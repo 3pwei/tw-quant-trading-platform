@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools==84.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tw-quant-trading-platform"
+version = "0.2.0"
+description = "Generic research, replay and isolated paper trading platform"
+readme = "README.md"
+requires-python = ">=3.11,<3.15"
+dependencies = [
+  "tw-quant-core @ https://github.com/3pwei/tw-quant-core/releases/download/v1.2.0/tw_quant_core-1.2.0-py3-none-any.whl",
+  "matplotlib>=3.7",
+  "numpy>=1.24",
+  "pandas==3.0.6",
+]
+
+[project.optional-dependencies]
+server = [
+  "fastapi>=0.115,<1",
+  "PyJWT[crypto]>=2.15.1,<3",
+  "uvicorn[standard]>=0.30,<1",
+]
+shioaji = [
+  "shioaji>=1.2,<2",
+]
+test = [
+  "httpx>=0.27,<1",
+]
+
+[tool.setuptools.packages.find]
+include = ["tw_quant*"]
+
+[tool.uv]
+required-version = "==0.11.33"

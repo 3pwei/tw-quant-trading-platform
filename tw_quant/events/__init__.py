@@ -1,0 +1,23 @@
+"""Compatibility namespace for canonical Core contracts."""
+from tw_quant_core.events import (
+    BarClosedEvent,
+    DeterministicEventEngine,
+    Direction,
+    DomainEvent,
+    EngineRun,
+    EventKind,
+    EventMetadata,
+    FillEvent,
+    MarketEvent,
+    OrderIntent,
+    OrderStatusEvent,
+    OrderSide,
+    PositionEvent,
+    ProcessedEvent,
+    RiskDecision,
+    SessionEvent,
+    SignalEvent,
+    VirtualClock,
+    deterministic_event_id,
+    event_to_dict,
+)

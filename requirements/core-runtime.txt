@@ -1,0 +1,4 @@
+# Production runtime dependency: immutable v1.1.0 release artifact.
+# Keep the digest synchronized with the GitHub release asset.
+tw-quant-core @ https://github.com/3pwei/tw-quant-core/releases/download/v1.1.0/tw_quant_core-1.1.0-py3-none-any.whl \
+    --hash=sha256:df0a8d50b9ffd5a7e2c072860eb84e4b0f3d85c28695f51c7319ac92b946addb

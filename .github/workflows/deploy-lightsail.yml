@@ -1,0 +1,249 @@
+name: Deploy to AWS Lightsail
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: "Exact full 40-character lowercase commit SHA from master"
+        required: true
+        type: string
+      production_confirmation:
+        description: "Type DEPLOY lightsail-production followed by a space and the exact commit_sha"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: lightsail-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.revision.outputs.sha }}
+      deployment_mode: ${{ steps.revision.outputs.deployment_mode }}
+    steps:
+      - name: Validate manual Production request
+        id: request
+        env:
+          REQUEST_EVENT: ${{ github.event_name }}
+          WORKFLOW_REF: ${{ github.ref }}
+          REQUESTED_SHA: ${{ inputs.commit_sha }}
+          PRODUCTION_CONFIRMATION: ${{ inputs.production_confirmation }}
+        run: |
+          test "$REQUEST_EVENT" = 'workflow_dispatch'
+          test "$WORKFLOW_REF" = 'refs/heads/master'
+          sha="$REQUESTED_SHA"
+          case "$sha" in
+            *[!0-9a-f]*|'') echo "commit_sha must be a full lowercase hexadecimal SHA" >&2; exit 2 ;;
+          esac
+          test "${#sha}" -eq 40
+          if test "$PRODUCTION_CONFIRMATION" != "DEPLOY lightsail-production ${sha}"; then
+            echo "Explicit Production confirmation for this exact SHA is required" >&2
+            exit 2
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: master
+          fetch-depth: 0
+          persist-credentials: false
+      - id: revision
+        env:
+          REQUESTED_SHA: ${{ steps.request.outputs.sha }}
+        run: |
+          sha="$REQUESTED_SHA"
+          case "$sha" in
+            *[!0-9a-f]*|'') echo "commit_sha must be a full lowercase hexadecimal SHA" >&2; exit 2 ;;
+          esac
+          test "${#sha}" -eq 40
+          git merge-base --is-ancestor "$sha" master
+          if test "$sha" = "$(git rev-parse master)"; then
+            deployment_mode=deploy
+          else
+            deployment_mode=rollback
+          fi
+          git checkout --detach "$sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "deployment_mode=$deployment_mode" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Production revision verification"
+            echo "- Mode: $deployment_mode"
+            echo "- Revision: $sha"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify CI and Security gates for revision
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GATE_REPOSITORY: ${{ github.repository }}
+          GATE_SHA: ${{ steps.revision.outputs.sha }}
+        run: |
+          python deploy/lightsail/verify-workflow-gates.py \
+            --repository "$GATE_REPOSITORY" --sha "$GATE_SHA" \
+            --attempts 30 --timeout 10 --retry-delay 10
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.14"
+      - name: Install locked dependencies
+        run: |
+          python -m pip install "uv==0.11.33"
+          uv lock --check
+          uv sync --locked --extra server --extra test --python python
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: python -m unittest discover -s tests -v
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+      - working-directory: dashboard
+        run: npm ci
+      - working-directory: dashboard
+        run: npm run lint && npm run build
+        env:
+          NEXT_PUBLIC_BASE_PATH: ""
+          NEXT_PUBLIC_MARKET_API_URL: ""
+
+  deploy:
+    needs: verify
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' && needs.verify.result == 'success' }}
+    runs-on: ubuntu-latest
+    environment: lightsail-production
+    steps:
+      - name: Checkout approved revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Configure SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.LIGHTSAIL_SSH_PRIVATE_KEY }}
+          SSH_HOST_KEY: ${{ secrets.LIGHTSAIL_SSH_HOST_KEY }}
+          LIGHTSAIL_HOST: ${{ vars.LIGHTSAIL_HOST }}
+          LIGHTSAIL_USER: ${{ vars.LIGHTSAIL_USER }}
+        run: |
+          install -d -m 700 ~/.ssh
+          install -m 600 /dev/null ~/.ssh/lightsail
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/lightsail
+          printf '%s\n' "$SSH_HOST_KEY" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host lightsail-production
+            HostName ${LIGHTSAIL_HOST}
+            User ${LIGHTSAIL_USER}
+            IdentityFile ~/.ssh/lightsail
+            BatchMode yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile ~/.ssh/known_hosts
+            ConnectTimeout 15
+            ServerAliveInterval 15
+            ServerAliveCountMax 4
+            TCPKeepAlive yes
+            LogLevel ERROR
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Verify previous known-good revision
+        id: known_good
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GATE_REPOSITORY: ${{ github.repository }}
+        run: |
+          rollback_sha="$(timeout --signal=TERM --kill-after=10s 90s ssh lightsail-production "set -e; sha=\$(sudo git -C /srv/trading-platform/repo rev-parse HEAD); mode=\$(sudo sed -n 's/^deployment_mode=//p' /srv/trading-platform/deployments/current.env); sudo bash /srv/trading-platform/repo/deploy/lightsail/verify-deployment-record.sh \${sha} \${mode} >/dev/null; printf '%s' \${sha}")"
+          case "$rollback_sha" in
+            *[!0-9a-f]*|'') echo "Known-good revision is invalid" >&2; exit 2 ;;
+          esac
+          test "${#rollback_sha}" -eq 40
+          git merge-base --is-ancestor "$rollback_sha" HEAD
+          python deploy/lightsail/verify-workflow-gates.py \
+            --repository "$GATE_REPOSITORY" --sha "$rollback_sha" \
+            --attempts 30 --timeout 10 --retry-delay 10
+          echo "sha=$rollback_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy approved revision
+        id: deploy_revision
+        env:
+          DEPLOY_SHA: ${{ needs.verify.outputs.sha }}
+          DEPLOYMENT_MODE: ${{ needs.verify.outputs.deployment_mode }}
+        run: |
+          bundle="${RUNNER_TEMP}/tw-quant-${DEPLOY_SHA}.bundle"
+          remote_bundle="/tmp/tw-quant-${DEPLOY_SHA}.bundle"
+          remote_record_verifier="/tmp/tw-quant-${DEPLOY_SHA}-verify-record.sh"
+          git bundle create "${bundle}" HEAD
+          git bundle verify "${bundle}"
+
+          timeout --signal=TERM --kill-after=30s 2m scp \
+            "${bundle}" \
+            "lightsail-production:${remote_bundle}"
+          timeout --signal=TERM --kill-after=30s 2m scp \
+            deploy/lightsail/verify-deployment-record.sh \
+            "lightsail-production:${remote_record_verifier}"
+
+          timeout --signal=TERM --kill-after=30s 20m ssh \
+            lightsail-production \
+            "set -e; trap 'rm -f ${remote_bundle} ${remote_record_verifier} /tmp/tw-quant-deploy.sh' EXIT; sudo git -C /srv/trading-platform/repo fetch '${remote_bundle}' HEAD; sudo git -C /srv/trading-platform/repo cat-file -e '${DEPLOY_SHA}^{commit}'; sudo git -C /srv/trading-platform/repo show '${DEPLOY_SHA}:deploy/lightsail/deploy.sh' > /tmp/tw-quant-deploy.sh; sudo flock -w 30 /var/lock/tw-quant-deploy.lock bash -c \"bash /tmp/tw-quant-deploy.sh '${DEPLOY_SHA}' '${DEPLOYMENT_MODE}' && bash '${remote_record_verifier}' '${DEPLOY_SHA}' '${DEPLOYMENT_MODE}'\""
+
+      - name: Capture sanitized deployment failure context
+        if: always() && steps.deploy_revision.conclusion == 'failure'
+        env:
+          DEPLOY_SHA: ${{ needs.verify.outputs.sha }}
+        run: |
+          remote_diagnostics="/tmp/tw-quant-${DEPLOY_SHA}-diagnose.sh"
+          timeout --signal=TERM --kill-after=10s 90s scp \
+            deploy/lightsail/diagnose-production.sh \
+            "lightsail-production:${remote_diagnostics}"
+          timeout --signal=TERM --kill-after=10s 90s ssh \
+            lightsail-production \
+            "set -e; trap 'rm -f ${remote_diagnostics}' EXIT; sudo bash '${remote_diagnostics}'"
+
+      - name: Verify formal public user path
+        id: public_origin
+        env:
+          PUBLIC_DASHBOARD_URL: ${{ vars.PUBLIC_DASHBOARD_URL }}
+        run: |
+          python deploy/lightsail/verify-public-origin.py \
+            --base-url "$PUBLIC_DASHBOARD_URL" \
+            --attempts 9 --timeout 10 --retry-delay 5
+
+      - name: Rollback after deployment failure
+        id: rollback
+        if: always() && steps.known_good.conclusion == 'success' && needs.verify.outputs.deployment_mode == 'deploy' && (steps.deploy_revision.conclusion == 'failure' || steps.public_origin.conclusion == 'failure')
+        env:
+          DEPLOY_SHA: ${{ needs.verify.outputs.sha }}
+          PUBLIC_DASHBOARD_URL: ${{ vars.PUBLIC_DASHBOARD_URL }}
+          ROLLBACK_SHA: ${{ steps.known_good.outputs.sha }}
+        run: |
+          case "$ROLLBACK_SHA" in
+            *[!0-9a-f]*|'') echo "Rollback revision is invalid" >&2; exit 2 ;;
+          esac
+          test "${#ROLLBACK_SHA}" -eq 40
+          remote_record_verifier="/tmp/tw-quant-${ROLLBACK_SHA}-verify-record.sh"
+          timeout --signal=TERM --kill-after=30s 2m scp \
+            deploy/lightsail/verify-deployment-record.sh \
+            "lightsail-production:${remote_record_verifier}"
+          timeout --signal=TERM --kill-after=30s 20m ssh \
+            lightsail-production \
+            "set -e; trap 'rm -f /tmp/tw-quant-rollback.sh ${remote_record_verifier} /tmp/tw-quant-${DEPLOY_SHA}.bundle /tmp/tw-quant-${DEPLOY_SHA}-verify-record.sh /tmp/tw-quant-${DEPLOY_SHA}-diagnose.sh' EXIT; sudo git -C /srv/trading-platform/repo cat-file -e '${ROLLBACK_SHA}^{commit}'; sudo git -C /srv/trading-platform/repo show '${ROLLBACK_SHA}:deploy/lightsail/deploy.sh' > /tmp/tw-quant-rollback.sh; sudo flock -w 300 /var/lock/tw-quant-deploy.lock bash -c \"bash /tmp/tw-quant-rollback.sh '${ROLLBACK_SHA}' rollback && bash '${remote_record_verifier}' '${ROLLBACK_SHA}' rollback\""
+          python deploy/lightsail/verify-public-origin.py \
+            --base-url "$PUBLIC_DASHBOARD_URL" \
+            --attempts 9 --timeout 10 --retry-delay 5
+
+      - name: Record verified Production deployment
+        if: success()
+        run: |
+          {
+            echo "### Production deployment verified"
+            echo "- Mode: ${{ needs.verify.outputs.deployment_mode }}"
+            echo "- Revision: ${{ needs.verify.outputs.sha }}"
+            echo "- Container/localhost health: passed"
+            echo "- Gateway server-side health: passed"
+            echo "- Formal public path: 200 + ok with required security headers"
+          } >> "$GITHUB_STEP_SUMMARY"

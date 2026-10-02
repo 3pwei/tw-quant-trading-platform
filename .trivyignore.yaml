@@ -1,0 +1,106 @@
+vulnerabilities:
+  - id: CVE-2025-69720
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-11822
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-11824
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-13221
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-16742
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-41992
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-42496
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-42497
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-48962
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-54369
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-57432
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-57433
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-76642
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-78408
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-78409
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-78410
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-8376
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-86145
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-89157
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-89161
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18
+  - id: CVE-2026-9538
+    statement: >-
+      Present in the pinned upstream Debian base layer; applies to the exact pinned Python Debian base;
+      the time-bounded exception and must be removed on or before expiry.
+    expired_at: 2026-10-18

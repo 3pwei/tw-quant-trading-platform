@@ -1,0 +1,1389 @@
+{
+  "files": [
+    {
+      "path": ".dockerignore",
+      "sha256": "265a5062042cf9e3918b006b1e1d16c3f101fdf04404ad2f3d23dd026c72d0d1"
+    },
+    {
+      "path": ".env.example",
+      "sha256": "f41627e2b851c96665c0555117d135efe59491edb5fc5c4417d3fa3d1d90c745"
+    },
+    {
+      "path": ".github/dependabot.yml",
+      "sha256": "e4c741e80e798274939f7e623f41a422f2f4b3e0fe80f6a46eef6ba3bbefb07e"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "sha256": "7ae10ffe7c14aa1b5a3084e46de375ed0bdb08e71b7c335f26cdc55391468d30"
+    },
+    {
+      "path": ".github/workflows/deploy-lightsail.yml",
+      "sha256": "0717eaff5e4536cf7312f5f86dbcf8167a64e190cebc3c84694d0eb45704c40b"
+    },
+    {
+      "path": ".github/workflows/security-exception-expiry.yml",
+      "sha256": "bb991312be0b78fdb89bf90e19c149487eb3f038743183c1c9b5c72be1d2d9ac"
+    },
+    {
+      "path": ".github/workflows/security.yml",
+      "sha256": "4fe05acd0df8f968522cd47b801ad1f821a0146d24d407ed2c22543703dc0bf7"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "67fdb684405a866f5c4b479cc5d8a46db122b2734470ef713dcf5c47f6e2cbcd"
+    },
+    {
+      "path": ".trivyignore.yaml",
+      "sha256": "6119889620abe7453040a49d3bfe9572e873a5ae32c9c945efad73abdcc06a0d"
+    },
+    {
+      "path": "AGENTS.md",
+      "sha256": "123186afacb79ce54ec2295dbfd2f247ba775f9d1c83cb40ee061db32d80f687"
+    },
+    {
+      "path": "Dockerfile",
+      "sha256": "42e7b046228ae141927500c79442652af246a403c9144da04d7db555b0cd1321"
+    },
+    {
+      "path": "README.md",
+      "sha256": "41468775466a7e7874e5f11687914be3ade6fe786da900745af995c77d9368fe"
+    },
+    {
+      "path": "THIRD_PARTY_NOTICES.md",
+      "sha256": "479c07750b5b585733837a24d1120c0381aff2e114b1900290fbf56631dddcf2"
+    },
+    {
+      "path": "dashboard/app/admin/users/page.tsx",
+      "sha256": "d0cb824344a389913ee291185214787de50292985439f31a7aa3f6586878b72d"
+    },
+    {
+      "path": "dashboard/app/admin/users/user-management.tsx",
+      "sha256": "3d3a0616bb6dd99257ae77c58658d1bb12378f8e61cb3a2b0b16f567d6908d2f"
+    },
+    {
+      "path": "dashboard/app/backtest/interactive-trade-chart.tsx",
+      "sha256": "0fa79a4a44c78cf32199dbe71374313d6de3a1a632fdfc1ab8ff56dc754cdbd9"
+    },
+    {
+      "path": "dashboard/app/backtest/page.tsx",
+      "sha256": "4ba4d4ed220206854b9337ac6fbd6beaf98c4aca7bcba3b81cf77496f09fb94c"
+    },
+    {
+      "path": "dashboard/app/backtest/strategy-diagnostics.tsx",
+      "sha256": "20780724051de82a5fb8fa5d3274e72abc19ccfe081b7fdaa955781b2e55250e"
+    },
+    {
+      "path": "dashboard/app/backtest/strategy-series.ts",
+      "sha256": "81077bb895b038c800aa2c44d37b9c1717c2056462c79077ca3ebc9fb201f0d1"
+    },
+    {
+      "path": "dashboard/app/backtest/trade-chart-model.ts",
+      "sha256": "10f0f8a8ce63ceac4d6ebdac9063c955e7571d6b63b6b0d8f215f6ea1af21cd5"
+    },
+    {
+      "path": "dashboard/app/components/current-user-context.tsx",
+      "sha256": "d40c2d1348fc875208045545ddca83bf628a79f06978b0d1690899d9651f4a40"
+    },
+    {
+      "path": "dashboard/app/components/exit-reason.ts",
+      "sha256": "d9a62d41ffa2ee494f696425a2c4006691413ce39ffe70b7d770d14c1b7f247c"
+    },
+    {
+      "path": "dashboard/app/components/section-shell.tsx",
+      "sha256": "00b0ba35951e72031cb279e9f03cba4c9aa0f47b7e6b61f119c47babe9b8b44b"
+    },
+    {
+      "path": "dashboard/app/components/system-nav-policy.ts",
+      "sha256": "19ce90a6708cfa0846c418d6f26568a65e52389d7d9bd35024c44504953b7eb9"
+    },
+    {
+      "path": "dashboard/app/components/system-nav.tsx",
+      "sha256": "3d2b6a8acfbbf5c4241c7e286b2557f28df26a7efd0164bd8c6c8eac820b3f1c"
+    },
+    {
+      "path": "dashboard/app/components/trade-redirect.tsx",
+      "sha256": "14eff5602e198cb330872d1050dbc049454079b6d9d2461bdb0fe1e05358f4a9"
+    },
+    {
+      "path": "dashboard/app/composite-strategies/composite-catalog.tsx",
+      "sha256": "254155599ad8966193646a3a631cbd294d8dca593557e8f75628a0f494111f32"
+    },
+    {
+      "path": "dashboard/app/composite-strategies/editor/page.tsx",
+      "sha256": "8ad0ecc6c824ecfb530ee376187e5f123eb8977e7caec4c0c41e3e4813655a9b"
+    },
+    {
+      "path": "dashboard/app/composite-strategies/new/page.tsx",
+      "sha256": "d0897ecfcbaee3eb65a4c162aac8adfbf6b8a40718dec3ec78095f646880451a"
+    },
+    {
+      "path": "dashboard/app/composite-strategies/page.tsx",
+      "sha256": "2b4ff96adb1f7609d01bc554598baf85caa85309d7be1c2f6c354eb0968e95b4"
+    },
+    {
+      "path": "dashboard/app/dashboard.tsx",
+      "sha256": "f9b4711d0625ec2da04d7d4547bf8ae2671189cac35004c9b1410fc3e03badfa"
+    },
+    {
+      "path": "dashboard/app/demo/demo-client.ts",
+      "sha256": "ecf2227897e6cb1f255b760d533edf6834ca1f20aca92008d7ee430033a93c9e"
+    },
+    {
+      "path": "dashboard/app/demo/demo-equity-chart.tsx",
+      "sha256": "2c76c276911fe30042abdf447a335e76791695453be318a9b35b7f4c2950bcfb"
+    },
+    {
+      "path": "dashboard/app/demo/page.tsx",
+      "sha256": "82cec80d0b840940af07e2b9554b368aa280bd65afe861c5e25dc328fc7b1e4c"
+    },
+    {
+      "path": "dashboard/app/globals.css",
+      "sha256": "549d6a3c642f8ad16b09831d0dcc6b38af1ab915c065fd9972ae98a527e79cb3"
+    },
+    {
+      "path": "dashboard/app/history/history-dashboard.tsx",
+      "sha256": "03d7613cf04224daa4546c87e512a2adfffa2c20ceea493d9962a719d115a9a6"
+    },
+    {
+      "path": "dashboard/app/history/history-pagination.ts",
+      "sha256": "a5c9ce91e179deb33771a4dbf47356c60b385aaaf5e87055a390c5910fe37374"
+    },
+    {
+      "path": "dashboard/app/history/history-selection.ts",
+      "sha256": "34d423e0b77ae3531563eca464a09d3e25919d056a085f8933b090bc643416a0"
+    },
+    {
+      "path": "dashboard/app/history/page.tsx",
+      "sha256": "a5b1da4d684fe47a8137857c04d8fc3bfb4d7d0fab438eb512ed96234e0b70a7"
+    },
+    {
+      "path": "dashboard/app/layout.tsx",
+      "sha256": "ce6e641d5afe6d257e82ec41a450c47100c69402d16a70c60724908ed0460d91"
+    },
+    {
+      "path": "dashboard/app/lib/api-client.ts",
+      "sha256": "96357182ebf116c05b87dc60d484d873255793a1d14b6a49b2bb8d29e788960b"
+    },
+    {
+      "path": "dashboard/app/lib/formatters.ts",
+      "sha256": "3b2cc482b37f571b066b38fbb8bdd7c28bf88c0903a7d608a057426a8c84d53f"
+    },
+    {
+      "path": "dashboard/app/lib/strategy-catalog.ts",
+      "sha256": "291f505bffaab3c5089152c8eeda0df9cdfd0e88959d7304b8b2cfb18f93f45c"
+    },
+    {
+      "path": "dashboard/app/live/live-dashboard.tsx",
+      "sha256": "53037d2e3fe0620b93b93a8efd15c9fba810d7c589b289f7ddf65ca929eb13bc"
+    },
+    {
+      "path": "dashboard/app/live/market-socket-policy.ts",
+      "sha256": "97e66f204d8ae2afe8e42346b059c9f9b4c45e34e2fef6db3a97f4a7c7582188"
+    },
+    {
+      "path": "dashboard/app/live/page.tsx",
+      "sha256": "73ec69069bd7e1ca72adfd36b43ceddf8a766918650f086d7c09b3859697367c"
+    },
+    {
+      "path": "dashboard/app/live/strategy-menu.ts",
+      "sha256": "441a3523e5b8f282b82da880965860fe285405de0ee5dff7b5f54e5e71e6fddb"
+    },
+    {
+      "path": "dashboard/app/live/trade-selection.ts",
+      "sha256": "8fa796b05afcd1e60a1fb96cd99d086f55cf1bb3cf46ed7aa5d64dc35829821b"
+    },
+    {
+      "path": "dashboard/app/live/types.ts",
+      "sha256": "2225f6baf30af3206fc48900c7e52877612a11da7d87837bfd2d90c38776816b"
+    },
+    {
+      "path": "dashboard/app/live/use-market-socket.ts",
+      "sha256": "a034cc44b751907e064e39519dcc6aa149f1845d546451c55ff9648897170e16"
+    },
+    {
+      "path": "dashboard/app/live/use-paper-overlay.ts",
+      "sha256": "b6e74e84c3f1752030c28d4001ece4ec26345273814208e2631116d35fadbd7c"
+    },
+    {
+      "path": "dashboard/app/live/use-trading-chart.ts",
+      "sha256": "102d054c23ec01a44a03141b1cfe43e53d0e6db6c31e758333767d22f92aa3ba"
+    },
+    {
+      "path": "dashboard/app/overview-dashboard.tsx",
+      "sha256": "6528dfa05fb962e7b2745a9cc9e36e104baa18043885368043a5d6dbe253916b"
+    },
+    {
+      "path": "dashboard/app/page.tsx",
+      "sha256": "ffa1236253a1469f33754eab6cec25c01bfddbfecc03d72a969abb87908155d7"
+    },
+    {
+      "path": "dashboard/app/paper/page.tsx",
+      "sha256": "a4391dbad43ddc3a20282ab449efe3272b72915e2fd0384aa875ecd35223a561"
+    },
+    {
+      "path": "dashboard/app/paper/paper-account-loader.ts",
+      "sha256": "e99b72809a9a98055522831f9ff35db70f47ad6026c539c38f94527c52d98552"
+    },
+    {
+      "path": "dashboard/app/paper/paper-trading-dashboard.tsx",
+      "sha256": "5732b142f6c6d61b553a7b830ae108b10bbc5e3a597929192bff2a485a01da37"
+    },
+    {
+      "path": "dashboard/app/paper/types.ts",
+      "sha256": "8292a4960eb3d0d951bdb040ad7999100511e965a6f9924172788d344677e574"
+    },
+    {
+      "path": "dashboard/app/paper/use-paper-account.ts",
+      "sha256": "18a233a44de7b81c131a0f03f7cc13d9bb2f1a538dc617f9a7301f73aa64669f"
+    },
+    {
+      "path": "dashboard/app/replay/page.tsx",
+      "sha256": "956530b522c5f92e38b0d33d6a22223cb646b24f5ae55b74f378aa10365da3ec"
+    },
+    {
+      "path": "dashboard/app/replay/replay-chart-data.ts",
+      "sha256": "1f4ca8084e494f8065037ba607f9f1440d1a10ee35bb2ec27def82b53be96fc6"
+    },
+    {
+      "path": "dashboard/app/replay/replay-dashboard.tsx",
+      "sha256": "6d37f84ed7a590b47cfdf1d5bd6c5249b9ed6c874ec9cff6dc6b6f848830dee9"
+    },
+    {
+      "path": "dashboard/app/replay/types.ts",
+      "sha256": "df2119ba32265def60819d325d49d435dfc00c4b7032b71846ad7a16aae50d60"
+    },
+    {
+      "path": "dashboard/app/replay/use-replay-chart.ts",
+      "sha256": "afb37885ce2e1a856a6e4c81d62487f16532a4f93cae66698eace1d3a61f1e63"
+    },
+    {
+      "path": "dashboard/app/settings/page.tsx",
+      "sha256": "3a459792fbf8ffea9a0980eb99d68371a26cca9d1f061a140b6ffd5fd266b1b5"
+    },
+    {
+      "path": "dashboard/app/settings/system-health.tsx",
+      "sha256": "e1281a7b6e3fc32ece50f410d2d7f3df9cd2d30fa953d61e6cc6aaedb54533bc"
+    },
+    {
+      "path": "dashboard/app/strategies/composite-builder.tsx",
+      "sha256": "953836f991262c564ac201eb7270288a38603097d3da60893e3c838fcdc8c3b9"
+    },
+    {
+      "path": "dashboard/app/strategies/page.tsx",
+      "sha256": "1758cd94c46dabd2abf4949ec3541d7418ac54f560a1885815bb67a70736104a"
+    },
+    {
+      "path": "dashboard/app/strategies/strategy-manager.tsx",
+      "sha256": "63953cf8a268cbd6dc516460278ce5d48ddf1700a9933299398253e3a3d08110"
+    },
+    {
+      "path": "dashboard/app/trade/live-auto-panel.tsx",
+      "sha256": "bb26b37faae220dd44113ae0ba709d20d1ff68886eccab410e2f7b109e2b2e76"
+    },
+    {
+      "path": "dashboard/app/trade/live-canary-panel.tsx",
+      "sha256": "af42144e4bf5f7b84b1dc11acb081c4e040ba8ae305e6b274802ef21c7dff80b"
+    },
+    {
+      "path": "dashboard/app/trade/live-shadow-panel.tsx",
+      "sha256": "ff3e8a6c5b027ef172fafc7f1e2e3eafbcd02dcacfae11087eec777007acd87e"
+    },
+    {
+      "path": "dashboard/app/trade/page.tsx",
+      "sha256": "72395be81635ea4b643f34d896872940025bccd973b88bb21c294340c80e6bdc"
+    },
+    {
+      "path": "dashboard/app/trade/paper-auto-panel.tsx",
+      "sha256": "a4e16d1dcb5a1e057e979e0b51f5a9eaa9142a89723c0330d74c2950aa645fd0"
+    },
+    {
+      "path": "dashboard/app/trade/paper-auto-policy.ts",
+      "sha256": "bef1b33960f977d4a2c825227a3e8d00c170cc586fcaa45eaba110df5ef2dc89"
+    },
+    {
+      "path": "dashboard/app/trade/paper-auto-types.ts",
+      "sha256": "56c61dbea212e67cabae57ef015a9fd346ab13e6571398ac9064067812eb57e7"
+    },
+    {
+      "path": "dashboard/app/trade/use-paper-auto.ts",
+      "sha256": "65136ef135286d488aaa288c071c8980b40ce82cddc3fff61b1ffeccf80a3436"
+    },
+    {
+      "path": "dashboard/eslint-security-rules.mjs",
+      "sha256": "ff31d9b2027c54aedd725445ed5acc92b7377439b8ed03fe45110d0b901e8f1a"
+    },
+    {
+      "path": "dashboard/eslint.config.mjs",
+      "sha256": "1dfc697a0964786b2788ced4506a3e3109bf602e000b4f893ba065ca58dfd91f"
+    },
+    {
+      "path": "dashboard/eslint.security.config.mjs",
+      "sha256": "a1a4b3e1ff02766c2114cc67e7eeb99a2d8e308328e7c692ea85ebf6826c257f"
+    },
+    {
+      "path": "dashboard/next.config.ts",
+      "sha256": "76047a3b4608244460dad5afc736cc9e3b42007987d8cc500d25476790f71422"
+    },
+    {
+      "path": "dashboard/package-lock.json",
+      "sha256": "4a5c136c11df66771a0ccec9ce55fc812be93ed188dd5612f62a12c4e710e3e0"
+    },
+    {
+      "path": "dashboard/package.json",
+      "sha256": "43ffe386dbde52e503fbbc058bafb46e0ba7079782787fe383fcf22da5e8f47f"
+    },
+    {
+      "path": "dashboard/public/favicon.svg",
+      "sha256": "e6d2e59b7b5bbb0342e0fb496dfc262decbfe4426bbb7b047aec8d467d1dc6f7"
+    },
+    {
+      "path": "dashboard/scripts/verify-security-gate.mjs",
+      "sha256": "3797294cd3337a919ebbfc0293df94133a61642c51a6e97553aff981c0c38fdf"
+    },
+    {
+      "path": "dashboard/tests/backtest-trade-chart-model.test.ts",
+      "sha256": "a5dc1091e1a12a8105bec403740ef1377b7b643dc871c9d9ccfda03c7b707049"
+    },
+    {
+      "path": "dashboard/tests/demo-client.test.ts",
+      "sha256": "3a70fb8fb8df75175229a1e908a4b41327394b28a6274fadda24a198d33d741d"
+    },
+    {
+      "path": "dashboard/tests/history-pagination.test.ts",
+      "sha256": "3f485fe52bf0cb2880fdc7d73abbcd9237069ee189a30ec32b0771c36ff59f62"
+    },
+    {
+      "path": "dashboard/tests/history-selection.test.ts",
+      "sha256": "5c4acdd961f15d412c2dc84dffc6ab974c694b3e1389f0b606c8679a3bc0c1a1"
+    },
+    {
+      "path": "dashboard/tests/live-canary-boundary.test.ts",
+      "sha256": "58e3db307745f0fc9314cc28a1a60245048b9a8e18eda6d3f682c1f5d65afcc5"
+    },
+    {
+      "path": "dashboard/tests/live-shadow-boundary.test.ts",
+      "sha256": "7f47797e3361ed9100ec5be82c17564cf406f41347f52d466107c74d53362f24"
+    },
+    {
+      "path": "dashboard/tests/market-socket-policy.test.ts",
+      "sha256": "d48fe1af644f4a7f3e898eb98f52dc1b788ac8c9a09d4c66dec8aa3c2d27d481"
+    },
+    {
+      "path": "dashboard/tests/paper-account-loader.test.ts",
+      "sha256": "a2443a5cbc7a452cac9b112a2b64d815df3541b06ce18d3f5faa79326064293d"
+    },
+    {
+      "path": "dashboard/tests/paper-auto-policy.test.ts",
+      "sha256": "64ef652a9736b9b1f473a6e771c0fcbee4b2b9c800c1834df2af515a30b48eda"
+    },
+    {
+      "path": "dashboard/tests/provider-identity.test.ts",
+      "sha256": "14d41243077fb8893cdb74a9022c4fce279d731eab8dacf85ec66547be9f159a"
+    },
+    {
+      "path": "dashboard/tests/replay-chart-data.test.ts",
+      "sha256": "ac67fa8a6a0f354901252ff72618fdb74d31090bb052f74d28302c106f3a591d"
+    },
+    {
+      "path": "dashboard/tests/strategy-catalog.test.ts",
+      "sha256": "4fd7cd394982b163b904e351f6f2135aa85b1a9d2780b68f0a637029e6604b6c"
+    },
+    {
+      "path": "dashboard/tests/strategy-menu.test.ts",
+      "sha256": "58fb9b42ffa05fcf1566c094f16201e2530858e49f8c2b795054092102aa80cf"
+    },
+    {
+      "path": "dashboard/tests/system-nav-policy.test.ts",
+      "sha256": "9a20d767494195093b173abde18fce584bd783b037459529d8d5f28f236695a6"
+    },
+    {
+      "path": "dashboard/tests/trade-selection.test.ts",
+      "sha256": "6b201ba42c8f3ceea97db762eaa670ac797f3388248cb5058c753cf25e2fa52b"
+    },
+    {
+      "path": "dashboard/tsconfig.json",
+      "sha256": "f2735fc4e568bab363ae9b9d3cdb1d0e94128ef6f963f780cf59cc715eef2f7e"
+    },
+    {
+      "path": "deploy/lightsail/Caddyfile",
+      "sha256": "95d2bc9ea9ad2da8c99742d8720780892b0f816c95669f933b883538a4b9fa26"
+    },
+    {
+      "path": "deploy/lightsail/Dockerfile.gateway",
+      "sha256": "4265c6e16833f35b4652d8fc39dd616341c3faefabc1a226131f216f1b9d56c5"
+    },
+    {
+      "path": "deploy/lightsail/bootstrap.sh",
+      "sha256": "806d4d74a6ffdcbbb08793ee7527249e6fb66f0f0a79f4cfca8ff5ed2a15d95b"
+    },
+    {
+      "path": "deploy/lightsail/compose.env.example",
+      "sha256": "16e6a22314f8ee93895c90b0414105b795d0ad9103d5fc068d7bd4fc7df7e6d7"
+    },
+    {
+      "path": "deploy/lightsail/deploy.sh",
+      "sha256": "ff5a4e725fd9550872f0455d263beb8b42b41f724412e00e3b1130711d9af7ad"
+    },
+    {
+      "path": "deploy/lightsail/diagnose-production.sh",
+      "sha256": "daf69399f28ad00bb5a64b82244bb3da67c30efc03942e415387bd4b43402df1"
+    },
+    {
+      "path": "deploy/lightsail/docker-compose.yml",
+      "sha256": "de5bbb884e07a9691dd24836f80e728f3fb17420c32d550e7aae2921cf0ee2c0"
+    },
+    {
+      "path": "deploy/lightsail/execution.env.example",
+      "sha256": "9ea31a385707adae8a061e8cc1553cabb5b025d1c556f15a87f0b5619b661a46"
+    },
+    {
+      "path": "deploy/lightsail/gateway.env.example",
+      "sha256": "34188dfbce8f794d15b921ca11fda3c07046de137a1c2490c31cb0ed0309e1b7"
+    },
+    {
+      "path": "deploy/lightsail/market.env.example",
+      "sha256": "73be1337190bea80b1d60d61888b082b89290e08d90266f123c221a13cb8344d"
+    },
+    {
+      "path": "deploy/lightsail/migrate-production-target.py",
+      "sha256": "e88c4da8fd2dbb725e394da7714e05f04cbb46d63f1d942964f1b8247b8a35b8"
+    },
+    {
+      "path": "deploy/lightsail/prepare-host.sh",
+      "sha256": "b650113c4e41569c76b423b450a251998493dd121b9230257317b69047a1467c"
+    },
+    {
+      "path": "deploy/lightsail/test-gateway-auth.sh",
+      "sha256": "0e66ed22a321c061f3ccf563537c02d1bfb89a52856e2b9a81e53efe192cd223"
+    },
+    {
+      "path": "deploy/lightsail/test-hardened-runtime.sh",
+      "sha256": "25b94cbf3467983ed57baa070120aa05d59489a19aed27eb338d0a32315bfb76"
+    },
+    {
+      "path": "deploy/lightsail/verify-deployment-record.sh",
+      "sha256": "d92f2b77254d1be0fe70e88233949a346a21948c19c1f6c8807e8dff5fa62f84"
+    },
+    {
+      "path": "deploy/lightsail/verify-gateway-path.sh",
+      "sha256": "21b2969731fc4dc4e5a7308b155e1917f8cd154ef47b78de4355722643696813"
+    },
+    {
+      "path": "deploy/lightsail/verify-production.sh",
+      "sha256": "456227e55d097ca47a1213d7194faed9c76ebb6968e55e3a1c58cbec0f393bd8"
+    },
+    {
+      "path": "deploy/lightsail/verify-public-origin.py",
+      "sha256": "e9e168027677fe8e526b711fe348e71004c4b090136a15066405a05ff3f97f75"
+    },
+    {
+      "path": "deploy/lightsail/verify-workflow-gates.py",
+      "sha256": "5cdfe25bbbd53fb24ca564204ef48735555573b38980acb8cab13786588cf1f3"
+    },
+    {
+      "path": "deploy/security/codeql_eligibility.py",
+      "sha256": "a55c55a3011ffb7069f6b581eb981c9d2edf9b14f404503f30f86134331e51b0"
+    },
+    {
+      "path": "deploy/security/codeql_sarif_gate.py",
+      "sha256": "052c1b98b59e74db0339fc80baf733ad5fc2c1edff7e35ae944826c34c0579c6"
+    },
+    {
+      "path": "deploy/security/exception_policy.py",
+      "sha256": "1b89f49b5770e2bad2982656503ce90125c8e8d8123c6cd73f014d55c135aa9f"
+    },
+    {
+      "path": "deploy/security/python_sast.py",
+      "sha256": "d4a198b3943347c2f96a6c1191922c24358426b330f5dce7d7bee5ef9116260b"
+    },
+    {
+      "path": "docker-compose.yml",
+      "sha256": "427d8ea9cfa62e8f8bda7b0a060cfb7dd087e55265bc1b9b67e6291d552c2a29"
+    },
+    {
+      "path": "docs/dependency-notices.json",
+      "sha256": "47f0b9d73b63902bf8d6450dfba3107136f9f186505ba0515c9829fff797cfba"
+    },
+    {
+      "path": "docs/deployment.md",
+      "sha256": "c1d9b7d2055805bb82d8ac6dec335fd1901dd5de9792ff354dcee0e246a1958e"
+    },
+    {
+      "path": "docs/provenance.md",
+      "sha256": "f461f9e5b811bdcd0e480086fde408c6f4f5778223201e579c5396a8d178caf7"
+    },
+    {
+      "path": "docs/third-party-license-texts.txt",
+      "sha256": "13dca457caa021bd68fc4ee43742e7ec3ee447228da17d6ba615b0f4e99d38c4"
+    },
+    {
+      "path": "pyproject.toml",
+      "sha256": "73f5db4b7ea088ab31e587b335a4b954be95bf58285451094d2688fda83f81dc"
+    },
+    {
+      "path": "requirements/core-runtime.txt",
+      "sha256": "1aa5f9a1ca1b75d11b6209ea91016145103353db41c843f3aeacf0c9fd92023a"
+    },
+    {
+      "path": "tests/gateway_auth_app.py",
+      "sha256": "07697f5aba8c308840edff9ed1a379df0b872c153fc6d7535a2c2450b709316f"
+    },
+    {
+      "path": "tests/public_fixtures.py",
+      "sha256": "4c98a7b93e4a37ffdb8b1d1bc0c936ffe61b86c68093e292dcc85c7662fb2fa1"
+    },
+    {
+      "path": "tests/public_runtime_probe.py",
+      "sha256": "6dec78dcc592d5cfadbfe0ce79291d29ce5e828763cd43a4ac30c57761d6b8f2"
+    },
+    {
+      "path": "tests/test_access.py",
+      "sha256": "8cd9ec531cb167d6c5ee3c7811232f99aca5be3d9977aa73972b768f87b194ac"
+    },
+    {
+      "path": "tests/test_access_security_regression.py",
+      "sha256": "20133ecdd1f0343beb17b1cd51c5fc04803d5d5cf326b42562e783dce67cc1b2"
+    },
+    {
+      "path": "tests/test_account_risk.py",
+      "sha256": "bb5f25aa12f92b2ab2a86e3aade677adeb8fd40bce40e41ea805c9a367407cb9"
+    },
+    {
+      "path": "tests/test_api_application_architecture.py",
+      "sha256": "5ad8f49e33313e3a11adcff6c9bda259eeddf2f245a50eea26511eeef67bd84d"
+    },
+    {
+      "path": "tests/test_architecture_v2_runtime_data.py",
+      "sha256": "4351c8697aeeec22c3dc471c3c3deaa21c0f41e3a39275946b36b0b2479de0cc"
+    },
+    {
+      "path": "tests/test_auth_foundation.py",
+      "sha256": "932a0c801a532c99b229c1954a7b76716cb3a3e71476ab05f561962bf1be2d00"
+    },
+    {
+      "path": "tests/test_authorization.py",
+      "sha256": "6336430263f4a974d196707f02019f6f2802cca4e223569d04078e02a61f089f"
+    },
+    {
+      "path": "tests/test_backtest_history.py",
+      "sha256": "dad2d63aa7dac241fcb3b1ae8254319a6029f3802201b30a4b001b8e719edd0c"
+    },
+    {
+      "path": "tests/test_backtest_runner.py",
+      "sha256": "f3e8b22892302b2944f5f8fb40eb3bc9ba4bf89c4d4887c2ec63f42b2fe71779"
+    },
+    {
+      "path": "tests/test_broker_callback_consumer.py",
+      "sha256": "90c1e65cb89714df55d23bc2fabda74661516e7ca26af9205dafeb7641f8a2ea"
+    },
+    {
+      "path": "tests/test_broker_contract.py",
+      "sha256": "7b2a5ce9e873bd84a569cbafe58749286ee095b1f74f1d4eeab09ec862f2e1f8"
+    },
+    {
+      "path": "tests/test_broker_secret_management.py",
+      "sha256": "55bf7967c0a5cbbcf34bf0552b2748e8f7eddcffbb11e02b31d1deee06b9633a"
+    },
+    {
+      "path": "tests/test_codeql_sarif_gate.py",
+      "sha256": "94709d49168c67c6f35c04959b571b6611a0b12609c846e2fc1046b6ec0861df"
+    },
+    {
+      "path": "tests/test_container_origin_hardening.py",
+      "sha256": "05e6de81d059c30f2f9e84c72247c99d4857e4a4f1093f0437e69c66a1292245"
+    },
+    {
+      "path": "tests/test_costs.py",
+      "sha256": "cf5e31573cc53ba2c2fce8b0e57f5f594867876979708a4bada7babedd39c441"
+    },
+    {
+      "path": "tests/test_dashboard_architecture.py",
+      "sha256": "0079b7401d724402a7b28e28ce51e8acd5308bc1cdc4fb8f614ad270f4e82d53"
+    },
+    {
+      "path": "tests/test_data.py",
+      "sha256": "fd24543c10de7b7e5234f51c3731fc7d10ce2000aa2f91768effac49c371dd6c"
+    },
+    {
+      "path": "tests/test_data_ownership.py",
+      "sha256": "a9c218f4adf6cf18be2e50f28a57e3ff6ff47172fa04d4015161180eca6990da"
+    },
+    {
+      "path": "tests/test_deployment_record.py",
+      "sha256": "22586c9999cae3381748026e5c8acedd8424ef8518d927f94eb650501caecd5f"
+    },
+    {
+      "path": "tests/test_deployment_workflow.py",
+      "sha256": "f5cd4fb012256188bdf4f041ea11bbd92c9e40c8433cc25cc6d6a5ef9b21fc65"
+    },
+    {
+      "path": "tests/test_deployment_workflow_gates.py",
+      "sha256": "87390e5ac792111e6843f38c816a54980b15b97619736fb7d0b3a876e397dd11"
+    },
+    {
+      "path": "tests/test_event_engine.py",
+      "sha256": "beff59c58a2a1bd36f67c09a699b1a88cfb8a94fe613167d3f9c439aec7ddfeb"
+    },
+    {
+      "path": "tests/test_event_execution.py",
+      "sha256": "d5c789fa5bc07e59f2ac7a4f7aa8a9a8846674bebc5c0cafe1017700727c1096"
+    },
+    {
+      "path": "tests/test_execution_architecture.py",
+      "sha256": "6154416d37fad6af5de52cb3b044d97de43abc1678ab387d0db7ad75a7b11c65"
+    },
+    {
+      "path": "tests/test_execution_quote.py",
+      "sha256": "02b85e8174abf99ff966e2f6c63fb038413f466381d33b14856641e3e60822a4"
+    },
+    {
+      "path": "tests/test_execution_security_boundary.py",
+      "sha256": "431a41465b05428cde986dd246d0b1ff76f7ac5c5c3158dfc6ad1f5ab5246a0e"
+    },
+    {
+      "path": "tests/test_execution_targets.py",
+      "sha256": "21dc265a765e18db3fe3ce347219ae6b5565e2495c3da0054e83df9a708c8f0a"
+    },
+    {
+      "path": "tests/test_execution_worker.py",
+      "sha256": "766c25d312d97b073adf6c7bddaedaea3d1d9654331211af862e3189cc32bbdb"
+    },
+    {
+      "path": "tests/test_futures.py",
+      "sha256": "05e09b6808d2dd93b8fb124b2378c1b13f44da6709b675f196c56f068e4a75b3"
+    },
+    {
+      "path": "tests/test_github_actions_runtime.py",
+      "sha256": "b3d769dc960cd0c4a838c8d25118cb29fde016c6db64e43b401be58b3aad4459"
+    },
+    {
+      "path": "tests/test_level2_acceptance.py",
+      "sha256": "0943051552b3871491a0bb7bbc084bc1d05923815c900ea3cdbe56b7fda4bcd8"
+    },
+    {
+      "path": "tests/test_live_aggregator.py",
+      "sha256": "ad24a95e1a50b10257f92120c2046da4e507f2832991112936de774938a4c55a"
+    },
+    {
+      "path": "tests/test_live_api.py",
+      "sha256": "a59714bfd0219f226ef55297fbed4fb9d8cc14e84d7f65b817bd6f08d782e103"
+    },
+    {
+      "path": "tests/test_live_auto.py",
+      "sha256": "80dab66875a41b2b103580c7ec6a9c384c159424c838e4bad9050d5f36e51c24"
+    },
+    {
+      "path": "tests/test_live_canary.py",
+      "sha256": "f75d0b2302a555dedd68eaab675221d59b6f34802a23b5c52eb6fe946ccaefae"
+    },
+    {
+      "path": "tests/test_live_canary_admission.py",
+      "sha256": "2cf3d3e03234aba889b57119614b81c7c32f15733f5c20352eb2bfcc6c38c46c"
+    },
+    {
+      "path": "tests/test_live_canary_dispatch.py",
+      "sha256": "524635e37f08faf8432208ca878ab166a8442182447e94133dd6e21ec64b1666"
+    },
+    {
+      "path": "tests/test_live_position_guardian.py",
+      "sha256": "62eade26183a07d5a5e64dba7be2fd4f601693c46ecb26088174a12bab9af827"
+    },
+    {
+      "path": "tests/test_live_reconciliation.py",
+      "sha256": "fc519ed626c10cdbe7526a59e8e3d962ae53fd6ece7c7082d8ed239efc41e66f"
+    },
+    {
+      "path": "tests/test_live_recovery_worker.py",
+      "sha256": "a2b2cebe6d1a990805ccbc7faa33b6299b0e4aaccf4f79563989cc4b62b82763"
+    },
+    {
+      "path": "tests/test_live_settings.py",
+      "sha256": "1d35add0ea36efa718a3eb2f58be8188b50217cf09ba786f764ac762eb3a15f7"
+    },
+    {
+      "path": "tests/test_live_shadow.py",
+      "sha256": "2aa62a66a56e025531fc6905cf49dadca522773e5a5970e46a0cfb2c07102a9f"
+    },
+    {
+      "path": "tests/test_market_data_architecture.py",
+      "sha256": "5690442973cf306fa5f82a50ca64a42079977c818a12e3d4588f023b4a2e6694"
+    },
+    {
+      "path": "tests/test_monitoring.py",
+      "sha256": "57a9fb65405c7ab02ad3bd91f65a72a7cd29eec35482039309b4a85bd2005805"
+    },
+    {
+      "path": "tests/test_multi_broker_execution.py",
+      "sha256": "6b25e443c7d724be75dbdb53811ff9f7433d092744b69a774703ed333e58975e"
+    },
+    {
+      "path": "tests/test_openssl_runtime.py",
+      "sha256": "3c0341c5590e42de1fd262b2b7bfe4bedbae3221bf097251f4cfb45b1735f8ac"
+    },
+    {
+      "path": "tests/test_paper_auto.py",
+      "sha256": "c9e0d09120a0feccaa8e4d2fcceafbc58a112c9b786a6b38558151edc86cbaee"
+    },
+    {
+      "path": "tests/test_paper_broker_adapter.py",
+      "sha256": "98dc1012e5fe746917db67175872cea75b6aba9fc5c1ff2c600d4da237eabe94"
+    },
+    {
+      "path": "tests/test_paper_read_model.py",
+      "sha256": "d5b4ff7773df09c08c911c18eb3ffc8f69d09fd0be49896a510b2de9e87d6ce9"
+    },
+    {
+      "path": "tests/test_paper_recovery.py",
+      "sha256": "6ad7557973384b4e1db922f3431313d2b5c959cccab6f4feb3cbf571594cab86"
+    },
+    {
+      "path": "tests/test_paper_trading.py",
+      "sha256": "d9e00060f37c722b09821d6dc02427bf3f0778b16de54c7a21a9d18a178aceac"
+    },
+    {
+      "path": "tests/test_production_hardening.py",
+      "sha256": "12aa58b56b017437801296ca820ea1696be0f73fc7305f5a15ee5d747a409add"
+    },
+    {
+      "path": "tests/test_production_target_migration.py",
+      "sha256": "4e7b6adb185e689033eb96e9213ef3825bb575f5fc73f67f73c9a23bf37a6201"
+    },
+    {
+      "path": "tests/test_provider_identity_views.py",
+      "sha256": "5f714538b71c48245ad5e9ca8008a759e7cf513ef33b7942ab4be19338e3a932"
+    },
+    {
+      "path": "tests/test_public_application.py",
+      "sha256": "8067ed78d115956927045e0f3639d741e38a9719b574f8b89f12283907215e50"
+    },
+    {
+      "path": "tests/test_public_cli.py",
+      "sha256": "8d9d366df73e9ecebc7488ddd32bde11f9c33701485a3c12aac7e4a47de7ff97"
+    },
+    {
+      "path": "tests/test_public_core_generic_runtime.py",
+      "sha256": "9b3f74afa0893b7a4a4217b1b52978a59c7a6bcf5f5dde9b7f28a5ad6e2c8b94"
+    },
+    {
+      "path": "tests/test_public_core_integration.py",
+      "sha256": "8f6bff50bbe698213de875c8615aade1af73ad75f63902679635782b1c15d2f8"
+    },
+    {
+      "path": "tests/test_public_core_single_source.py",
+      "sha256": "dc9aea7885ae5100a39bc5d75359d28c7173e6ad20b7b14634d864227f4f4514"
+    },
+    {
+      "path": "tests/test_public_origin_verification.py",
+      "sha256": "ed3c31b4edc9084cfc9204842c751f4b3ec320effff056b35438ed2499fa2f65"
+    },
+    {
+      "path": "tests/test_publication_policy.py",
+      "sha256": "855ada7d1d151d9db20af6117ceca12afd8f73191d4fb07c3b58e6482e1aa644"
+    },
+    {
+      "path": "tests/test_rate_limit.py",
+      "sha256": "05b855e99b5b42046521934205f09b8b6e217af28a94c00630266669b3a9ede7"
+    },
+    {
+      "path": "tests/test_replay_trading.py",
+      "sha256": "c6b82e588a34de1f586bbdb2ec2b3e905d2c007f13fe322de460c294f623615b"
+    },
+    {
+      "path": "tests/test_security_exception_policy.py",
+      "sha256": "b1559f0880dc8bde423e4457ee97174f8e2f26054a33dc522d3ab183057768cd"
+    },
+    {
+      "path": "tests/test_security_sast.py",
+      "sha256": "0539797b4c16d4cf2837535f39039fb014299ddee58566c071a43093f38cd7e0"
+    },
+    {
+      "path": "tests/test_shared_architecture.py",
+      "sha256": "c4cd6180ac872b479333fca56e3c7a6b2cbaa95e3a69a5754091fc861640fd89"
+    },
+    {
+      "path": "tests/test_shioaji_production_readonly.py",
+      "sha256": "a3e453672378299688de0d10e3528a6f28d0e2b49fdda59771ceb345c0716b48"
+    },
+    {
+      "path": "tests/test_shioaji_simulation.py",
+      "sha256": "e26157f846a728bb37f24e6b0afdc77fbb5bc13945c37419082d38d64a5811cc"
+    },
+    {
+      "path": "tests/test_signal_simulator.py",
+      "sha256": "5de64e127d84aa3b0ee786733fb2ae0d804720ed4e1844c2ecf37d647e2a1ab9"
+    },
+    {
+      "path": "tests/test_timeframes.py",
+      "sha256": "7a992af8171df98f13b57426b0f676ab9015ed31cc3bde7e366f7399e43ead73"
+    },
+    {
+      "path": "tools/verify_public_candidate.py",
+      "sha256": "d5d6e47e7befc38616b4479f3c13c1654f58ce5a4a0543a612c65cbf57b4c2db"
+    },
+    {
+      "path": "tools/verify_publication_policy.py",
+      "sha256": "d095338424739f18629e0869e1cb80757c09cc552ce38997c8a6f2cdd7a969cb"
+    },
+    {
+      "path": "tw_quant/__init__.py",
+      "sha256": "7a223fc9ec9d4cdd053d81f0620790245fbaf6cea90cd0abd8fad29acef3cdea"
+    },
+    {
+      "path": "tw_quant/__main__.py",
+      "sha256": "d7815f9da17bcd8e79d1d47170e5795e29cc5837f97d1049664813068a9e563f"
+    },
+    {
+      "path": "tw_quant/auth/__init__.py",
+      "sha256": "b9c87ce8228fea3910292f0d0e92304a392b8e2ecd8911352ee70ffb49a0d46c"
+    },
+    {
+      "path": "tw_quant/auth/access.py",
+      "sha256": "20b2650a07377c7de25533db5f514ad2d38b5a67cad5eead90f772a9ce8b6794"
+    },
+    {
+      "path": "tw_quant/auth/models.py",
+      "sha256": "a483be7068b4aa2faa04672906394d90e573a24697daccd4ae32011a61ecf0c7"
+    },
+    {
+      "path": "tw_quant/auth/permissions.py",
+      "sha256": "2fe8b2fb67da344f06ffe7ce10386aee07d72dd3c2bfe59ff18c57073d3ecd49"
+    },
+    {
+      "path": "tw_quant/auth/repository.py",
+      "sha256": "6f32fa1fc3c94559277d4db64ba046ff8094cf2b4a7b644f54a696f14b74dc18"
+    },
+    {
+      "path": "tw_quant/auth/service.py",
+      "sha256": "f26b8ebc0cf157ff8f64242f06ab70df10a70c5ddc192c76a3fa17f5da5ddc96"
+    },
+    {
+      "path": "tw_quant/backtest/__init__.py",
+      "sha256": "4100671ed05adc9adfb92b97b251f8e04c073e6ce6964972a602018dd1ce401e"
+    },
+    {
+      "path": "tw_quant/backtest/event_runner.py",
+      "sha256": "c1a61aad89845679ff8f65cd3c023109af65c41d9feb470b3adf5eccffeee272"
+    },
+    {
+      "path": "tw_quant/backtest/runner.py",
+      "sha256": "45f15d5098b1918c45f2a7150762875e718957c25f6e184249badebe67e2cbee"
+    },
+    {
+      "path": "tw_quant/broker/__init__.py",
+      "sha256": "4e44d84a5b723a0229134b49a57042e22fb078f2f574dcb7e9d51a1d0eeda37a"
+    },
+    {
+      "path": "tw_quant/broker/audit.py",
+      "sha256": "bba80830d00ab54e9fd920463e7ffe71124d3471cb596ff5796c0780d592aa6c"
+    },
+    {
+      "path": "tw_quant/broker/callback_consumer.py",
+      "sha256": "a492e02b6735492e6870291e5a17fc394f2e7899d977700f0fe450e7e3617829"
+    },
+    {
+      "path": "tw_quant/broker/canary.py",
+      "sha256": "9678163a8f00cf9a07351af3af793c5f3f8ac11baa4bbac7f7a5518ef5f06082"
+    },
+    {
+      "path": "tw_quant/broker/canary_repository.py",
+      "sha256": "99b5faf3c43240d6a7af208126cc5f34d9d309cf7e73c142ee337b50dcb1fe26"
+    },
+    {
+      "path": "tw_quant/broker/capabilities.py",
+      "sha256": "0ad7763a9d8a99d2e1a46c5cab6e82e54ca86af3b7157b5d71ce012afd1a69c9"
+    },
+    {
+      "path": "tw_quant/broker/disabled.py",
+      "sha256": "4d8d9a04ed45c12cb3aebb364be80f8671b38a9832277d1051082b3ed74e3a7a"
+    },
+    {
+      "path": "tw_quant/broker/events.py",
+      "sha256": "ce41d22afa65295ec7c5cd1698ac71e5215160696ce52f5345fe4fbe739d3daa"
+    },
+    {
+      "path": "tw_quant/broker/execution_target_repository.py",
+      "sha256": "746dda3fc682fac9f3de29838cc8703bed6422318fd941ae19a5b704c8a76107"
+    },
+    {
+      "path": "tw_quant/broker/execution_targets.py",
+      "sha256": "f3707764b17ba3533c5bc07e016d51360432be504b41190a626d8f0bdfc2f389"
+    },
+    {
+      "path": "tw_quant/broker/factory.py",
+      "sha256": "3df3a7947698137052e9850aaa58092f3ac54cbee6f6733368412c26bbbe0a45"
+    },
+    {
+      "path": "tw_quant/broker/guardian_models.py",
+      "sha256": "6ba4bcd2f0b364781256b30ad59103224aa6acb224e159d9d27866f50852b2fd"
+    },
+    {
+      "path": "tw_quant/broker/guardian_repository.py",
+      "sha256": "1487e3e6c1158d02589d7f0a1291f8f05ceeea4b272d132d58902fb70ed83d13"
+    },
+    {
+      "path": "tw_quant/broker/identity.py",
+      "sha256": "23137cf551d35764b29b3714294f0ea56907c8902382db2e9e983cfd395c94c6"
+    },
+    {
+      "path": "tw_quant/broker/instruments.py",
+      "sha256": "3cdf3860a8f610efff1cb6d0d5fce51285e998034058c183219d430b910dce26"
+    },
+    {
+      "path": "tw_quant/broker/lifecycle.py",
+      "sha256": "1142a620a74b6bbeed46b68fc5332222984a027bf1cdc8ae3df3976e271b511d"
+    },
+    {
+      "path": "tw_quant/broker/manager.py",
+      "sha256": "6f4fe70cc56658cd8e51ca1fb8801a7063c712ad7cb1b5db9478569a7bcbfff2"
+    },
+    {
+      "path": "tw_quant/broker/models.py",
+      "sha256": "3b6f2a2bd707986063eb0a5a15fa02473c758e1d31a40d27ac6380ae09b259e2"
+    },
+    {
+      "path": "tw_quant/broker/ports.py",
+      "sha256": "65374dae513e2a9e4a5a280021e7615935b29d816da53f6eddf6a287c26441e7"
+    },
+    {
+      "path": "tw_quant/broker/reconciliation.py",
+      "sha256": "26625c3af282a7357f214a8954bc33ae7e29422faa4da2c60dd220068da8221f"
+    },
+    {
+      "path": "tw_quant/broker/recovery.py",
+      "sha256": "4ea0b17857ca9de6f11e688bb565eb1e2e2efb59efa29c12e09c23404134d5c7"
+    },
+    {
+      "path": "tw_quant/broker/repository.py",
+      "sha256": "5d6a6ccaa7887f8c110a5a8d2792af17983f22e192a70afaacd06da992a36b00"
+    },
+    {
+      "path": "tw_quant/broker/routing.py",
+      "sha256": "6c6b58905f5fcb7924cefa54fc669ed607187cf7109864da559af31bd2ead6d9"
+    },
+    {
+      "path": "tw_quant/broker/safety.py",
+      "sha256": "b8cefad83eaaa327b2958d0c2218d22f4493ac7c2638a8aaaaa66d52088b61e2"
+    },
+    {
+      "path": "tw_quant/broker/secret_factory.py",
+      "sha256": "2da25bf5e8884a6bfd11efccaaab5b2d47d889ca613b85310a3831a5e54fd5db"
+    },
+    {
+      "path": "tw_quant/broker/secret_resolver.py",
+      "sha256": "68933def8f01038f257819b5f5315e1649fea9dd3f5e690f0cbb6df53064b9ea"
+    },
+    {
+      "path": "tw_quant/broker/secrets.py",
+      "sha256": "f1ddbfe57b9a48256aa0de8fd9b3530465eca639d557c0a3942e9f45a6b3c0a3"
+    },
+    {
+      "path": "tw_quant/broker/settings.py",
+      "sha256": "a8b72cf86a2a4785936b11e291f8db820b031b2c148a076feb976acd62cbb680"
+    },
+    {
+      "path": "tw_quant/broker/shioaji.py",
+      "sha256": "987948ece9a8d1e454c084c00d3821b319b4398241ad8bbd32cdfc47b3bc1a57"
+    },
+    {
+      "path": "tw_quant/broker/shioaji_production.py",
+      "sha256": "d51f4f42052b17c0031c06587491e1c634373b88ef57146b0a40ec560cf0d9dd"
+    },
+    {
+      "path": "tw_quant/broker/shioaji_secrets.py",
+      "sha256": "61d293ddcc82ac4ce2d29c2350e5bb20754a423a2325f13ae53f75c7d311d0b5"
+    },
+    {
+      "path": "tw_quant/broker/shioaji_simulation.py",
+      "sha256": "c96d1fe6eda0354e04b43115319a57aedb3660dd3ce2a9d7d54336945defa6b1"
+    },
+    {
+      "path": "tw_quant/broker/truth.py",
+      "sha256": "39e13826f5db1ffd5d3bbe459ef6047b0d79fbe2f1ff7b0624df97def31b906b"
+    },
+    {
+      "path": "tw_quant/broker/worker.py",
+      "sha256": "9d5379663831f0b8ba1f393ea902e042bdfe9e8bf2e955d4937ea38beaa91496"
+    },
+    {
+      "path": "tw_quant/cli.py",
+      "sha256": "5365abe0ac0940d767aaa9e4905ab88881eebc48ebc469b4c1275e0ebfabcb6d"
+    },
+    {
+      "path": "tw_quant/demo_data.py",
+      "sha256": "be6a6e7d6785b2367cd0ffbb61206c1a23d2df8363db818cd44c9f82db967ce4"
+    },
+    {
+      "path": "tw_quant/events/__init__.py",
+      "sha256": "eb96678f2aeeaa4ed7ca4a69f9da87ba4b0135e05e3550bab3c0717108d1f81a"
+    },
+    {
+      "path": "tw_quant/events/models.py",
+      "sha256": "2c00872be04b179ee3597e1955e7a07966258f8a8af70e532ac8dd1af3f19434"
+    },
+    {
+      "path": "tw_quant/execution/__init__.py",
+      "sha256": "f078adc7986d85b4dc005d475c0b92a81c230ca2f99a50b45c9e5a0c7e53720b"
+    },
+    {
+      "path": "tw_quant/execution/canary.py",
+      "sha256": "0b49db723266f080c8d257e689f25e5c548df1c3aa6f88601114fba8c81d312e"
+    },
+    {
+      "path": "tw_quant/execution/event_simulator.py",
+      "sha256": "cf1975a5627debadf59e967e3a62de4f4aaa79060384326c894677daadafc627"
+    },
+    {
+      "path": "tw_quant/execution/guardian.py",
+      "sha256": "256edcd021e3cb971366857f41849d8063e952a018e966333b410053d31fc206"
+    },
+    {
+      "path": "tw_quant/execution/live_models.py",
+      "sha256": "4ddc3a0a22f12a8521ab294118e6760d9c7d78a7016e07f8929b6a85e3e973f4"
+    },
+    {
+      "path": "tw_quant/execution/live_policy.py",
+      "sha256": "3941ec31d467b6495396745186be68e6a39cd955821682488ea6f6ec402211ba"
+    },
+    {
+      "path": "tw_quant/execution/policy.py",
+      "sha256": "04f25ae11da422497531e754164ff59469eeacf8ef61fb0db6275a125f5374eb"
+    },
+    {
+      "path": "tw_quant/execution/position_ledger.py",
+      "sha256": "e3b5e057c0423a7009518ccd3b4ae817ac980241604c89be6eb4218ee353bad9"
+    },
+    {
+      "path": "tw_quant/execution/shadow.py",
+      "sha256": "31adadb733fe5da4ce9be5361be1349431cb04256b15524f3ecb09750ca79234"
+    },
+    {
+      "path": "tw_quant/execution_service/__init__.py",
+      "sha256": "f7253838e24ca0f24f27202940405d7464b405d8fe7399f185324a4db076d81f"
+    },
+    {
+      "path": "tw_quant/execution_service/__main__.py",
+      "sha256": "4f0356753ce57b240c38017cc6390411074d307d69e826626520e25800f044d9"
+    },
+    {
+      "path": "tw_quant/execution_service/config.py",
+      "sha256": "2156ad943ccafcaf1a5815c3b2864e623249634ac5ab1a8d2c14fbf9b091edf9"
+    },
+    {
+      "path": "tw_quant/execution_service/health.py",
+      "sha256": "3c018670bbf9866830b1e5feb7e1e4363595fcfa1ee7ac96ff3cea5b292f3abf"
+    },
+    {
+      "path": "tw_quant/execution_service/redaction.py",
+      "sha256": "aeae8422d8113177cde952c27f066221234a864652fdd406dff7e1e5b4366f30"
+    },
+    {
+      "path": "tw_quant/execution_service/runtime.py",
+      "sha256": "b11c65cb525577d81da222fe9dd0745cd929e932e06c515e4dd9b3c35119b995"
+    },
+    {
+      "path": "tw_quant/execution_service/secrets.py",
+      "sha256": "547e6647be8f0e19a181539a1d09030953c0d9c2b8b5d58cb65cf580ed1acfa6"
+    },
+    {
+      "path": "tw_quant/execution_service/target_migration.py",
+      "sha256": "1e6143d6c10c838fac91b02b4ba07125bcb1f2ff657b9b5d21a15d924a9bd27b"
+    },
+    {
+      "path": "tw_quant/level2_acceptance.py",
+      "sha256": "3ec6a0cb2692f54b37878c3dc6d29e3a5c3befe7c71719a57ae5243cfcc1e1d2"
+    },
+    {
+      "path": "tw_quant/live/__init__.py",
+      "sha256": "96d10075e874586abf9dfd6b6c57741a494d96aeab0a08dc37e29ceefdd8fbd9"
+    },
+    {
+      "path": "tw_quant/live/__main__.py",
+      "sha256": "33deced481d4a33916776365a1a3c6dad52136bbbcd3a46db1144b947618364d"
+    },
+    {
+      "path": "tw_quant/live/access.py",
+      "sha256": "f8f39ec83f7f3739bcfee216832f9083ddb60a8bc83566733ba253bf019a3371"
+    },
+    {
+      "path": "tw_quant/live/aggregator.py",
+      "sha256": "67e6bf49d0ba82b53d0ee8ae7ba070eed30c4ac53eaed8dbbf166ddc392f2380"
+    },
+    {
+      "path": "tw_quant/live/api.py",
+      "sha256": "01826316ca47ca70f5f58fcca056ee6a59f4218a81a7c4b79a39edf784e1a831"
+    },
+    {
+      "path": "tw_quant/live/api_context.py",
+      "sha256": "9a768fc38a12ec796bff3755e6e9ca06859a4e8da685970f41203592496a03e9"
+    },
+    {
+      "path": "tw_quant/live/api_errors.py",
+      "sha256": "3f2f4045cb8433b5190754b09742e8bb486db474715d934b88c8802d66cfef74"
+    },
+    {
+      "path": "tw_quant/live/api_models.py",
+      "sha256": "f1ae0415077770cd4857ed2e4b12e02c1d09c5be15b6e37ad671c5d6433c275e"
+    },
+    {
+      "path": "tw_quant/live/api_routes/__init__.py",
+      "sha256": "0c772fbf22a6470520911a8f8389166f5ab7e2efdef348ecda0d3b122eaec93b"
+    },
+    {
+      "path": "tw_quant/live/api_routes/admin.py",
+      "sha256": "16f6f2bb9b2e3645f55f49c8c33548e2f94d74195f4321fd4b6b64852e54c16c"
+    },
+    {
+      "path": "tw_quant/live/api_routes/live_auto.py",
+      "sha256": "0227c1a9ca78aa722a8853b4ca048690193583498254a936730e3b76b11c46b6"
+    },
+    {
+      "path": "tw_quant/live/api_routes/live_canary.py",
+      "sha256": "a5971b06d7ff1603ba1d549631432088528f03169c8a7872ea4b0d94e82c91ef"
+    },
+    {
+      "path": "tw_quant/live/api_routes/market.py",
+      "sha256": "7d66cfd3ef1db134a3a3b75ff908dc6f53ca0d7c2eb0e55aa4be46635354f8ff"
+    },
+    {
+      "path": "tw_quant/live/api_routes/paper.py",
+      "sha256": "6bb780725379bf569271ba5ddcea6488713e4a978d077dc94ead857bcd1ec29b"
+    },
+    {
+      "path": "tw_quant/live/api_routes/research.py",
+      "sha256": "980d5ea5cd916595a0ad198e0a0c141f060c75d9dcfa886170e323660e860dcb"
+    },
+    {
+      "path": "tw_quant/live/api_routes/strategies.py",
+      "sha256": "536535bb3059a73bf1e248d50b560f3e9635eb3746a2a3e32b52fcf7eaaefe27"
+    },
+    {
+      "path": "tw_quant/live/api_routes/system.py",
+      "sha256": "1ce4a015ca24cda43048bf97b193f3faa3c5f816283d2625588329c67b50d38b"
+    },
+    {
+      "path": "tw_quant/live/api_routes/trading_runtimes.py",
+      "sha256": "e6fdb037af9282bfeaac473696982c6f3f93754e9b86fef6aa07c39e754f0676"
+    },
+    {
+      "path": "tw_quant/live/api_security.py",
+      "sha256": "797b8959329d1bf064e010b69a81bb286ccc2e4e386b0feb59f5b1e18f3bc28d"
+    },
+    {
+      "path": "tw_quant/live/application/__init__.py",
+      "sha256": "0b5bdc8bab02f19c54b96027676f06c8ca8b5d56f74c353486357e0500b1f482"
+    },
+    {
+      "path": "tw_quant/live/application/errors.py",
+      "sha256": "5020e2ab639b0d4cbdfd0377355d9959be2a727cbf8bb7d3850435ddc9c928b0"
+    },
+    {
+      "path": "tw_quant/live/application/live_auto.py",
+      "sha256": "70e11f4f5795b463907e9b2cbe02032a8872a2e849b6ef94cdc0cb75c821ef44"
+    },
+    {
+      "path": "tw_quant/live/application/live_canary.py",
+      "sha256": "c24b9c07f5bacad1710d6b1dafce8183b9028c1bf0121f34d48c07500875b381"
+    },
+    {
+      "path": "tw_quant/live/application/live_shadow.py",
+      "sha256": "6994e4fd92bf913b4dab27dde37f341ab0521184bf76babaa83b5e1b41ada043"
+    },
+    {
+      "path": "tw_quant/live/application/paper.py",
+      "sha256": "837e7970951b53c8b03b6df350c1a3062dd4ca9166d833d2b38297b16e4832a5"
+    },
+    {
+      "path": "tw_quant/live/application/paper_auto.py",
+      "sha256": "c49b71ad428009c96e79e43805b95b594ab9f2a69083ffc29e30d866ba5f0386"
+    },
+    {
+      "path": "tw_quant/live/application/research.py",
+      "sha256": "484a21bfffa94bc0f9fe1b8e0060aa10b91cbf033a0b10997abc32d7f88817ad"
+    },
+    {
+      "path": "tw_quant/live/application/strategies.py",
+      "sha256": "071bf05874221bd47af7fb9d738fd830ad653ad7e5799b033abd6599a67b55f5"
+    },
+    {
+      "path": "tw_quant/live/application/trading_runtime.py",
+      "sha256": "25535514d6a4b99ec841d273d7d80aec510b078f36a59eb2b00fc34aba853a4e"
+    },
+    {
+      "path": "tw_quant/live/backtest.py",
+      "sha256": "505862103866ed5d6c213fe4853333a41ac3502011b4ca144d1cc61b2aa4d041"
+    },
+    {
+      "path": "tw_quant/live/demo_backtest.py",
+      "sha256": "34eb31c7d7a5f650c70e0310749dfd165278ee4209b867c7dffefe7a0668a1db"
+    },
+    {
+      "path": "tw_quant/live/feed.py",
+      "sha256": "ab58b0e1a2767cd9e93e63f69b265eed292462021487897c1dacb97d45f316fd"
+    },
+    {
+      "path": "tw_quant/live/hub.py",
+      "sha256": "a8ffe620b02b39e4ff474e1cafb32f64f0bbf62ef3d3b595685dcfae5a6af2dd"
+    },
+    {
+      "path": "tw_quant/live/models.py",
+      "sha256": "bd7f580f753bfaeca6adbf0b857bd6582e5ff60f577041d205fdac1df635c1b6"
+    },
+    {
+      "path": "tw_quant/live/monitoring.py",
+      "sha256": "71748087fe0fc66c0d0d0761a5de0bf3f6938dff6e007b5e77870bbddf355f18"
+    },
+    {
+      "path": "tw_quant/live/rate_limit.py",
+      "sha256": "d2a2eadadd71164d09471bfa19454ce0caa50273c0b8927aca029e74edf36e38"
+    },
+    {
+      "path": "tw_quant/live/request_limit.py",
+      "sha256": "d974ccc472c81bfc0deddb21458ac62f0e4c8d75b44755100a5343fdacf9cef3"
+    },
+    {
+      "path": "tw_quant/live/runtime_data.py",
+      "sha256": "03b3c0b2a0835e91e9343ce4eb7ee42a4bbabe40975df679d1cb5452df18cf3a"
+    },
+    {
+      "path": "tw_quant/live/service.py",
+      "sha256": "61037b2bdb0933b7e5c6a89b8b9ad7baaa203a0bb0679dbc6f06e39ce0452997"
+    },
+    {
+      "path": "tw_quant/live/sessions.py",
+      "sha256": "0b66876b5f3b7fd9be4cb90b0ce407ed5f98c87940ac024b37e2f47cd42b01cc"
+    },
+    {
+      "path": "tw_quant/live/settings.py",
+      "sha256": "6257d4292af052847a2f7b5678146fbd1ed8318429839bc3686c4bd518d08a8b"
+    },
+    {
+      "path": "tw_quant/live/shadow_context.py",
+      "sha256": "4321be0ba9874748cdfa6eeac783b6fef2f4be074f3fc5abf8c562041f44e1da"
+    },
+    {
+      "path": "tw_quant/live/shadow_store.py",
+      "sha256": "87c7d876515ab93dc53407087d2f1072867e9cb65357ed7b9f889a7fdf073093"
+    },
+    {
+      "path": "tw_quant/live/storage.py",
+      "sha256": "13fb172a76bc5a494df2cf989f77a8864b2f883c993f532cf36d813720c8932d"
+    },
+    {
+      "path": "tw_quant/live/strategy_analysis.py",
+      "sha256": "228ab204ef78c4da8ed793b897c06cd0bbe2fc7c01dbe24204232b6ef9e56a6f"
+    },
+    {
+      "path": "tw_quant/maintenance.py",
+      "sha256": "e92a92783695bd24227a3f164effef9dd21dea48606d269d4ba528b110d89724"
+    },
+    {
+      "path": "tw_quant/market/__init__.py",
+      "sha256": "7c0b875a634b68fe0f0fc1ee7219e097391466c8d0856939aae2984e662244b0"
+    },
+    {
+      "path": "tw_quant/market/models.py",
+      "sha256": "56ebe6e8722458030badf188ffa9b2d71746358be541de83bae60c6fdb7921ce"
+    },
+    {
+      "path": "tw_quant/market/quote_store.py",
+      "sha256": "0419b014e962253164ec86496666d1b9b73fb246981f1d496c85acf76997379c"
+    },
+    {
+      "path": "tw_quant/market_data/__init__.py",
+      "sha256": "3ce1313213e117d648d040a2c335ff31359360d7c71c86ce1c30fa5fe654d925"
+    },
+    {
+      "path": "tw_quant/market_data/factory.py",
+      "sha256": "3f2285b1b0d248c5a0a09bf837a81e043c28b6f0a59abfd7346457edcb0f9dc5"
+    },
+    {
+      "path": "tw_quant/market_data/instruments.py",
+      "sha256": "a7eac23886c1d21a8f3cf6d2dc20b5c87fcd7e476e328991d37449dc48f8f6e6"
+    },
+    {
+      "path": "tw_quant/market_data/ports.py",
+      "sha256": "c02395a9a9de5382b06c40d40a868924edb0df2a8fbd7bfec50b2aec230553b1"
+    },
+    {
+      "path": "tw_quant/market_data/providers/__init__.py",
+      "sha256": "a9fb3ca7a0c5f0b07bd7e526513b40731c6e6359fe28d350a9e7767a204e6331"
+    },
+    {
+      "path": "tw_quant/market_data/providers/replay.py",
+      "sha256": "f2370259d4019679bbc7f03558f24fde6ca880dac939a663e1f0b927bb32aada"
+    },
+    {
+      "path": "tw_quant/market_data/providers/shioaji.py",
+      "sha256": "37d4b70a344c4d119ba50b921bd686888139e7ec678475e0c46eb02d14d79eec"
+    },
+    {
+      "path": "tw_quant/market_data/settings.py",
+      "sha256": "649c1923a22be1009c76af3b1600923c1065a34fbc65b9649b4d8d0fa027cf85"
+    },
+    {
+      "path": "tw_quant/paper/__init__.py",
+      "sha256": "00bd7071e1360834fa72dee326fccd69db6f644f07a1416e9cdb4f43b4159242"
+    },
+    {
+      "path": "tw_quant/paper/broker.py",
+      "sha256": "3307172f27dff8b2dcdd95282e46f6159c458efb3020955aec8a52d69c08ffef"
+    },
+    {
+      "path": "tw_quant/paper/repository.py",
+      "sha256": "af4ce34ccc97c5a43d3c81e200af6248f03a6a7c0c717eee0beba2c9bc724b88"
+    },
+    {
+      "path": "tw_quant/paper/service.py",
+      "sha256": "db85700d16711d30d25cfd3d9a9c9825fcf1b104c03d5a8698076551bc4003ec"
+    },
+    {
+      "path": "tw_quant/replay/__init__.py",
+      "sha256": "f1bd9a43e9cb05d73ecf0f4b46bc3cbf91683fc4322562e8ed1a9e5ee3c6c301"
+    },
+    {
+      "path": "tw_quant/replay/session.py",
+      "sha256": "a00413127c035fe9406ec25b2337d9281f36e6d5a40ba8a484aba30da69e8725"
+    },
+    {
+      "path": "tw_quant/risk/__init__.py",
+      "sha256": "8958d3260d5a7387174876b87d8a957e3f9c7cef36a66763c821d109dc741601"
+    },
+    {
+      "path": "tw_quant/risk/account.py",
+      "sha256": "9918e3ee8ae210929f40ba0318c07ce80308a99fa4e82c53f1252df39cc9f839"
+    },
+    {
+      "path": "tw_quant/risk/engine.py",
+      "sha256": "7b5b34593681e888fd654eeea56da4cd9595c3c2b33e017453cb4b87ba1e4f09"
+    },
+    {
+      "path": "tw_quant/risk/live.py",
+      "sha256": "c07c4c844aadcba0e707fb7515b2a3ddc9efcfb293d1a2e2309e114320940f55"
+    },
+    {
+      "path": "tw_quant/strategy_registry.py",
+      "sha256": "1d200e29688a422a1dbbeca0e261a789072e7606ee85effa11aaf7a2cd207696"
+    },
+    {
+      "path": "tw_quant/synthetic_data.py",
+      "sha256": "7e61c49c0f163bac9b729fbd33c6ccf791228f3ae66418bf86f81feae38d556c"
+    },
+    {
+      "path": "uv.lock",
+      "sha256": "30f1af09c504171254155c28c7ee5faeff9e0028ffccba9eb2f7718d18b442a4"
+    }
+  ],
+  "p6_acceptance": [
+    "first CI",
+    "first Security",
+    "native CodeQL python",
+    "native CodeQL javascript-typescript",
+    "dependency audit",
+    "Gitleaks",
+    "Trivy",
+    "SBOM"
+  ],
+  "p6_entry_gate": "PASS",
+  "remaining_gates": [],
+  "schema_version": 1
+}

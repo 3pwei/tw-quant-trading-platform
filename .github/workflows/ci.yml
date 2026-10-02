@@ -1,0 +1,96 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.14"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Verify public reconstruction and dependency closure
+        run: python tools/verify_public_candidate.py
+      - name: Install locked public dependencies
+        run: |
+          python -m pip install "uv==0.11.33"
+          uv lock --check
+          uv sync --locked --extra server --extra test --python python
+      - name: Verify Core contracts and reviewed Python tests
+        run: |
+          uv run --locked --extra server --extra test python tools/verify_public_candidate.py --runtime
+          uv run --locked --extra server --extra test python tests/public_runtime_probe.py .
+          uv run --locked --extra server --extra test python -m unittest discover -s tests -v
+
+  dashboard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: dashboard/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run behavior tests
+        run: npm test
+
+      - name: Build static dashboard
+        env:
+          NEXT_PUBLIC_MARKET_API_URL: http://localhost:8000
+          NEXT_PUBLIC_BASE_PATH: ""
+        run: npm run build
+
+  public-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify source and Compose
+        run: |
+          python tools/verify_public_candidate.py
+          docker compose config --quiet
+      - name: Build public-only runtime images
+        run: |
+          docker build --target market-api --tag platform-market-api:ci .
+          docker build --target execution-worker --tag platform-execution-worker:ci .
+      - name: Verify non-root TLS and missing-plugin boundaries
+        run: |
+          for image in platform-market-api:ci platform-execution-worker:ci; do
+            test "$(docker image inspect --format '{{.Config.User}}' "$image")" = "10001:10001"
+            docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+              --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m,uid=10001,gid=10001 \
+              --mount "type=bind,source=$PWD/tests/test_openssl_runtime.py,target=/tests/test_openssl_runtime.py,readonly" \
+              "$image" python /tests/test_openssl_runtime.py
+            docker run --rm --network none "$image" python -c 'from tw_quant.strategy_registry import get_strategy_services; assert get_strategy_services().catalog() == []'
+          done
+          test -z "$(docker image inspect --format '{{range $port, $_ := .Config.ExposedPorts}}{{$port}}{{end}}' platform-execution-worker:ci)"
+          docker run --rm --network none --env BROKER_PROVIDER=disabled --env LIVE_TRADING_ENABLED=false platform-execution-worker:ci python -m tw_quant.execution_service validate
+      - name: Build and exercise hardened gateway and authorization boundary
+        run: |
+          docker build --file deploy/lightsail/Dockerfile.gateway --tag platform-gateway:ci .
+          bash deploy/lightsail/test-hardened-runtime.sh
+          bash deploy/lightsail/test-gateway-auth.sh

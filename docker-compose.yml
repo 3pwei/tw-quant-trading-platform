@@ -1,0 +1,61 @@
+# Neutral example. Broker credentials are never built into images.
+services:
+  market-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: market-api
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      MARKET_DATA_PROVIDER: replay
+      MARKET_REPLAY_CSV: ${MARKET_REPLAY_CSV:-}
+      MARKET_DB_PATH: /data/market.sqlite3
+      BROKER_PROVIDER: disabled
+      LIVE_TRADING_ENABLED: "false"
+      LIVE_CANARY_ENABLED: "false"
+      LIVE_AUTO_ENABLED: "false"
+      LIVE_POSITION_GUARDIAN_ENABLED: "false"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m,uid=10001,gid=10001
+    volumes:
+      - platform-data:/data
+    restart: unless-stopped
+  execution-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: execution-worker
+    environment:
+      BROKER_PROVIDER: disabled
+      LIVE_TRADING_ENABLED: "false"
+      LIVE_CANARY_ENABLED: "false"
+      LIVE_AUTO_ENABLED: "false"
+      LIVE_POSITION_GUARDIAN_ENABLED: "false"
+      LIVE_EXECUTION_DB_PATH: /data/market.sqlite3
+      LIVE_EXECUTION_HEALTH_PATH: /run/tw-quant-execution/health.json
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=64m,uid=10001,gid=10001
+    volumes:
+      - platform-data:/data
+      - execution-health:/run/tw-quant-execution
+    networks: [execution-internal]
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD, python, -m, tw_quant.execution_service, healthcheck]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 10s
+volumes:
+  platform-data:
+  execution-health:
+networks:
+  execution-internal:
+    internal: true

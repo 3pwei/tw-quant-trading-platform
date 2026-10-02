@@ -1,0 +1,88 @@
+{
+	admin off
+	email {$ACME_EMAIL}
+}
+
+{$MARKET_DOMAIN} {
+	encode zstd gzip
+
+	route {
+		@health path /healthz
+		respond @health "ok" 200
+
+		request_body {
+			max_size {$API_MAX_REQUEST_BODY_BYTES:262144}
+		}
+
+		# Only the static Demo document and Next build assets are public.
+		# Shared build assets contain executable UI code, not user data or secrets.
+		@demoCanonical {
+			method GET
+			path /demo
+		}
+		redir @demoCanonical /demo/ 308
+
+		root * /srv
+		@demoDocument {
+			method GET
+			path /demo/
+		}
+		file_server @demoDocument
+		@demoStatic {
+			method GET
+			path /_next/static/* /favicon.svg
+		}
+		file_server @demoStatic
+
+		@demoCases {
+			method GET
+			path /api/demo/cases
+		}
+		reverse_proxy @demoCases market-api:8000 {
+			header_up -X-Authenticated-Subject
+			header_up -X-Authenticated-Email
+			header_up -X-Authenticated-User-ID
+			header_up -X-Authenticated-Role
+			header_up -Cf-Access-Jwt-Assertion
+		}
+		@demoBacktests {
+			method POST
+			path /api/demo/backtests
+		}
+		reverse_proxy @demoBacktests market-api:8000 {
+			header_up -X-Authenticated-Subject
+			header_up -X-Authenticated-Email
+			header_up -X-Authenticated-User-ID
+			header_up -X-Authenticated-Role
+			header_up -Cf-Access-Jwt-Assertion
+		}
+
+		forward_auth market-api:8000 {
+			uri /internal/auth/cloudflare
+			header_up X-Original-URI {orig_uri}
+			# Keep the auth probe as regular HTTP even when the original request
+			# is a WebSocket handshake.
+			header_up -Connection
+			header_up -Upgrade
+			copy_headers X-Authenticated-Subject X-Authenticated-Email X-Authenticated-User-ID X-Authenticated-Role
+		}
+
+		@backend path /api/* /ws/* /docs* /openapi.json /health/live
+		reverse_proxy @backend market-api:8000
+
+		try_files {path} {path}/index.html /404.html
+		file_server
+	}
+
+	header {
+		Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https: wss: ws:; manifest-src 'self'; worker-src 'self' blob:; upgrade-insecure-requests"
+		Permissions-Policy "accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Resource-Policy "same-origin"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+}

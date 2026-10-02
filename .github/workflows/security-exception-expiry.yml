@@ -1,0 +1,43 @@
+name: Security exception expiry
+
+on:
+  schedule:
+    - cron: "23 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-exception-expiry
+  cancel-in-progress: false
+
+jobs:
+  expiry-policy:
+    name: Vulnerability exception expiry
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Evaluate exception deadlines
+        run: |
+          python deploy/security/exception_policy.py check \
+            --ignore-file .trivyignore.yaml \
+            --report /tmp/security-exception-report.json
+      - name: Create or update the tracking issue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python deploy/security/exception_policy.py sync-issue \
+            --report /tmp/security-exception-report.json \
+            --repository "${GITHUB_REPOSITORY}"
+      - name: Enforce expired exceptions
+        if: always()
+        run: |
+          python deploy/security/exception_policy.py enforce \
+            --report /tmp/security-exception-report.json
