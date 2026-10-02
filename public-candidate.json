@@ -534,7 +534,7 @@
     },
     {
       "path": "tests/public_runtime_probe.py",
-      "sha256": "6dec78dcc592d5cfadbfe0ce79291d29ce5e828763cd43a4ac30c57761d6b8f2"
+      "sha256": "7463c6c916dc61cffd2e81251b298785fab59e6bc5680401e3e2fd6f56f2825a"
     },
     {
       "path": "tests/test_access.py",
@@ -1362,7 +1362,7 @@
     },
     {
       "path": "tw_quant/strategy_registry.py",
-      "sha256": "1d200e29688a422a1dbbeca0e261a789072e7606ee85effa11aaf7a2cd207696"
+      "sha256": "67b59a5f79a4d09275f0bc67e2a9fe6ddeff7e00f4bfeb04c26918b7198e3ab6"
     },
     {
       "path": "tw_quant/synthetic_data.py",

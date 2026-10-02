@@ -143,13 +143,15 @@ class RegistryStrategies:
             raise StrategyUnavailable("runtime plugin/version/schema identity mismatch")
         if snapshot.get("strategy") not in self._references:
             raise StrategyUnavailable("runtime requires an exact atomic strategy binding")
-        reference = self.reference(snapshot["strategy"])
-        if (
-            snapshot.get("atomic_strategy_version") is not None
-            and str(snapshot["atomic_strategy_version"])
-            != reference.strategy.strategy_version
+        # SQLite configuration lineage is independent of the provider semantic
+        # version, which is already bound exactly by plugin_identity above.
+        configuration_version = snapshot.get("atomic_strategy_version")
+        if configuration_version is not None and (
+            isinstance(configuration_version, bool)
+            or not isinstance(configuration_version, int)
+            or configuration_version < 1
         ):
-            raise StrategyUnavailable("runtime strategy version mismatch")
+            raise StrategyUnavailable("runtime configuration version is invalid")
         parameters = snapshot.get("parameters")
         if not isinstance(parameters, dict):
             raise StrategyUnavailable("canonical parameter snapshot is required")
