@@ -26,7 +26,7 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "4fe05acd0df8f968522cd47b801ad1f821a0146d24d407ed2c22543703dc0bf7"
+      "sha256": "6d0c38f1169bc1c15f94c4e6e8390ac56e1beb9c38c0fa785baa5e561a473ff8"
     },
     {
       "path": ".gitignore",
