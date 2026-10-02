@@ -74,9 +74,12 @@ class InertProvider:
         template=None,
         normalize=None,
         result_reference=None,
+        strategy_version="1",
     ):
         self.identity = PluginArtifactIdentity("inert-"+key, "1", "inert-double", "1", "sha256:"+"a"*64)
-        self.reference = StrategyReference(self.identity, StrategyIdentity(key, "1"))
+        self.reference = StrategyReference(
+            self.identity, StrategyIdentity(key, strategy_version)
+        )
         self.descriptor = StrategyDescriptor(
             self.reference, "Scripted test response", ParameterSchemaMetadata(schema, fields or (
                 ParameterField("force_close_last", ParameterKind.BOOLEAN, required=False),
@@ -301,6 +304,177 @@ class CandidateRuntimeTests(unittest.TestCase):
             services.require_snapshot(dict(snapshot, parameters={"alias": 7}))
         snapshot["plugin_identity"] = dict(snapshot["plugin_identity"], parameter_schema_version="wrong")
         with self.assertRaises(StrategyUnavailable): services.require_snapshot(snapshot)
+
+    def test_atomic_configuration_version_is_not_provider_implementation_version(self):
+        provider = InertProvider(
+            fields=(ParameterField("input", ParameterKind.NUMBER),),
+            normalize=lambda values: (
+                {"input": values.get("input", values.get("alias"))}
+                if "input" in values or "alias" in values
+                else dict(values)
+            ),
+            strategy_version="0.2.0",
+        )
+        services = RegistryStrategies(provider=provider)
+        identity = services.identity_snapshot()
+        snapshot = {
+            "strategy": "scripted",
+            "atomic_strategy_version": 1,
+            "parameters": {"input": 7},
+            "plugin_identity": identity,
+        }
+
+        services.require_snapshot(snapshot)
+        services.require_snapshot(dict(snapshot, atomic_strategy_version=2))
+
+        for invalid in (0, -1, True, 1.0, "1"):
+            with self.subTest(invalid_configuration_version=invalid), self.assertRaises(
+                StrategyUnavailable
+            ):
+                services.require_snapshot(
+                    dict(snapshot, atomic_strategy_version=invalid)
+                )
+
+        provider_mismatch = dict(
+            identity,
+            strategy_versions={"scripted": "0.2.1"},
+        )
+        with self.assertRaises(StrategyUnavailable):
+            services.require_snapshot(
+                dict(snapshot, plugin_identity=provider_mismatch)
+            )
+        for field, value in (
+            ("plugin_id", "other-plugin"),
+            ("artifact_digest", "sha256:" + "b" * 64),
+        ):
+            with self.subTest(identity_field=field), self.assertRaises(
+                StrategyUnavailable
+            ):
+                services.require_snapshot(
+                    dict(
+                        snapshot,
+                        plugin_identity=dict(identity, **{field: value}),
+                    )
+                )
+        with self.assertRaises(StrategyUnavailable):
+            services.require_snapshot(
+                dict(
+                    snapshot,
+                    plugin_identity=dict(
+                        identity, parameter_schema_version="2"
+                    ),
+                )
+            )
+        with self.assertRaises(StrategyUnavailable):
+            services.require_snapshot(
+                dict(snapshot, parameters={"alias": 7})
+            )
+
+    def test_persisted_runtime_keeps_configuration_and_exact_provider_identity(self):
+        provider = InertProvider(
+            fields=(ParameterField("input", ParameterKind.NUMBER),),
+            strategy_version="0.2.0",
+        )
+        services = RegistryStrategies(provider=provider)
+        identity = services.identity_snapshot()
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "runtime.sqlite3"
+            repo = SQLiteBarRepository(path)
+            first = repo.ensure_strategy_version(
+                "scripted", {"input": 7}, identity, "owner"
+            )
+            second = repo.ensure_strategy_version(
+                "scripted", {"input": 8}, identity, "owner"
+            )
+            snapshot = {
+                "strategy": "scripted",
+                "atomic_strategy_version": second["version"],
+                "parameters": second["parameters"],
+                "plugin_identity": identity,
+            }
+            created = repo.create_trading_runtime({
+                "owner_user_id": "owner",
+                "strategy_kind": "atomic",
+                "strategy_id": "scripted",
+                "strategy_version": second["version"],
+                "strategy_snapshot": snapshot,
+                "strategy_lineage": second["lineage"],
+                "symbol": "TMF",
+                "interval": "1m",
+                "quantity": 1,
+                "mode": "observe",
+            })
+            repo.close()
+
+            restarted = SQLiteBarRepository(path)
+            try:
+                restored = restarted.trading_runtime(
+                    created["runtime_id"], "owner"
+                )
+                self.assertEqual(first["version"], 1)
+                self.assertEqual(restored["strategy_version"], 2)
+                self.assertEqual(
+                    restored["strategy_snapshot"]["atomic_strategy_version"],
+                    2,
+                )
+                self.assertEqual(
+                    restored["strategy_lineage"]["strategy_version"], 2
+                )
+                self.assertEqual(
+                    restored["strategy_snapshot"]["plugin_identity"],
+                    identity,
+                )
+                services.require_snapshot(restored["strategy_snapshot"])
+                changed_provider = RegistryStrategies(provider=InertProvider(
+                    fields=(ParameterField("input", ParameterKind.NUMBER),),
+                    strategy_version="0.2.1",
+                ))
+                with self.assertRaises(StrategyUnavailable):
+                    changed_provider.require_snapshot(
+                        restored["strategy_snapshot"]
+                    )
+            finally:
+                restarted.close()
+
+    def test_composite_snapshots_still_require_provider_semantic_versions(self):
+        provider = InertProvider(
+            capabilities={
+                StrategyCapability.COMPOSITE_ANALYZE,
+                StrategyCapability.COMPOSITE_EVALUATE,
+                StrategyCapability.NORMALIZE_PARAMETERS,
+                StrategyCapability.PARAMETER_TEMPLATE,
+            },
+            strategy_version="0.2.0",
+        )
+        services = RegistryStrategies(provider=provider)
+        evaluator = {
+            "strategy": "scripted",
+            "strategy_version": "0.2.0",
+            "parameter_schema_version": "1",
+            "parameters": {},
+        }
+        member = {"member_id": "member", **evaluator}
+        definition = {
+            "composite_id": "composite",
+            "composite_version": 1,
+            "evaluator": evaluator,
+            "members": [member],
+        }
+        services.composite_request(definition, bars(), analysis=False)
+        for location in ("evaluator", "member"):
+            changed = dict(definition)
+            if location == "evaluator":
+                changed["evaluator"] = dict(
+                    evaluator, strategy_version="0.2.1"
+                )
+            else:
+                changed["members"] = [dict(
+                    member, strategy_version="0.2.1"
+                )]
+            with self.subTest(location=location), self.assertRaises(
+                StrategyUnavailable
+            ):
+                services.composite_request(changed, bars(), analysis=False)
 
     def test_optional_protocol_absence_and_result_identity_mismatch_fail_closed(self):
         for capability, call in (
