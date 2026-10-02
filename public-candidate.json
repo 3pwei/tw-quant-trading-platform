@@ -21,12 +21,20 @@
       "sha256": "0717eaff5e4536cf7312f5f86dbcf8167a64e190cebc3c84694d0eb45704c40b"
     },
     {
+      "path": ".github/workflows/deploy-staging.yml",
+      "sha256": "70de6c54a25ebc70c4977be66231bfb8dc5441cca8240ff4db1a88d72a33c257"
+    },
+    {
       "path": ".github/workflows/security-exception-expiry.yml",
       "sha256": "bb991312be0b78fdb89bf90e19c149487eb3f038743183c1c9b5c72be1d2d9ac"
     },
     {
       "path": ".github/workflows/security.yml",
       "sha256": "6d0c38f1169bc1c15f94c4e6e8390ac56e1beb9c38c0fa785baa5e561a473ff8"
+    },
+    {
+      "path": ".github/workflows/staging-candidate.yml",
+      "sha256": "b8a0890a8c345ecb3d163ee4780b10c1ab2b35fa494da9ca0ff6d017f291e308"
     },
     {
       "path": ".gitignore",
@@ -497,6 +505,54 @@
       "sha256": "d4a198b3943347c2f96a6c1191922c24358426b330f5dce7d7bee5ef9116260b"
     },
     {
+      "path": "deploy/staging/Caddyfile",
+      "sha256": "22ce887d33fa5b6f7a0bde33653c68fb63829f8e07c62be7f81a8d937171ab55"
+    },
+    {
+      "path": "deploy/staging/Dockerfile.gateway",
+      "sha256": "9902028eeecdbc23e2f6997bf228729048cf1202dfbd360b1c2711b5aede375a"
+    },
+    {
+      "path": "deploy/staging/Dockerfile.runtime",
+      "sha256": "f8c5fcfa4301f9e38c5f2914a91b681157577569fc3d4ca5c55fd24836545a88"
+    },
+    {
+      "path": "deploy/staging/candidate_manifest.py",
+      "sha256": "347485247de9b77db2aa44435307d8c854958a067b2d6ab99e942107fd0df822"
+    },
+    {
+      "path": "deploy/staging/composition.py",
+      "sha256": "c4a4a0c69ae4e3b28e6c01a7977098fd114877aee83d3aeeea70a4335a11c3a8"
+    },
+    {
+      "path": "deploy/staging/deploy.sh",
+      "sha256": "4fb1f4f5c2dd14031a2366d5bd8fce8ee4cb24740b087b3231ff2fc43ee27ca5"
+    },
+    {
+      "path": "deploy/staging/docker-compose.yml",
+      "sha256": "0a2a5ad8a60a66fa65de8940ca2293d73f459bb3410860da2962f265fe7fea98"
+    },
+    {
+      "path": "deploy/staging/identities.conf",
+      "sha256": "d94b2dde1da7523b9390f4aef283e0f8c7af8f324021ca026ddb064773b13b11"
+    },
+    {
+      "path": "deploy/staging/prepare-host.sh",
+      "sha256": "063cfdf676f613b6920332705bf91207d535996f69a8184a0b00e2ea862dfc70"
+    },
+    {
+      "path": "deploy/staging/runtime_acceptance.py",
+      "sha256": "027b05c18fe058b48e0d53c2b936f7aeffd0c70c040359a7a990a99741d51137"
+    },
+    {
+      "path": "deploy/staging/soak.sh",
+      "sha256": "7ef1545480a817a93e6acea060b80eb38050559b439a83f8d192b43dd266188d"
+    },
+    {
+      "path": "deploy/staging/verify.sh",
+      "sha256": "fb3cd158101beca3e54d5bf29f66f55ce667fa581551255e9c90dd851b21fcaf"
+    },
+    {
       "path": "docker-compose.yml",
       "sha256": "427d8ea9cfa62e8f8bda7b0a060cfb7dd087e55265bc1b9b67e6291d552c2a29"
     },
@@ -507,6 +563,10 @@
     {
       "path": "docs/deployment.md",
       "sha256": "c1d9b7d2055805bb82d8ac6dec335fd1901dd5de9792ff354dcee0e246a1958e"
+    },
+    {
+      "path": "docs/p8-staging.md",
+      "sha256": "95bd45d382d41ea2e48f2eb24f9758599b348a23555bc4d35f94bae4856cfdec"
     },
     {
       "path": "docs/provenance.md",
@@ -719,6 +779,10 @@
     {
       "path": "tests/test_openssl_runtime.py",
       "sha256": "3c0341c5590e42de1fd262b2b7bfe4bedbae3221bf097251f4cfb45b1735f8ac"
+    },
+    {
+      "path": "tests/test_p8_staging.py",
+      "sha256": "80226eef1f9f85c4c78ae9d7db8eb48c3cd69e1953a43ec4daa22410566b55a6"
     },
     {
       "path": "tests/test_paper_auto.py",

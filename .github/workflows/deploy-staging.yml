@@ -1,0 +1,219 @@
+name: P8 Deploy Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run_id:
+        description: "Successful P8 Staging Candidate workflow run ID"
+        required: true
+        type: string
+      soak_minutes:
+        description: "Staging soak duration (30-360 minutes)"
+        required: true
+        default: "60"
+        type: string
+      confirmation:
+        description: "Type DEPLOY staging followed by a space and candidate_run_id"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+  packages: read
+
+concurrency:
+  group: p8-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Validate staging-only request before secrets
+        env:
+          REQUEST_EVENT: ${{ github.event_name }}
+          WORKFLOW_REF: ${{ github.ref }}
+          RUN_ID: ${{ inputs.candidate_run_id }}
+          SOAK_MINUTES: ${{ inputs.soak_minutes }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          test "$REQUEST_EVENT" = workflow_dispatch
+          test "$WORKFLOW_REF" = refs/heads/master
+          case "$RUN_ID" in *[!0-9]*|'') exit 2;; esac
+          case "$SOAK_MINUTES" in *[!0-9]*|'') exit 2;; esac
+          test "$SOAK_MINUTES" -ge 30 -a "$SOAK_MINUTES" -le 360
+          test "$CONFIRMATION" = "DEPLOY staging ${RUN_ID}"
+
+      - name: Checkout deployment pipeline
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download exact candidate manifest
+        env:
+          API_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.candidate_run_id }}
+        run: |
+          install -d -m 700 candidate-artifact
+          curl --fail --silent --show-error \
+            --header "Authorization: Bearer ${API_TOKEN}" \
+            --header 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" \
+            --output "${RUNNER_TEMP}/artifacts.json"
+          artifact_url="$(python -c 'import json,sys; d=json.load(open(sys.argv[1])); a=[x for x in d["artifacts"] if x["name"]=="p8-staging-candidate-manifest" and not x["expired"]]; assert len(a)==1; print(a[0]["archive_download_url"])' "${RUNNER_TEMP}/artifacts.json")"
+          curl --fail --location --silent --show-error \
+            --header "Authorization: Bearer ${API_TOKEN}" \
+            --header 'Accept: application/vnd.github+json' \
+            "$artifact_url" --output "${RUNNER_TEMP}/candidate.zip"
+          unzip -q "${RUNNER_TEMP}/candidate.zip" -d candidate-artifact
+          python deploy/staging/candidate_manifest.py verify candidate-artifact/candidate-manifest.json
+
+      - name: Verify candidate workflow and exact pipeline revision
+        env:
+          API_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.candidate_run_id }}
+        run: |
+          curl --fail --silent --show-error \
+            --header "Authorization: Bearer ${API_TOKEN}" \
+            --header 'Accept: application/vnd.github+json' \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" \
+            --output "${RUNNER_TEMP}/run.json"
+          pipeline_sha="$(python -c 'import json; print(json.load(open("candidate-artifact/candidate-manifest.json"))["pipeline_revision"])')"
+          python - "$RUNNER_TEMP/run.json" "$pipeline_sha" <<'PY'
+          import json, sys
+          run = json.load(open(sys.argv[1]))
+          assert run["name"] == "P8 Staging Candidate"
+          assert run["event"] == "workflow_dispatch"
+          assert run["status"] == "completed" and run["conclusion"] == "success"
+          assert run["head_branch"] == "master" and run["head_sha"] == sys.argv[2]
+          PY
+          git cat-file -e "${pipeline_sha}^{commit}"
+          git checkout --detach "$pipeline_sha"
+          test "$(git rev-parse HEAD)" = "$pipeline_sha"
+          python deploy/staging/candidate_manifest.py verify candidate-artifact/candidate-manifest.json
+
+      - name: Configure isolated staging SSH
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          SSH_HOST_KEY: ${{ secrets.STAGING_SSH_HOST_KEY }}
+          STAGING_HOST: ${{ vars.STAGING_HOST }}
+          STAGING_USER: ${{ vars.STAGING_USER }}
+        run: |
+          test -n "$SSH_PRIVATE_KEY" && test -n "$SSH_HOST_KEY"
+          test -n "$STAGING_HOST" && test -n "$STAGING_USER"
+          install -d -m 700 ~/.ssh
+          install -m 600 /dev/null ~/.ssh/staging
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/staging
+          printf '%s\n' "$SSH_HOST_KEY" > ~/.ssh/known_hosts
+          cat > ~/.ssh/config <<EOF
+          Host p8-staging
+            HostName ${STAGING_HOST}
+            User ${STAGING_USER}
+            IdentityFile ~/.ssh/staging
+            BatchMode yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile ~/.ssh/known_hosts
+            ConnectTimeout 15
+            ServerAliveInterval 15
+            ServerAliveCountMax 4
+            TCPKeepAlive yes
+            LogLevel ERROR
+          EOF
+          chmod 600 ~/.ssh/config
+
+      - name: Stage exact pipeline bundle and owner-only provider factory
+        env:
+          PRIVATE_PROVIDER_FACTORY: ${{ secrets.PRIVATE_PROVIDER_FACTORY }}
+        run: |
+          test -n "$PRIVATE_PROVIDER_FACTORY"
+          install -d -m 700 "${RUNNER_TEMP}/p8-bundle"
+          install -m 644 deploy/staging/docker-compose.yml "${RUNNER_TEMP}/p8-bundle/docker-compose.yml"
+          install -m 644 deploy/staging/identities.conf "${RUNNER_TEMP}/p8-bundle/identities.conf"
+          install -m 755 deploy/staging/candidate_manifest.py "${RUNNER_TEMP}/p8-bundle/candidate_manifest.py"
+          install -m 755 deploy/staging/deploy.sh "${RUNNER_TEMP}/p8-bundle/deploy.sh"
+          install -m 755 deploy/staging/prepare-host.sh "${RUNNER_TEMP}/p8-bundle/prepare-host.sh"
+          install -m 755 deploy/staging/verify.sh "${RUNNER_TEMP}/p8-bundle/verify.sh"
+          install -m 755 deploy/staging/soak.sh "${RUNNER_TEMP}/p8-bundle/soak.sh"
+          install -m 644 deploy/staging/runtime_acceptance.py "${RUNNER_TEMP}/p8-bundle/runtime_acceptance.py"
+          install -d -m 755 "${RUNNER_TEMP}/p8-bundle/runtime-tests"
+          for test_file in \
+            tests/test_broker_contract.py \
+            tests/test_execution_worker.py \
+            tests/test_live_canary.py \
+            tests/test_live_position_guardian.py \
+            tests/test_live_reconciliation.py \
+            tests/test_live_recovery_worker.py; do
+            install -m 644 "$test_file" "${RUNNER_TEMP}/p8-bundle/runtime-tests/$(basename "$test_file")"
+          done
+          cp candidate-artifact/candidate-manifest.json "${RUNNER_TEMP}/p8-bundle/candidate-manifest.json"
+          tar -C "${RUNNER_TEMP}" -czf "${RUNNER_TEMP}/p8-bundle.tar.gz" p8-bundle
+          timeout --signal=TERM --kill-after=30s 3m scp "${RUNNER_TEMP}/p8-bundle.tar.gz" p8-staging:/tmp/p8-bundle.tar.gz
+          printf '%s' "$PRIVATE_PROVIDER_FACTORY" | timeout --signal=TERM --kill-after=10s 90s ssh p8-staging \
+            "sudo install -d -m 700 /srv/trading-platform-staging/provider && sudo install -o 10001 -g 10001 -m 400 /dev/stdin /srv/trading-platform-staging/provider/factory"
+          timeout --signal=TERM --kill-after=30s 3m ssh p8-staging \
+            "set -e; sudo install -d -m 755 /srv/trading-platform-staging/bundle; sudo tar -xzf /tmp/p8-bundle.tar.gz -C /srv/trading-platform-staging/bundle --strip-components=1; rm -f /tmp/p8-bundle.tar.gz; sudo /srv/trading-platform-staging/bundle/prepare-host.sh"
+
+      - name: Pull exact approved digests on staging without persistent registry token
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          refs="$(python - <<'PY'
+          import json
+          d=json.load(open('candidate-artifact/candidate-manifest.json'))['images']
+          print(d['gateway']['ref'])
+          print(d['releases']['known_good']['runtime']['ref'])
+          print(d['releases']['candidate']['runtime']['ref'])
+          PY
+          )"
+          while IFS= read -r ref; do
+            case "$ref" in ghcr.io/*@sha256:*) ;; *) exit 2;; esac
+          done <<<"$refs"
+          printf '%s' "$GHCR_TOKEN" | timeout --signal=TERM --kill-after=30s 20m ssh p8-staging \
+            "set -e; trap 'sudo docker logout ghcr.io >/dev/null 2>&1 || true' EXIT; sudo docker login ghcr.io --username '${GITHUB_ACTOR}' --password-stdin >/dev/null; $(while IFS= read -r ref; do printf "sudo docker pull '%s' >/dev/null; " "$ref"; done <<<"$refs")"
+
+      - name: Deploy A, verify B, and rollback to previous known-good A
+        run: |
+          timeout --signal=TERM --kill-after=30s 20m ssh p8-staging \
+            "sudo flock -w 30 /var/lock/tw-quant-staging.lock /srv/trading-platform-staging/bundle/deploy.sh deploy /srv/trading-platform-staging/bundle/candidate-manifest.json known_good"
+          timeout --signal=TERM --kill-after=30s 20m ssh p8-staging \
+            "sudo flock -w 30 /var/lock/tw-quant-staging.lock /srv/trading-platform-staging/bundle/deploy.sh deploy /srv/trading-platform-staging/bundle/candidate-manifest.json candidate"
+          timeout --signal=TERM --kill-after=30s 20m ssh p8-staging \
+            "sudo flock -w 30 /var/lock/tw-quant-staging.lock /srv/trading-platform-staging/bundle/deploy.sh rollback"
+
+      - name: Complete staging soak
+        env:
+          SOAK_MINUTES: ${{ inputs.soak_minutes }}
+        run: |
+          timeout --signal=TERM --kill-after=30s "$((SOAK_MINUTES + 15))m" ssh p8-staging \
+            "sudo /srv/trading-platform-staging/bundle/soak.sh '${SOAK_MINUTES}'"
+
+      - name: Capture non-secret P8 acceptance records
+        if: success()
+        run: |
+          install -d -m 700 p8-acceptance
+          timeout --signal=TERM --kill-after=10s 90s ssh p8-staging \
+            "sudo cat /srv/trading-platform-staging/deployments/current.env" > p8-acceptance/current.env
+          timeout --signal=TERM --kill-after=10s 90s ssh p8-staging \
+            "sudo cat /srv/trading-platform-staging/deployments/previous.env" > p8-acceptance/previous.env
+          cp candidate-artifact/candidate-manifest.json p8-acceptance/
+          {
+            echo '### P8 staging acceptance'
+            echo '- Known-good A: deployed and verified'
+            echo '- Candidate B: same CI-built digest deployed and verified'
+            echo '- Rollback: previous record A restored without rebuild'
+            echo "- Soak: ${{ inputs.soak_minutes }} minutes passed"
+            echo '- Production deployments: 0'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload P8 staging acceptance
+        if: success()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: p8-staging-acceptance
+          path: p8-acceptance
+          if-no-files-found: error
+          retention-days: 30

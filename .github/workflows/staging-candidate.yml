@@ -1,0 +1,241 @@
+name: P8 Staging Candidate
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type BUILD staging 7d490254130d6fd3da5f8f88d9903cb1a35a2f88"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+  packages: write
+
+concurrency:
+  group: p8-staging-candidate
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate exact candidate request before secrets
+        env:
+          REQUEST_EVENT: ${{ github.event_name }}
+          WORKFLOW_REF: ${{ github.ref }}
+          CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          test "$REQUEST_EVENT" = workflow_dispatch
+          test "$WORKFLOW_REF" = refs/heads/master
+          test "$CONFIRMATION" = "BUILD staging 7d490254130d6fd3da5f8f88d9903cb1a35a2f88"
+
+      - name: Checkout P8 pipeline revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify exact identities and completed workflow gates
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GATE_REPOSITORY: ${{ github.repository }}
+          GATE_SHA: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$GATE_SHA"
+          git merge-base --is-ancestor 7d490254130d6fd3da5f8f88d9903cb1a35a2f88 HEAD
+          grep -qx 'PLATFORM_SOURCE_SHA=7d490254130d6fd3da5f8f88d9903cb1a35a2f88' deploy/staging/identities.conf
+          grep -qx 'CORE_WHEEL_SHA256=63645e42755068c308d66d74ded5133395dfef816360dc8106e0bbc247ee49bd' deploy/staging/identities.conf
+          grep -qx 'PRIVATE_PROVIDER_WHEEL_SHA256=a5cbd8147bfd517e0297f6e70fdbbf33b63c22ab58e570a35bfdbdfc26993ee5' deploy/staging/identities.conf
+          grep -qx 'P7_ACCEPTANCE_SHA=97ba63f514c6adeb531666e9b10d8b05578cde76' deploy/staging/identities.conf
+          python tools/verify_public_candidate.py
+          python deploy/lightsail/verify-workflow-gates.py \
+            --repository "$GATE_REPOSITORY" --sha "$GATE_SHA" \
+            --attempts 30 --timeout 10 --retry-delay 10
+
+      - name: Materialize exact approved Platform source
+        run: |
+          install -d -m 700 "${RUNNER_TEMP}/candidate-source"
+          git archive 7d490254130d6fd3da5f8f88d9903cb1a35a2f88 | tar -x -C "${RUNNER_TEMP}/candidate-source"
+          (cd "${RUNNER_TEMP}/candidate-source" && python tools/verify_public_candidate.py)
+          install -d -m 755 "${RUNNER_TEMP}/candidate-source/deploy/staging"
+          install -m 644 deploy/staging/composition.py "${RUNNER_TEMP}/candidate-source/deploy/staging/composition.py"
+          install -m 644 deploy/staging/Caddyfile "${RUNNER_TEMP}/candidate-source/deploy/staging/Caddyfile"
+          install -m 644 deploy/staging/Dockerfile.runtime "${RUNNER_TEMP}/candidate-source/Dockerfile.p8-runtime"
+          install -m 644 deploy/staging/Dockerfile.gateway "${RUNNER_TEMP}/candidate-source/Dockerfile.p8-gateway"
+
+      - name: Acquire and verify private provider wheel at controlled boundary
+        env:
+          PRIVATE_PROVIDER_ASSET_URL: ${{ secrets.PRIVATE_PROVIDER_ASSET_URL }}
+          PRIVATE_PROVIDER_READ_TOKEN: ${{ secrets.PRIVATE_PROVIDER_READ_TOKEN }}
+        run: |
+          test -n "$PRIVATE_PROVIDER_ASSET_URL"
+          test -n "$PRIVATE_PROVIDER_READ_TOKEN"
+          install -m 600 /dev/null "${RUNNER_TEMP}/provider.whl"
+          curl --fail --location --silent --show-error \
+            --header "Authorization: Bearer ${PRIVATE_PROVIDER_READ_TOKEN}" \
+            --header "Accept: application/octet-stream" \
+            "$PRIVATE_PROVIDER_ASSET_URL" --output "${RUNNER_TEMP}/provider.whl"
+          echo 'a5cbd8147bfd517e0297f6e70fdbbf33b63c22ab58e570a35bfdbdfc26993ee5  '${RUNNER_TEMP}'/provider.whl' | sha256sum -c -
+
+      - name: Build each candidate exactly once
+        env:
+          REGISTRY: ghcr.io
+          IMAGE_ROOT: ghcr.io/${{ github.repository_owner }}/tw-quant-trading-platform-staging
+        run: |
+          source deploy/staging/identities.conf
+          runtime_a="${IMAGE_ROOT}:runtime-a-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          runtime_b="${IMAGE_ROOT}:runtime-b-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          gateway="${IMAGE_ROOT}:gateway-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          common=(
+            --file "${RUNNER_TEMP}/candidate-source/Dockerfile.p8-runtime"
+            --secret "id=private_provider_wheel,src=${RUNNER_TEMP}/provider.whl"
+            --build-arg "PLATFORM_SOURCE_SHA=${PLATFORM_SOURCE_SHA}"
+            --build-arg "PIPELINE_REVISION=${GITHUB_SHA}"
+            --build-arg "CORE_WHEEL_SHA256=${CORE_WHEEL_SHA256}"
+            --build-arg "PRIVATE_PROVIDER_VERSION=${PRIVATE_PROVIDER_VERSION}"
+            --build-arg "PRIVATE_PROVIDER_WHEEL_SHA256=${PRIVATE_PROVIDER_WHEEL_SHA256}"
+            --build-arg "P7_ACCEPTANCE_SHA=${P7_ACCEPTANCE_SHA}"
+          )
+          DOCKER_BUILDKIT=1 docker build "${common[@]}" \
+            --build-arg "CONFIGURATION_IDENTITY=p8-a-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --tag "$runtime_a" "${RUNNER_TEMP}/candidate-source"
+          DOCKER_BUILDKIT=1 docker build "${common[@]}" \
+            --build-arg "CONFIGURATION_IDENTITY=p8-b-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --tag "$runtime_b" "${RUNNER_TEMP}/candidate-source"
+          DOCKER_BUILDKIT=1 docker build \
+            --file "${RUNNER_TEMP}/candidate-source/Dockerfile.p8-gateway" \
+            --build-arg "PLATFORM_SOURCE_SHA=${PLATFORM_SOURCE_SHA}" \
+            --build-arg "PIPELINE_REVISION=${GITHUB_SHA}" \
+            --tag "$gateway" "${RUNNER_TEMP}/candidate-source"
+          {
+            echo "RUNTIME_A_TAG=$runtime_a"
+            echo "RUNTIME_B_TAG=$runtime_b"
+            echo "GATEWAY_TAG=$gateway"
+          } >> "$GITHUB_ENV"
+
+      - name: Verify installed private composition and zero credential persistence
+        env:
+          PRIVATE_PROVIDER_FACTORY: ${{ secrets.PRIVATE_PROVIDER_FACTORY }}
+          PRIVATE_PROVIDER_READ_TOKEN: ${{ secrets.PRIVATE_PROVIDER_READ_TOKEN }}
+        run: |
+          test -n "$PRIVATE_PROVIDER_FACTORY"
+          install -m 400 /dev/null "${RUNNER_TEMP}/provider-factory"
+          printf '%s' "$PRIVATE_PROVIDER_FACTORY" > "${RUNNER_TEMP}/provider-factory"
+          sudo chown 10001:10001 "${RUNNER_TEMP}/provider-factory"
+          for image in "$RUNTIME_A_TAG" "$RUNTIME_B_TAG"; do
+            docker run --rm --network none --read-only --cap-drop ALL \
+              --security-opt no-new-privileges \
+              --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m,uid=10001,gid=10001 \
+              --mount "type=bind,source=${RUNNER_TEMP}/provider-factory,target=/run/staging-provider/factory,readonly" \
+              --env PRIVATE_PROVIDER_WHEEL_SHA256=a5cbd8147bfd517e0297f6e70fdbbf33b63c22ab58e570a35bfdbdfc26993ee5 \
+              "$image" python -c 'from staging_composition import load_provider; from tw_quant.strategy_registry import RegistryStrategies; s=RegistryStrategies(provider=load_provider()); assert s.catalog(); assert s.identity_snapshot()["artifact_digest"] == "sha256:a5cbd8147bfd517e0297f6e70fdbbf33b63c22ab58e570a35bfdbdfc26993ee5"'
+            docker run --rm --network none "$image" sh -c "! find / -xdev -type f -name '*.whl' -print -quit 2>/dev/null | grep -q ."
+            docker history --no-trunc "$image" > "${RUNNER_TEMP}/history.txt"
+            docker image inspect "$image" > "${RUNNER_TEMP}/inspect.json"
+            IMAGE_HISTORY="${RUNNER_TEMP}/history.txt" IMAGE_INSPECT="${RUNNER_TEMP}/inspect.json" \
+              python -c 'import os,pathlib; secret=os.environ["PRIVATE_PROVIDER_READ_TOKEN"].encode(); assert secret not in pathlib.Path(os.environ["IMAGE_HISTORY"]).read_bytes(); assert secret not in pathlib.Path(os.environ["IMAGE_INSPECT"]).read_bytes()'
+          done
+          rm -f "${RUNNER_TEMP}/history.txt" "${RUNNER_TEMP}/inspect.json"
+
+      - name: Scan runtime A
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.RUNTIME_A_TAG }}
+          trivyignores: .trivyignore.yaml
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: "1"
+      - name: Scan runtime B
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.RUNTIME_B_TAG }}
+          trivyignores: .trivyignore.yaml
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: "1"
+      - name: Scan gateway
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.GATEWAY_TAG }}
+          trivyignores: .trivyignore.yaml
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: "1"
+
+      - name: Generate runtime A CycloneDX SBOM
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          image: ${{ env.RUNTIME_A_TAG }}
+          artifact-name: p8-runtime-a-sbom.cdx.json
+          format: cyclonedx-json
+      - name: Generate runtime B CycloneDX SBOM
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          image: ${{ env.RUNTIME_B_TAG }}
+          artifact-name: p8-runtime-b-sbom.cdx.json
+          format: cyclonedx-json
+      - name: Generate gateway CycloneDX SBOM
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
+        with:
+          image: ${{ env.GATEWAY_TAG }}
+          artifact-name: p8-gateway-sbom.cdx.json
+          format: cyclonedx-json
+
+      - name: Push the already tested image bytes and create provenance
+        env:
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          for image in "$RUNTIME_A_TAG" "$RUNTIME_B_TAG" "$GATEWAY_TAG"; do docker push "$image"; done
+          curl --fail --silent --show-error \
+            --header "Authorization: Bearer ${GHCR_TOKEN}" \
+            --header 'Accept: application/vnd.github+json' \
+            "https://api.github.com/users/${GITHUB_REPOSITORY_OWNER}/packages/container/tw-quant-trading-platform-staging" \
+            --output "${RUNNER_TEMP}/package.json"
+          python -c 'import json,os; d=json.load(open(os.environ["RUNNER_TEMP"]+"/package.json")); assert d["visibility"] == "private"'
+          digest() { docker buildx imagetools inspect "$1" | awk '$1 == "Digest:" {print $2; exit}'; }
+          runtime_a_digest="$(digest "$RUNTIME_A_TAG")"
+          runtime_b_digest="$(digest "$RUNTIME_B_TAG")"
+          gateway_digest="$(digest "$GATEWAY_TAG")"
+          runtime_a_config="$(docker image inspect --format '{{.Id}}' "$RUNTIME_A_TAG")"
+          runtime_b_config="$(docker image inspect --format '{{.Id}}' "$RUNTIME_B_TAG")"
+          gateway_config="$(docker image inspect --format '{{.Id}}' "$GATEWAY_TAG")"
+          runtime_a_ref="${RUNTIME_A_TAG%@*}@${runtime_a_digest}"
+          runtime_b_ref="${RUNTIME_B_TAG%@*}@${runtime_b_digest}"
+          gateway_ref="${GATEWAY_TAG%@*}@${gateway_digest}"
+          python deploy/staging/candidate_manifest.py create \
+            --output candidate-manifest.json \
+            --pipeline-revision "$GITHUB_SHA" --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --runtime-a-ref "$runtime_a_ref" --runtime-a-digest "$runtime_a_digest" --runtime-a-config-digest "$runtime_a_config" \
+            --runtime-b-ref "$runtime_b_ref" --runtime-b-digest "$runtime_b_digest" --runtime-b-config-digest "$runtime_b_config" \
+            --gateway-ref "$gateway_ref" --gateway-digest "$gateway_digest" --gateway-config-digest "$gateway_config" \
+            | tee candidate-manifest.sha256
+          python deploy/staging/candidate_manifest.py verify candidate-manifest.json
+          docker logout ghcr.io
+
+      - name: Upload immutable candidate manifest
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: p8-staging-candidate-manifest
+          path: |
+            candidate-manifest.json
+            candidate-manifest.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Record candidate identities
+        run: |
+          {
+            echo '### P8 immutable staging candidate'
+            echo '- Platform source: `7d490254130d6fd3da5f8f88d9903cb1a35a2f88`'
+            echo '- Core wheel: `63645e42755068c308d66d74ded5133395dfef816360dc8106e0bbc247ee49bd`'
+            echo '- Private provider wheel: `a5cbd8147bfd517e0297f6e70fdbbf33b63c22ab58e570a35bfdbdfc26993ee5`'
+            echo '- Private leakage in Public tree: `0`'
+            echo '- Images: built once, tested/scanned, then pushed without rebuild'
+          } >> "$GITHUB_STEP_SUMMARY"
