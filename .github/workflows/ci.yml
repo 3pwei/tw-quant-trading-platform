@@ -73,6 +73,14 @@ jobs:
         run: |
           python tools/verify_public_candidate.py
           docker compose config --quiet
+          touch /tmp/staging-market.env /tmp/staging-execution.env /tmp/staging-gateway.env
+          STAGING_RUNTIME_IMAGE=ghcr.io/example/runtime@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+          STAGING_GATEWAY_IMAGE=ghcr.io/example/gateway@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
+          STAGING_MARKET_ENV_FILE=/tmp/staging-market.env \
+          STAGING_EXECUTION_ENV_FILE=/tmp/staging-execution.env \
+          STAGING_GATEWAY_ENV_FILE=/tmp/staging-gateway.env \
+          STAGING_PROVIDER_FACTORY_FILE=/tmp/staging-provider-factory \
+            docker compose --file deploy/staging/docker-compose.yml config --quiet
       - name: Build public-only runtime images
         run: |
           docker build --target market-api --tag platform-market-api:ci .
