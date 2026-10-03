@@ -30,7 +30,7 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "6d0c38f1169bc1c15f94c4e6e8390ac56e1beb9c38c0fa785baa5e561a473ff8"
+      "sha256": "d2db144a842749639ca1fab326f4864ad7f1c2a94d974139386ddbcd163637c2"
     },
     {
       "path": ".github/workflows/staging-candidate.yml",
@@ -501,6 +501,14 @@
       "sha256": "1b89f49b5770e2bad2982656503ce90125c8e8d8123c6cd73f014d55c135aa9f"
     },
     {
+      "path": "deploy/security/npm-audit-exceptions.json",
+      "sha256": "e14e23978e1ec7a42a84907acb99c1261f0e6d32c53c106946039c230a1ee34a"
+    },
+    {
+      "path": "deploy/security/npm_audit_gate.py",
+      "sha256": "ce3b3bf7f88dc721a15b1b858da0fc85d8ef0c524085b1b2a562b6bfb0746ffa"
+    },
+    {
       "path": "deploy/security/python_sast.py",
       "sha256": "d4a198b3943347c2f96a6c1191922c24358426b330f5dce7d7bee5ef9116260b"
     },
@@ -775,6 +783,10 @@
     {
       "path": "tests/test_multi_broker_execution.py",
       "sha256": "6b25e443c7d724be75dbdb53811ff9f7433d092744b69a774703ed333e58975e"
+    },
+    {
+      "path": "tests/test_npm_audit_gate.py",
+      "sha256": "73b7958bdbc9dc85db64e86438742afc918a257702afb467b2d8ba2cd7d95b48"
     },
     {
       "path": "tests/test_openssl_runtime.py",
