@@ -132,6 +132,17 @@ class P8StagingIsolationTests(unittest.TestCase):
             self.assertIn("/srv/trading-platform-staging", text)
             self.assertRegex(text, r'(?:==|!=) \*production\*')
 
+    def test_host_python_calls_use_ubuntu_python3(self):
+        prepare = (STAGING / "prepare-host.sh").read_text()
+        deploy = (STAGING / "deploy.sh").read_text()
+        verify = (STAGING / "verify.sh").read_text()
+        soak = (STAGING / "soak.sh").read_text()
+        self.assertIn("command -v python3", prepare)
+        self.assertIn('python3 "${BUNDLE}/candidate_manifest.py" verify', deploy)
+        self.assertIn('python3 "${BUNDLE}/candidate_manifest.py" emit-env', deploy)
+        self.assertIn("python3 -c 'import json,sys", verify)
+        self.assertIn("python3 -c 'import json,sys", soak)
+
     def test_deployment_has_atomic_records_rollback_and_no_build(self):
         script = (STAGING / "deploy.sh").read_text()
         self.assertIn("previous.env", script)

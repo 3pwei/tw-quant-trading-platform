@@ -80,7 +80,7 @@ verify_once() {
   [[ "${ports}" == "{}" && "${network_mode}" == none ]]
   "${compose[@]}" exec -T execution-worker python -m tw_quant.execution_service healthcheck
   health="$("${compose[@]}" exec -T execution-worker cat /run/tw-quant-execution/health.json)"
-  python -c 'import json,sys; d=json.load(sys.stdin); assert d["locked"] is True; assert d["external_order_calls"] == 0; assert d["external_cancel_calls"] == 0' <<<"${health}"
+  python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["locked"] is True; assert d["external_order_calls"] == 0; assert d["external_cancel_calls"] == 0' <<<"${health}"
   curl --fail --silent --show-error http://127.0.0.1:18080/healthz | grep -qx ok
   curl --fail --silent --show-error http://127.0.0.1:18080/health/live >/dev/null
   docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \

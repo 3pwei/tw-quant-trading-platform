@@ -18,9 +18,9 @@ PREVIOUS="${DEPLOYMENTS}/previous.env"
 case "${ACTION}" in
   deploy)
     [[ -f "${MANIFEST}" && "${RELEASE}" =~ ^(known_good|candidate)$ ]]
-    python "${BUNDLE}/candidate_manifest.py" verify "${MANIFEST}"
+    python3 "${BUNDLE}/candidate_manifest.py" verify "${MANIFEST}"
     target="$(mktemp "${DEPLOYMENTS}/.target.XXXXXX")"
-    python "${BUNDLE}/candidate_manifest.py" emit-env "${MANIFEST}" --release "${RELEASE}" > "${target}"
+    python3 "${BUNDLE}/candidate_manifest.py" emit-env "${MANIFEST}" --release "${RELEASE}" > "${target}"
     ;;
   rollback)
     [[ -f "${PREVIOUS}" ]]
