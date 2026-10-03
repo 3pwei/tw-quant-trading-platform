@@ -55,7 +55,7 @@ RUN --mount=type=secret,id=private_provider_wheel,target=/run/secrets/provider.w
     && rm -f "/tmp/${provider_filename}" \
     && ! find /app -type f -name '*.whl' -print -quit | grep -q .
 RUN uv cache clean \
-    && python -m pip uninstall --yes uv pip wheel setuptools jaraco.context \
+    && /usr/local/bin/python -m pip uninstall --yes uv pip wheel setuptools jaraco.context \
     && groupadd --gid 10001 twquant \
     && useradd --uid 10001 --gid twquant --no-create-home --home-dir /nonexistent \
         --shell /usr/sbin/nologin twquant \
