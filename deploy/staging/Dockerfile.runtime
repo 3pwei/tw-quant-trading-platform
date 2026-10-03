@@ -1,0 +1,63 @@
+# syntax=docker/dockerfile:1.7
+FROM python:3.14-slim@sha256:cad9a2c871761c413caa6fdd6441c783451e740a48aaeba60ae62a8b53525ef6
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends --only-upgrade \
+        libssl3t64=3.5.7-1~deb13u3 \
+        openssl=3.5.7-1~deb13u3 \
+        openssl-provider-legacy=3.5.7-1~deb13u3 \
+        libpcre2-8-0=10.46-1~deb13u3 \
+    && for package in libssl3t64 openssl openssl-provider-legacy; do \
+        test "$(dpkg-query -W -f='${Version}' "$package")" = '3.5.7-1~deb13u3' || exit 1; \
+    done \
+    && test "$(dpkg-query -W -f='${Version}' libpcre2-8-0)" = '10.46-1~deb13u3' \
+    && python -c "import ssl; ssl.create_default_context()" \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    HOME=/tmp \
+    XDG_CACHE_HOME=/tmp/.cache \
+    MPLCONFIGDIR=/tmp/matplotlib \
+    NUMBA_CACHE_DIR=/tmp/numba \
+    PATH=/app/.venv/bin:$PATH
+
+ARG PLATFORM_SOURCE_SHA
+ARG PIPELINE_REVISION
+ARG CONFIGURATION_IDENTITY
+ARG CORE_WHEEL_SHA256
+ARG PRIVATE_PROVIDER_VERSION
+ARG PRIVATE_PROVIDER_WHEEL_SHA256
+ARG P7_ACCEPTANCE_SHA
+
+LABEL org.opencontainers.image.revision="${PLATFORM_SOURCE_SHA}" \
+      io.tw-quant.pipeline.revision="${PIPELINE_REVISION}" \
+      io.tw-quant.configuration.identity="${CONFIGURATION_IDENTITY}" \
+      io.tw-quant.core.version="1.2.0" \
+      io.tw-quant.core.sha256="${CORE_WHEEL_SHA256}" \
+      io.tw-quant.private-provider.version="${PRIVATE_PROVIDER_VERSION}" \
+      io.tw-quant.private-provider.sha256="${PRIVATE_PROVIDER_WHEEL_SHA256}" \
+      io.tw-quant.p7.acceptance="${P7_ACCEPTANCE_SHA}"
+
+WORKDIR /app
+RUN python -m pip install --no-cache-dir "uv==0.11.33"
+COPY pyproject.toml uv.lock README.md THIRD_PARTY_NOTICES.md ./
+COPY docs/dependency-notices.json ./dependency-notices.json
+COPY docs/third-party-license-texts.txt ./third-party-license-texts.txt
+COPY tw_quant ./tw_quant
+COPY deploy/staging/composition.py ./staging_composition.py
+RUN uv sync --locked --no-dev --extra server --no-editable
+RUN --mount=type=secret,id=private_provider_wheel,target=/run/secrets/provider.whl,required=true \
+    echo "${PRIVATE_PROVIDER_WHEEL_SHA256}  /run/secrets/provider.whl" | sha256sum -c - \
+    && uv pip install --python /app/.venv/bin/python --no-deps /run/secrets/provider.whl \
+    && ! find /app -type f -name '*.whl' -print -quit | grep -q .
+RUN uv cache clean \
+    && python -m pip uninstall --yes uv pip wheel setuptools jaraco.context \
+    && groupadd --gid 10001 twquant \
+    && useradd --uid 10001 --gid twquant --no-create-home --home-dir /nonexistent \
+        --shell /usr/sbin/nologin twquant \
+    && install -d -o twquant -g twquant -m 0750 /data /run/tw-quant-execution \
+    && chown -R twquant:twquant /app
+
+USER 10001:10001
+CMD ["uvicorn", "staging_composition:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]

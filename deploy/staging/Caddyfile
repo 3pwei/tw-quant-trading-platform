@@ -1,0 +1,32 @@
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	encode zstd gzip
+
+	@health path /healthz
+	respond @health "ok" 200
+
+	request_body {
+		max_size {$API_MAX_REQUEST_BODY_BYTES:262144}
+	}
+
+	root * /srv
+	@backend path /api/* /ws/* /docs* /openapi.json /health/live
+	reverse_proxy @backend market-api:8000
+	try_files {path} {path}/index.html /404.html
+	file_server
+
+	header {
+		Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http: ws:; manifest-src 'self'; worker-src 'self' blob:"
+		Permissions-Policy "accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Resource-Policy "same-origin"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "same-origin"
+		-Server
+	}
+}
