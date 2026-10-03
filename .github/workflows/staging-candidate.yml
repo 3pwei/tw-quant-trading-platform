@@ -122,9 +122,10 @@ jobs:
           PRIVATE_PROVIDER_READ_TOKEN: ${{ secrets.PRIVATE_PROVIDER_READ_TOKEN }}
         run: |
           test -n "$PRIVATE_PROVIDER_FACTORY"
-          install -m 400 /dev/null "${RUNNER_TEMP}/provider-factory"
+          install -m 600 /dev/null "${RUNNER_TEMP}/provider-factory"
           printf '%s' "$PRIVATE_PROVIDER_FACTORY" > "${RUNNER_TEMP}/provider-factory"
           sudo chown 10001:10001 "${RUNNER_TEMP}/provider-factory"
+          sudo chmod 0400 "${RUNNER_TEMP}/provider-factory"
           for image in "$RUNTIME_A_TAG" "$RUNTIME_B_TAG"; do
             docker run --rm --network none --read-only --cap-drop ALL \
               --security-opt no-new-privileges \
