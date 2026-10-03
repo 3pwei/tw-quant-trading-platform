@@ -14,7 +14,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "7ae10ffe7c14aa1b5a3084e46de375ed0bdb08e71b7c335f26cdc55391468d30"
+      "sha256": "bd90064001e677efcb9f437d9049839dee85bc8e7e6d1591f5791e69be9cda1b"
     },
     {
       "path": ".github/workflows/deploy-lightsail.yml",
@@ -538,7 +538,7 @@
     },
     {
       "path": "deploy/staging/docker-compose.yml",
-      "sha256": "0a2a5ad8a60a66fa65de8940ca2293d73f459bb3410860da2962f265fe7fea98"
+      "sha256": "fa81e00a595fc5e54c2b0057a0ae7cbdcd101904ece97682ca121a79e5ff027b"
     },
     {
       "path": "deploy/staging/identities.conf",
@@ -794,7 +794,7 @@
     },
     {
       "path": "tests/test_p8_staging.py",
-      "sha256": "8fc65c2a67d831c1b0e8a42c550673d07d1dc49a5d52766aea98a66fd30ecbd6"
+      "sha256": "849ac029de2ff19496165add2daea5b586c8c7e57e144a685c682620b36b0f1c"
     },
     {
       "path": "tests/test_paper_auto.py",

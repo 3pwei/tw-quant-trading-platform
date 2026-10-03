@@ -124,6 +124,29 @@ class P8StagingIsolationTests(unittest.TestCase):
         self.assertIn("staging-data:/data", compose)
         self.assertNotIn("platform-production", compose)
 
+    def test_compose_quotes_required_path_interpolation(self):
+        compose = (STAGING / "docker-compose.yml").read_text()
+        for variable in (
+            "STAGING_MARKET_ENV_FILE",
+            "STAGING_EXECUTION_ENV_FILE",
+            "STAGING_GATEWAY_ENV_FILE",
+        ):
+            self.assertIn(
+                f'env_file: ["${{{variable}:?',
+                compose,
+                variable,
+            )
+        self.assertIn(
+            '- "${STAGING_PROVIDER_FACTORY_FILE:?provider factory file is required}:'
+            '/run/staging-provider/factory:ro"',
+            compose,
+        )
+        ci = (ROOT / ".github/workflows/ci.yml").read_text()
+        self.assertIn(
+            "docker compose --file deploy/staging/docker-compose.yml config --quiet",
+            ci,
+        )
+
     def test_host_scripts_hard_reject_non_staging_root(self):
         for name in ("prepare-host.sh", "deploy.sh", "verify.sh", "soak.sh"):
             path = STAGING / name

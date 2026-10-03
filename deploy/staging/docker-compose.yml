@@ -18,12 +18,12 @@ services:
     pull_policy: never
     user: "10001:10001"
     command: ["uvicorn", "staging_composition:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
-    env_file: [${STAGING_MARKET_ENV_FILE:?staging market config is required}]
+    env_file: ["${STAGING_MARKET_ENV_FILE:?staging market config is required}"]
     expose: ["8000"]
     volumes:
       - staging-data:/data
       - execution-health:/run/tw-quant-execution:ro
-      - ${STAGING_PROVIDER_FACTORY_FILE:?provider factory file is required}:/run/staging-provider/factory:ro
+      - "${STAGING_PROVIDER_FACTORY_FILE:?provider factory file is required}:/run/staging-provider/factory:ro"
     tmpfs:
       - /tmp:rw,noexec,nosuid,nodev,size=64m,uid=10001,gid=10001,mode=1770
     networks: [staging-internal]
@@ -43,7 +43,7 @@ services:
     pull_policy: never
     user: "10001:10001"
     command: ["python", "-m", "tw_quant.execution_service", "run"]
-    env_file: [${STAGING_EXECUTION_ENV_FILE:?staging execution config is required}]
+    env_file: ["${STAGING_EXECUTION_ENV_FILE:?staging execution config is required}"]
     volumes:
       - staging-data:/data
       - execution-health:/run/tw-quant-execution
@@ -65,7 +65,7 @@ services:
     image: ${STAGING_GATEWAY_IMAGE:?exact gateway image digest is required}
     pull_policy: never
     user: "10000:10000"
-    env_file: [${STAGING_GATEWAY_ENV_FILE:?staging gateway config is required}]
+    env_file: ["${STAGING_GATEWAY_ENV_FILE:?staging gateway config is required}"]
     depends_on:
       market-api:
         condition: service_healthy
