@@ -29,13 +29,17 @@ wait_for_health() {
 }
 
 verify_image() {
-  local service="$1" exact_ref="$2" expected_config="$3" container_id running_config local_config repo_digests
+  local service="$1" exact_ref="$2" expected_config="$3"
+  local container_id running_config local_config repo_digests tagged_ref repository canonical_ref
   container_id="$("${compose[@]}" ps -q "${service}")"
   running_config="$(docker inspect --format '{{.Image}}' "${container_id}")"
   local_config="$(docker image inspect --format '{{.Id}}' "${exact_ref}")"
-  repo_digests="$(docker image inspect --format '{{json .RepoDigests}}' "${exact_ref}")"
+  repo_digests="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "${exact_ref}")"
+  tagged_ref="${exact_ref%@*}"
+  repository="${tagged_ref%:*}"
+  canonical_ref="${repository}@${exact_ref##*@}"
   [[ "${running_config}" == "${local_config}" && "${local_config}" == "${expected_config}" ]]
-  [[ "${repo_digests}" == *"${exact_ref}"* ]]
+  grep -Fxq "${canonical_ref}" <<<"${repo_digests}"
 }
 
 verify_labels() {
