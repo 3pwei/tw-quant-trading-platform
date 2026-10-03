@@ -534,7 +534,7 @@
     },
     {
       "path": "deploy/staging/deploy.sh",
-      "sha256": "4fb1f4f5c2dd14031a2366d5bd8fce8ee4cb24740b087b3231ff2fc43ee27ca5"
+      "sha256": "6dc2292adf9df135d0846c49e4beccddcf459feda4cf63ab73b2b126ada7a2a8"
     },
     {
       "path": "deploy/staging/docker-compose.yml",
@@ -546,7 +546,7 @@
     },
     {
       "path": "deploy/staging/prepare-host.sh",
-      "sha256": "063cfdf676f613b6920332705bf91207d535996f69a8184a0b00e2ea862dfc70"
+      "sha256": "1cbe2228ba9c8421b2821977bbfddd1c524fd08b8e76d2160333e5fb0c32372b"
     },
     {
       "path": "deploy/staging/runtime_acceptance.py",
@@ -554,11 +554,11 @@
     },
     {
       "path": "deploy/staging/soak.sh",
-      "sha256": "7ef1545480a817a93e6acea060b80eb38050559b439a83f8d192b43dd266188d"
+      "sha256": "a9ac08bc171be78182c676b4d0dbe51bd62ae45063e6c34870a353c761dc44e9"
     },
     {
       "path": "deploy/staging/verify.sh",
-      "sha256": "fb3cd158101beca3e54d5bf29f66f55ce667fa581551255e9c90dd851b21fcaf"
+      "sha256": "093b32be541ee13499808fd6529d333e201608bf43adb874a80fb14cbbf084b4"
     },
     {
       "path": "docker-compose.yml",
@@ -794,7 +794,7 @@
     },
     {
       "path": "tests/test_p8_staging.py",
-      "sha256": "99f2ac464c21cc0f8fcba51bfeecad82b37929630c3a5d9c7f80195c906dc848"
+      "sha256": "8fc65c2a67d831c1b0e8a42c550673d07d1dc49a5d52766aea98a66fd30ecbd6"
     },
     {
       "path": "tests/test_paper_auto.py",
