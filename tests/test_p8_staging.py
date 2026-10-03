@@ -74,6 +74,8 @@ class P8BuildBoundaryTests(unittest.TestCase):
         self.assertIn('"/tmp/${provider_filename}"', dockerfile)
         self.assertIn('rm -f "/tmp/${provider_filename}"', dockerfile)
         self.assertNotIn("--no-deps /run/secrets/provider.whl", dockerfile)
+        self.assertIn("/usr/local/bin/python -m pip uninstall", dockerfile)
+        self.assertNotIn("&& python -m pip uninstall", dockerfile)
         self.assertNotIn("COPY provider.whl", dockerfile)
         self.assertNotIn("ARG PRIVATE_PROVIDER_READ_TOKEN", dockerfile)
         self.assertNotIn("--build-arg PRIVATE_PROVIDER_READ_TOKEN", workflow)
