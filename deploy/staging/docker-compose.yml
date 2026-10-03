@@ -61,11 +61,11 @@ services:
       start_period: 10s
 
   gateway:
-    env_file: ["${STAGING_GATEWAY_ENV_FILE:?staging gateway config is required}"]
+    <<: *runtime-security
     image: ${STAGING_GATEWAY_IMAGE:?exact gateway image digest is required}
     pull_policy: never
     user: "10000:10000"
-    
+    env_file: ["${STAGING_GATEWAY_ENV_FILE:?staging gateway config is required}"]
     depends_on:
       market-api:
         condition: service_healthy
