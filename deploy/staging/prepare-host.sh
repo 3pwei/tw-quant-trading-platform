@@ -7,6 +7,8 @@ if [[ "${INSTALL_ROOT}" != /srv/trading-platform-staging || "${INSTALL_ROOT}" ==
   exit 2
 fi
 
+command -v python3 >/dev/null
+
 install -d -m 700 "${INSTALL_ROOT}" "${INSTALL_ROOT}/config" \
   "${INSTALL_ROOT}/deployments" "${INSTALL_ROOT}/provider"
 install -d -m 755 "${INSTALL_ROOT}/bundle"
