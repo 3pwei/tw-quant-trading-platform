@@ -49,7 +49,10 @@ COPY deploy/staging/composition.py ./staging_composition.py
 RUN uv sync --locked --no-dev --extra server --no-editable
 RUN --mount=type=secret,id=private_provider_wheel,target=/run/secrets/provider.whl,required=true \
     echo "${PRIVATE_PROVIDER_WHEEL_SHA256}  /run/secrets/provider.whl" | sha256sum -c - \
-    && uv pip install --python /app/.venv/bin/python --no-deps /run/secrets/provider.whl \
+    && provider_filename="$(python -c 'import sys, zipfile; z=zipfile.ZipFile(sys.argv[1]); roots={n.split("/", 1)[0][:-10] for n in z.namelist() if n.count("/") == 1 and n.endswith(".dist-info/WHEEL")}; assert len(roots) == 1; wheel=z.read(next(n for n in z.namelist() if n.count("/") == 1 and n.endswith(".dist-info/WHEEL"))).decode(); assert "Tag: py3-none-any" in wheel; print(roots.pop() + "-py3-none-any.whl")' /run/secrets/provider.whl)" \
+    && install -m 600 /run/secrets/provider.whl "/tmp/${provider_filename}" \
+    && uv pip install --python /app/.venv/bin/python --no-deps "/tmp/${provider_filename}" \
+    && rm -f "/tmp/${provider_filename}" \
     && ! find /app -type f -name '*.whl' -print -quit | grep -q .
 RUN uv cache clean \
     && python -m pip uninstall --yes uv pip wheel setuptools jaraco.context \
