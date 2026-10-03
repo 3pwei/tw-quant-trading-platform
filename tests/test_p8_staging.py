@@ -175,6 +175,14 @@ class P8StagingIsolationTests(unittest.TestCase):
         self.assertIn('cp "${CURRENT}" "${PREVIOUS}.tmp"', script)
         self.assertLess(script.index('"${BUNDLE}/verify.sh" restart'), script.index('mv "${record}" "${CURRENT}"'))
 
+    def test_runtime_verifier_compares_canonical_registry_digest(self):
+        verifier = (STAGING / "verify.sh").read_text()
+        self.assertIn('tagged_ref="${exact_ref%@*}"', verifier)
+        self.assertIn('repository="${tagged_ref%:*}"', verifier)
+        self.assertIn('canonical_ref="${repository}@${exact_ref##*@}"', verifier)
+        self.assertIn('grep -Fxq "${canonical_ref}" <<<"${repo_digests}"', verifier)
+        self.assertNotIn('[[ "${repo_digests}" == *"${exact_ref}"* ]]', verifier)
+
     def test_workflow_uses_only_staging_environment_and_secrets(self):
         workflow = (ROOT / ".github/workflows/deploy-staging.yml").read_text()
         self.assertIn("environment: staging", workflow)
