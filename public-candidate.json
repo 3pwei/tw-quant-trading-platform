@@ -522,7 +522,7 @@
     },
     {
       "path": "deploy/staging/Dockerfile.runtime",
-      "sha256": "ecbfffc9d967dca5e6e3951863020f7f8c23090f164998b1c490ec5793c92972"
+      "sha256": "b75eaa3c2b9c98c9b30f18b92b46592dd9414ddb9c7980fdb9125c26cff1940a"
     },
     {
       "path": "deploy/staging/candidate_manifest.py",
@@ -794,7 +794,7 @@
     },
     {
       "path": "tests/test_p8_staging.py",
-      "sha256": "e7c5293452263bf1ce2900879b2c8336f9153c91d432b74ff09f003aef6a68bd"
+      "sha256": "99f2ac464c21cc0f8fcba51bfeecad82b37929630c3a5d9c7f80195c906dc848"
     },
     {
       "path": "tests/test_paper_auto.py",
