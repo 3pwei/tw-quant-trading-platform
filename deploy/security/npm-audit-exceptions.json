@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "exceptions": [
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "package": "braces",
+      "version": "3.0.3",
+      "severity": "high",
+      "dependency_scope": "dev",
+      "affected_packages": [
+        "@next/eslint-plugin-next",
+        "braces",
+        "eslint-config-next",
+        "fast-glob",
+        "micromatch"
+      ],
+      "expired_at": "2026-10-18",
+      "statement": "No patched braces release exists. The package is reachable only through the pinned Next.js lint toolchain, is not executed with untrusted glob input, and is absent from the final gateway image. Remove this exception as soon as a compatible patched release is available."
+    }
+  ]
+}
