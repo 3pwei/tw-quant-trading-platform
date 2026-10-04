@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate expiring Trivy exceptions and maintain one tracking issue."""
+"""Validate expiring container/npm exceptions and maintain one tracking issue."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ import argparse
 from dataclasses import dataclass
 from datetime import date
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -31,7 +32,25 @@ _REPOSITORY = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 class VulnerabilityException:
     advisory_id: str
     expired_at: date
-    source_line: int
+    source_line: int | None
+    source: str = "trivy"
+
+
+def load_npm_exceptions(path: Path, lock_path: Path) -> list[VulnerabilityException]:
+    # Reuse the enforcement gate's exact schema/version/dev-only validation.
+    # Load by sibling path so CLI and importlib-based test invocation agree.
+    name = "_security_expiry_npm_gate"
+    if name not in sys.modules:
+        spec = importlib.util.spec_from_file_location(name, Path(__file__).with_name("npm_audit_gate.py"))
+        assert spec is not None and spec.loader is not None
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[name] = module
+        spec.loader.exec_module(module)
+    gate = sys.modules[name]
+    exceptions = gate.load_exceptions(path)
+    gate.validate_lock(exceptions, lock_path)
+    return [VulnerabilityException(item.advisory_id, item.expired_at, None, "npm")
+            for item in exceptions]
 
 
 def load_exceptions(path: Path) -> list[VulnerabilityException]:
@@ -109,7 +128,7 @@ def build_report(
     exceptions: list[VulnerabilityException], as_of: date
 ) -> dict[str, Any]:
     entries = []
-    for item in sorted(exceptions, key=lambda value: (value.expired_at, value.advisory_id)):
+    for item in sorted(exceptions, key=lambda value: (value.expired_at, value.source, value.advisory_id)):
         days_remaining = (item.expired_at - as_of).days
         entries.append(
             {
@@ -118,6 +137,7 @@ def build_report(
                 "days_remaining": days_remaining,
                 "urgency": urgency(days_remaining),
                 "source_line": item.source_line,
+                "source": item.source,
             }
         )
     actionable = [item for item in entries if item["urgency"] != "ok"]
@@ -151,13 +171,13 @@ def render_summary(report: dict[str, Any]) -> str:
         lines.extend(
             [
                 "",
-                "| Advisory | Expiry | Days remaining | Status |",
-                "|---|---:|---:|---|",
+                "| Source | Advisory | Expiry | Days remaining | Status |",
+                "|---|---|---:|---:|---|",
             ]
         )
         for item in actionable:
             lines.append(
-                f"| `{item['id']}` | {item['expired_at']} | "
+                f"| {item['source']} | `{item['id']}` | {item['expired_at']} | "
                 f"{item['days_remaining']} | {item['urgency']} |"
             )
     return "\n".join(lines) + "\n"
@@ -176,7 +196,7 @@ def render_issue_body(report: dict[str, Any], repository: str) -> str:
             "",
             render_summary(report).rstrip(),
             "",
-            "Required action: refresh the affected image, remove resolved entries, "
+            "Required action: refresh the affected image or dev dependency, remove resolved entries, "
             "or submit a separately reviewed time-bounded renewal with current "
             "exploitability evidence. Do not extend dates automatically.",
             "",
@@ -189,6 +209,7 @@ def issue_state_marker(report: dict[str, Any]) -> str:
     actionable = [
         {
             "id": item["id"],
+            "source": item["source"],
             "expired_at": item["expired_at"],
             "urgency": item["urgency"],
         }
@@ -299,8 +320,12 @@ def _write_summary(path: Path | None, summary: str) -> None:
 
 
 def check_command(args: argparse.Namespace) -> int:
+    # A failed re-evaluation must not leave a previous PASS for enforce/sync.
+    args.report.unlink(missing_ok=True)
     as_of = date.fromisoformat(args.as_of) if args.as_of else date.today()
-    report = build_report(load_exceptions(args.ignore_file), as_of)
+    exceptions = load_exceptions(args.ignore_file)
+    exceptions += load_npm_exceptions(args.npm_exceptions, args.lock_file)
+    report = build_report(exceptions, as_of)
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     summary = render_summary(report)
@@ -336,6 +361,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     check = commands.add_parser("check")
     check.add_argument("--ignore-file", type=Path, default=Path(".trivyignore.yaml"))
+    check.add_argument("--npm-exceptions", type=Path, default=Path("deploy/security/npm-audit-exceptions.json"))
+    check.add_argument("--lock-file", type=Path, default=Path("dashboard/package-lock.json"))
     check.add_argument("--as-of", help="ISO date override used by regression tests")
     check.add_argument("--report", type=Path, required=True)
     check.add_argument("--summary", type=Path)
