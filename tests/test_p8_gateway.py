@@ -22,6 +22,37 @@ STAGING = ROOT / "deploy/staging"
 
 
 class GatewayHealthcheckTests(unittest.TestCase):
+    def test_smoke_reads_exact_body_through_container_exec(self):
+        with tempfile.TemporaryDirectory() as directory:
+            docker = Path(directory) / "docker"
+            docker.write_text('''#!/bin/sh
+case "$1" in
+  run|rm) exit 0 ;;
+  inspect)
+    case "$3" in
+      *State.Status*) printf running ;;
+      *Config.User*) printf 10000:10000 ;;
+      *) exit 1 ;;
+    esac ;;
+  exec)
+    case "$3" in
+      curl) printf 200 ;;
+      cat) printf ok ;;
+      id) printf 10000 ;;
+      sh) exit 0 ;;
+      *) exit 1 ;;
+    esac ;;
+  *) exit 1 ;;
+esac
+''')
+            docker.chmod(0o755)
+            result = subprocess.run(["bash", str(STAGING / "smoke-gateway.sh"), "fixture"],
+                                    capture_output=True, text=True, timeout=5, env={
+                                        **os.environ, "PATH": directory + os.pathsep + os.environ["PATH"],
+                                    })
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("P8 gateway runtime smoke: PASS", result.stdout)
+
     def test_compose_healthcheck_rejects_html_errors_and_extra_bytes(self):
         line = next(line.strip() for line in (STAGING / "docker-compose.yml").read_text().splitlines()
                     if 'test: ["CMD-SHELL"' in line)

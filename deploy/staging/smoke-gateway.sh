@@ -6,13 +6,14 @@ gateway_smoke="p8-gateway-smoke-${GITHUB_RUN_ID:-local}-${GITHUB_RUN_ATTEMPT:-1}
 probe_dir="$(mktemp -d)"
 http_status=not-probed
 curl_status=not-probed
+body_status=not-probed
 check=container-start
 
 cleanup() {
   status=$?
   if (( status != 0 )); then
-    printf 'P8_GATEWAY_SMOKE_FAIL check=%s service=gateway http_status=%s curl_exit=%s\n' \
-      "$check" "$http_status" "$curl_status" >&2
+    printf 'P8_GATEWAY_SMOKE_FAIL check=%s service=gateway http_status=%s curl_exit=%s body_read_exit=%s\n' \
+      "$check" "$http_status" "$curl_status" "$body_status" >&2
     # This isolated gateway has no injected environment, credentials or backend traffic.
     # Select state fields only; never dump Config.Env or a full inspect payload.
     docker inspect --format \
@@ -50,8 +51,10 @@ while (( SECONDS < deadline )); do
     curl --fail --silent --show-error --max-time 2 \
     --output /tmp/.p8-health-body --write-out '%{http_code}' \
     http://127.0.0.1:8080/healthz)" || curl_status=$?
-  docker cp "$gateway_smoke:/tmp/.p8-health-body" "$probe_dir/body" >/dev/null 2>&1 || true
-  if [[ "$curl_status" = 0 && "$http_status" = 200 ]] && \
+  # Read through the running container's mount namespace, including its tmpfs.
+  body_status=0
+  docker exec "$gateway_smoke" cat /tmp/.p8-health-body > "$probe_dir/body" 2>/dev/null || body_status=$?
+  if [[ "$curl_status" = 0 && "$body_status" = 0 && "$http_status" = 200 ]] && \
     cmp -s "$probe_dir/expected" "$probe_dir/body"; then
     ready=1
     break

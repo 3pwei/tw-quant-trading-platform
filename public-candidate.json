@@ -554,7 +554,7 @@
     },
     {
       "path": "deploy/staging/smoke-gateway.sh",
-      "sha256": "031c59808930a44f8a03eba509c8f8e04ae28068c3a4f4f9a5211515e81f9b1f"
+      "sha256": "b851f883d70f2cfd465ade54364a06e7bdbdb0fa536be5c763c82e3720d12855"
     },
     {
       "path": "deploy/staging/soak.sh",
@@ -798,7 +798,7 @@
     },
     {
       "path": "tests/test_p8_gateway.py",
-      "sha256": "42f5c0c035d1753c881744ad102180fcd5c630fc97e90b0b7c6ec97453c2caf1"
+      "sha256": "93e141b668d1df2451b80632f784edf9c9c85b0eb60344c1e2321fb73d4f1835"
     },
     {
       "path": "tests/test_p8_staging.py",
