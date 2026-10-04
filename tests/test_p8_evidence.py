@@ -37,6 +37,44 @@ def snapshot():
         'execution': {'heartbeat_at': '2026-10-04T01:00:05Z'}}
 
 
+class ContainerHealthDiagnosticTests(unittest.TestCase):
+    def test_unhealthy_container_states_fail_closed_with_safe_service_diagnostics(self):
+        cases = (
+            ('gateway', True, 'starting', 1, 'running:true,health:starting,restarts:1'),
+            ('execution-worker', True, 'unhealthy', 2, 'running:true,health:unhealthy,restarts:2'),
+            ('market-api', False, 'healthy', 0, 'running:false,health:healthy,restarts:0'),
+            ('market-api', False, None, 3, 'running:false,health:none,restarts:3'),
+        )
+        for service, running, health, restarts, actual in cases:
+            with self.subTest(service=service, health=health), self.assertRaises(SystemExit) as raised:
+                evidence.entrypoint(lambda: evidence.require_container_health(service, {
+                    'running': running, 'health': health, 'restarts': restarts,
+                }))
+            self.assertNotEqual(raised.exception.code, 0)
+            self.assertEqual(
+                str(raised.exception),
+                'P8_EVIDENCE_FAIL check=container-health service=' + service +
+                ' expected=running:true,health:healthy actual=' + actual,
+            )
+
+    def test_container_health_diagnostic_never_emits_untrusted_inspect_values(self):
+        with self.assertRaises(SystemExit) as raised:
+            evidence.entrypoint(lambda: evidence.require_container_health('secret-service', {
+                'running': 'secret-running', 'health': 'token=secret', 'restarts': 'credential=secret',
+            }))
+        self.assertEqual(
+            str(raised.exception),
+            'P8_EVIDENCE_FAIL check=container-health service=invalid '
+            'expected=running:true,health:healthy actual=running:invalid,health:invalid,restarts:invalid',
+        )
+        self.assertNotIn('secret', str(raised.exception))
+
+    def test_healthy_running_container_remains_accepted(self):
+        evidence.require_container_health('gateway', {
+            'running': True, 'health': 'healthy', 'restarts': 0,
+        })
+
+
 class ContinuityTests(unittest.TestCase):
     def test_disabled_service_reopens_persisted_lock_without_loading_secrets(self):
         import asyncio

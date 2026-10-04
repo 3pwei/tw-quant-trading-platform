@@ -27,6 +27,28 @@ def require(condition, code):
         raise ValueError(code)
 
 
+class ContainerHealthError(ValueError):
+    """Safe, structured container health failure without raw inspect data."""
+    def __init__(self, service, running, health, restarts):
+        self.service = service if service in SERVICES else 'invalid'
+        self.running = 'true' if running is True else 'false' if running is False else 'invalid'
+        self.health = (health if isinstance(health, str) and
+                       re.fullmatch('[a-z][a-z0-9_-]{0,31}', health) else
+                       'none' if health is None else 'invalid')
+        self.restarts = str(restarts) if type(restarts) is int and restarts >= 0 else 'invalid'
+        super().__init__('container-health')
+
+    def diagnostic(self):
+        return ('P8_EVIDENCE_FAIL check=container-health service=' + self.service +
+                ' expected=running:true,health:healthy actual=running:' + self.running +
+                ',health:' + self.health + ',restarts:' + self.restarts)
+
+
+def require_container_health(service, state):
+    if state.get('running') is not True or state.get('health') != 'healthy':
+        raise ContainerHealthError(service, state.get('running'), state.get('health'), state.get('restarts'))
+
+
 def run(argv, *, data=None, limit=65536):
     # Never propagate stderr, raw response data, provider settings or command lines.
     with tempfile.TemporaryFile() as output:
@@ -94,7 +116,7 @@ def capture(root=ROOT):
         d = json.loads(run(['docker', 'inspect', '--format', INSPECT, cid]))
         require(re.fullmatch('[0-9a-f]{64}', d['id']) is not None and
                 re.fullmatch('sha256:[0-9a-f]{64}', d['image']) is not None, 'container-identity-invalid')
-        require(d['running'] is True and d['health'] == 'healthy', 'container-unhealthy')
+        require_container_health(service, d)
         require(type(d['restarts']) is int and d['restarts'] >= 0, 'restart-count-invalid')
         parse_time(d['started'])
         require(re.fullmatch('[A-Za-z0-9_-]+', d['network_mode']) is not None, 'network-mode-invalid')
@@ -378,10 +400,16 @@ def main():
     print('P8_EVIDENCE=PASS operation=' + args.command)
 
 
-if __name__ == '__main__':
+def entrypoint(action=None):
     try:
-        main()
+        (action or main)()
     except Exception as exc:
+        if isinstance(exc, ContainerHealthError):
+            raise SystemExit(exc.diagnostic())
         # All explicit invariant messages are fixed codes; never stringify tool exceptions.
         code = str(exc) if isinstance(exc, ValueError) and re.fullmatch('[a-z-]+', str(exc)) else 'collection-failed'
         raise SystemExit('P8_EVIDENCE=FAIL check=' + code)
+
+
+if __name__ == '__main__':
+    entrypoint()
