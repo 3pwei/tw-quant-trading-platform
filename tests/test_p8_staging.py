@@ -105,6 +105,35 @@ class P8BuildBoundaryTests(unittest.TestCase):
         push = workflow.index("docker push")
         self.assertNotIn("DOCKER_BUILDKIT=1 docker build", workflow[push:])
 
+    def test_gateway_candidate_smoke_matches_staging_security_boundary(self):
+        dockerfile = (STAGING / "Dockerfile.gateway").read_text()
+        workflow = (ROOT / ".github/workflows/staging-candidate.yml").read_text()
+
+        self.assertNotIn("setcap", dockerfile)
+        self.assertNotIn("libcap", dockerfile)
+
+        start = workflow.index(
+            "      - name: Smoke gateway under exact staging security boundary"
+        )
+        end = workflow.index("\n      - name:", start + 1)
+        smoke = workflow[start:end]
+        for expected in (
+            '--network none --read-only --cap-drop ALL',
+            '--security-opt no-new-privileges',
+            '--tmpfs /data:rw,noexec,nosuid,nodev,size=16m,uid=10000,gid=10000,mode=0700',
+            '--tmpfs /config:rw,noexec,nosuid,nodev,size=16m,uid=10000,gid=10000,mode=0700',
+            '--tmpfs /tmp:rw,noexec,nosuid,nodev,size=16m,uid=10000,gid=10000,mode=1770',
+            'curl --fail --silent --show-error http://127.0.0.1:8080/healthz',
+            "test \"$(docker inspect --format '{{.Config.User}}' \"$gateway_smoke\")\" = 10000:10000",
+            'test "$(docker exec "$gateway_smoke" id -u)" = 10000',
+            "touch /data/.p8-smoke /config/.p8-smoke /tmp/.p8-smoke",
+        ):
+            self.assertIn(expected, smoke)
+        self.assertIn('docker run --detach --name "$gateway_smoke"', smoke)
+        self.assertIn('"$GATEWAY_TAG" >/dev/null', smoke)
+        self.assertLess(start, workflow.index("      - name: Scan gateway"))
+        self.assertLess(start, workflow.index("docker push"))
+
     def test_public_runtime_image_remains_private_provider_free(self):
         public = (ROOT / "Dockerfile").read_text()
         self.assertNotIn("private_provider_wheel", public)
