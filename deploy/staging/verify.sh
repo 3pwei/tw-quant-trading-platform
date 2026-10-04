@@ -107,6 +107,30 @@ verify_container_security() {
   [[ "${actual}" == *ALL* ]] || fail_check cap-drop-all-missing "${service}" true false
 }
 
+verify_gateway_ingress() {
+  local gateway network actual
+  gateway="$("${compose[@]}" ps -q gateway)"
+  actual="$(docker inspect --format '{{json .HostConfig.PortBindings}}' "${gateway}")"
+  [[ "${actual}" == '{}' || "${actual}" == null ]] || \
+    fail_check gateway-unexpected-published-port gateway none present
+  actual="$(docker inspect --format '{{len .NetworkSettings.Networks}}' "${gateway}")"
+  [[ "${actual}" == 1 ]] || fail_check gateway-network-count gateway 1 "${actual}"
+  network="$(docker inspect --format '{{range $n,$v := .NetworkSettings.Networks}}{{$n}}{{end}}' "${gateway}")"
+  [[ "$(docker network inspect --format '{{.Internal}}' "${network}")" == true ]] || \
+    fail_check gateway-network-not-internal gateway true false
+  systemctl is-active --quiet p8-staging-ingress.socket || \
+    fail_check gateway-ingress-listener-inactive gateway active inactive
+  [[ "$(systemctl show --property=Listen --value p8-staging-ingress.socket)" == '127.0.0.1:18080 (Stream)' ]] || \
+    fail_check gateway-ingress-bind-mismatch gateway loopback18080 invalid
+  [[ "$(LC_ALL=C stat -c '%u:%g:%a:%F' /var/lib/tw-quant-staging-ingress/gateway.sock 2>/dev/null)" == '10000:10000:600:socket' ]] || \
+    fail_check gateway-ingress-socket-invalid gateway owner10000-mode600-socket invalid
+  if ! python3 "${INSTALL_ROOT}/bundle/ingress_probe.py"; then
+    # Preserve the probe's first failure; selected unit state contains no credentials.
+    systemctl show --property=ActiveState --property=SubState --property=Result p8-staging-ingress.service >&2 || true
+    return 1
+  fi
+}
+
 verify_once() {
   local service execution_container ports network_mode health health_fields
   local locked_ok locked_actual order_ok order_actual cancel_ok cancel_actual
@@ -137,10 +161,7 @@ verify_once() {
     fail_check external-order-call-detected execution-worker 0 "${order_actual}"
   [[ "${cancel_ok}" == true ]] || \
     fail_check external-cancel-call-detected execution-worker 0 "${cancel_actual}"
-  curl --fail --silent --show-error http://127.0.0.1:18080/healthz | grep -qx ok || \
-    fail_check market-health-failed market-api true false
-  curl --fail --silent --show-error http://127.0.0.1:18080/health/live >/dev/null || \
-    fail_check market-health-failed market-api true false
+  verify_gateway_ingress
   docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
     --tmpfs /tmp:rw,noexec,nosuid,nodev,size=128m,uid=10001,gid=10001 \
     --mount "type=bind,source=${INSTALL_ROOT}/provider/factory,target=/run/staging-provider/factory,readonly" \

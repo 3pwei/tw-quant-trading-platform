@@ -152,7 +152,9 @@ class P8StagingIsolationTests(unittest.TestCase):
         self.assertIn("network_mode: none", execution)
         self.assertNotIn("ports:", execution)
         self.assertNotIn("live-secrets", compose)
-        self.assertIn('127.0.0.1:${STAGING_GATEWAY_PORT:-18080}:8080', compose)
+        self.assertNotIn('    ports:', compose)
+        self.assertIn('STAGING_INGRESS_DIRECTORY', compose)
+        self.assertIn('ListenStream=127.0.0.1:18080', (STAGING / 'p8-staging-ingress.socket').read_text())
         self.assertIn("staging-data:/data", compose)
         self.assertNotIn("platform-production", compose)
 
@@ -293,7 +295,8 @@ class P8StagingIsolationTests(unittest.TestCase):
                 "execution-not-locked",
                 "external-order-call-detected",
                 "external-cancel-call-detected",
-                "market-health-failed",
+                "gateway-ingress-listener-inactive",
+                "gateway-ingress-socket-invalid",
             ),
         }
         for section, checks in sections.items():

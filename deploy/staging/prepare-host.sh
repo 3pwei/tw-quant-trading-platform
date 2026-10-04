@@ -8,6 +8,9 @@ if [[ "${INSTALL_ROOT}" != /srv/trading-platform-staging || "${INSTALL_ROOT}" ==
 fi
 
 command -v python3 >/dev/null
+command -v systemctl >/dev/null
+test -x /usr/lib/systemd/systemd-socket-proxyd
+python3 "$(dirname "${BASH_SOURCE[0]}")/prepare_ingress_identity.py"
 
 install -d -m 700 "${INSTALL_ROOT}" "${INSTALL_ROOT}/config" \
   "${INSTALL_ROOT}/deployments" "${INSTALL_ROOT}/provider"
@@ -80,12 +83,20 @@ STAGING_MARKET_ENV_FILE=${INSTALL_ROOT}/config/market.env
 STAGING_EXECUTION_ENV_FILE=${INSTALL_ROOT}/config/execution.env
 STAGING_GATEWAY_ENV_FILE=${INSTALL_ROOT}/config/gateway.env
 STAGING_PROVIDER_FACTORY_FILE=${INSTALL_ROOT}/provider/factory
-STAGING_GATEWAY_PORT=18080
+STAGING_INGRESS_DIRECTORY=/var/lib/tw-quant-staging-ingress
 EOF
 chmod 600 "${INSTALL_ROOT}/config/compose.env"
 
 for path in "${INSTALL_ROOT}/config"/*.env "${INSTALL_ROOT}/provider/factory"; do
   [[ "$(stat -c '%a' "${path}")" =~ ^(400|600)$ ]]
 done
+
+# This directory contains only a socket, never provider credentials or state.
+install -d -o 10000 -g 10000 -m 0700 /var/lib/tw-quant-staging-ingress
+for unit in p8-staging-ingress.socket p8-staging-ingress.service; do
+  install -o root -g root -m 0644 "${INSTALL_ROOT}/bundle/${unit}" "/etc/systemd/system/${unit}"
+done
+systemctl daemon-reload
+systemctl enable --now p8-staging-ingress.socket
 
 echo "Isolated staging host configuration: PASS"

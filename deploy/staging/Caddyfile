@@ -4,6 +4,8 @@
 }
 
 :8080 {
+	# Host ingress uses a permissioned Unix socket; TCP is for in-container health only.
+	bind 127.0.0.1 {$STAGING_GATEWAY_SOCKET_BIND}
 	encode zstd gzip
 
 	handle /healthz {

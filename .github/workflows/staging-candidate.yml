@@ -144,6 +144,12 @@ jobs:
           done
           rm -f "${RUNNER_TEMP}/history.txt" "${RUNNER_TEMP}/inspect.json"
 
+      - name: Verify full staging Compose A and B before publishing
+        run: |
+          sudo python3 deploy/staging/smoke_compose.py \
+            --runtime-a "$RUNTIME_A_TAG" --runtime-b "$RUNTIME_B_TAG" \
+            --gateway "$GATEWAY_TAG" --factory "${RUNNER_TEMP}/provider-factory"
+
       - name: Scan runtime A
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
