@@ -188,6 +188,14 @@ jobs:
             --audit-report "${RUNNER_TEMP}/npm-audit.json" \
             --exceptions ../deploy/security/npm-audit-exceptions.json \
             --lock-file package-lock.json
+      - name: Retain npm audit evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: npm-audit-evidence
+          path: ${{ runner.temp }}/npm-audit.json
+          if-no-files-found: error
+          retention-days: 14
 
   container:
     name: Container scan and SBOM
@@ -200,6 +208,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Verify public source and build runtime targets
+        id: runtime-build
         run: |
           python tools/verify_public_candidate.py
           docker build --target market-api --tag platform-market-api:security .
@@ -222,6 +231,35 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: false
           exit-code: "1"
+      - name: Retain unfiltered vulnerability evidence
+        if: always() && steps.runtime-build.outcome == 'success'
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/vulnerability-evidence"
+          trivy --version > "${RUNNER_TEMP}/vulnerability-evidence/scanner.txt"
+          for target in market-api execution-worker; do
+            docker image inspect --format '{{.Id}}' "platform-${target}:security" > "${RUNNER_TEMP}/vulnerability-evidence/${target}.image-id"
+            trivy image --scanners vuln --format json --severity HIGH,CRITICAL \
+              --ignore-unfixed=false --ignorefile /dev/null --exit-code 0 \
+              --output "${RUNNER_TEMP}/vulnerability-evidence/${target}.json" "platform-${target}:security"
+          done
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          for path in sorted((Path(os.environ['RUNNER_TEMP']) / 'vulnerability-evidence').glob('*.json')):
+              report = json.loads(path.read_text())
+              rows = sorted({(v['VulnerabilityID'], v['PkgName'], v['InstalledVersion'], v.get('FixedVersion', ''))
+                             for result in report.get('Results', []) for v in result.get('Vulnerabilities', [])})
+              print(path.name + ': ' + json.dumps(rows))
+          PY
+      - name: Upload unfiltered vulnerability evidence
+        if: always() && steps.runtime-build.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: runtime-vulnerability-evidence
+          path: ${{ runner.temp }}/vulnerability-evidence/
+          if-no-files-found: error
+          retention-days: 14
       - name: Generate CycloneDX SBOMs
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:

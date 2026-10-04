@@ -7,10 +7,16 @@ RUN apt-get update \
         openssl=3.5.7-1~deb13u3 \
         openssl-provider-legacy=3.5.7-1~deb13u3 \
         libpcre2-8-0=10.46-1~deb13u3 \
+        libsqlite3-0=3.46.1-7+deb13u2 \
+        perl-base=5.40.1-6+deb13u1 \
+        gzip=1.13-1+deb13u1 \
     && for package in libssl3t64 openssl openssl-provider-legacy; do \
         test "$(dpkg-query -W -f='${Version}' "$package")" = '3.5.7-1~deb13u3' || exit 1; \
     done \
     && test "$(dpkg-query -W -f='${Version}' libpcre2-8-0)" = '10.46-1~deb13u3' \
+    && test "$(dpkg-query -W -f='${Version}' libsqlite3-0)" = '3.46.1-7+deb13u2' \
+    && test "$(dpkg-query -W -f='${Version}' perl-base)" = '5.40.1-6+deb13u1' \
+    && test "$(dpkg-query -W -f='${Version}' gzip)" = '1.13-1+deb13u1' \
     && python -c "import ssl; ssl.create_default_context()" \
     && rm -rf /var/lib/apt/lists/*
 
