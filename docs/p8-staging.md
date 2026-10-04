@@ -99,6 +99,11 @@ forwarder also supports HTTP upgrade/WebSocket traffic. `prepare-host.sh`
 requires systemd and its socket proxy before making changes, installs the two
 reviewed units, and enables only the staging loopback socket. A failed bind is
 fatal; it never terminates an existing listener or changes firewall rules.
+The shared host/CI setup creates the locked `p8-staging-ingress` account with
+UID/GID 10000, no home and a nologin shell. Container users do not create host
+accounts; missing this host identity caused systemd `217/USER` in the new PR
+gate. Setup rejects an existing conflicting name, UID or GID before changing
+ownership. It never adopts another host user's identity or runs the proxy as root.
 These host changes occur only during a separately authorized deployment.
 
 The verifier requires a single internal gateway network, no Docker host port

@@ -10,6 +10,7 @@ fi
 command -v python3 >/dev/null
 command -v systemctl >/dev/null
 test -x /usr/lib/systemd/systemd-socket-proxyd
+python3 "$(dirname "${BASH_SOURCE[0]}")/prepare_ingress_identity.py"
 
 install -d -m 700 "${INSTALL_ROOT}" "${INSTALL_ROOT}/config" \
   "${INSTALL_ROOT}/deployments" "${INSTALL_ROOT}/provider"

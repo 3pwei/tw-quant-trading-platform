@@ -96,6 +96,7 @@ def main():
         ingress_created = False
         proxy_started = False
         try:
+            run("python3", str(HERE / "prepare_ingress_identity.py"))
             ingress.mkdir(mode=0o700)
             ingress_created = True
             os.chown(ingress, 10000, 10000)

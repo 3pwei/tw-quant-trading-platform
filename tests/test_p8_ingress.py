@@ -14,6 +14,8 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
+from types import SimpleNamespace
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,6 +23,35 @@ STAGING = ROOT / "deploy/staging"
 spec = importlib.util.spec_from_file_location("ingress_probe", STAGING / "ingress_probe.py")
 ingress_probe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ingress_probe)
+identity_spec = importlib.util.spec_from_file_location("ingress_identity", STAGING / "prepare_ingress_identity.py")
+ingress_identity = importlib.util.module_from_spec(identity_spec)
+identity_spec.loader.exec_module(ingress_identity)
+
+
+class HostIdentityTests(unittest.TestCase):
+    def test_absent_exact_and_conflicting_host_identities(self):
+        user = SimpleNamespace(pw_name="p8-staging-ingress", pw_uid=10000, pw_gid=10000,
+                               pw_dir="/nonexistent", pw_shell="/usr/sbin/nologin")
+        group = SimpleNamespace(gr_name="p8-staging-ingress", gr_gid=10000, gr_mem=[])
+        foreign_user = SimpleNamespace(**{**vars(user), "pw_name": "existing-owner"})
+        foreign_group = SimpleNamespace(**{**vars(group), "gr_name": "existing-owner"})
+        login_user = SimpleNamespace(**{**vars(user), "pw_shell": "/bin/bash"})
+        cases = (
+            ([None, None, None, None], (False, False)),
+            ([user, user, group, group], (True, True)),
+            ([None, foreign_user, None, None], None),
+            ([None, None, None, foreign_group], None),
+            ([login_user, login_user, group, group], None),
+            ([user, None, group, group], None),
+        )
+        for records, expected in cases:
+            with self.subTest(expected=expected, records=records):
+                with patch.object(ingress_identity, "lookup", side_effect=records):
+                    if expected is None:
+                        with self.assertRaises(RuntimeError):
+                            ingress_identity.validate_identity()
+                    else:
+                        self.assertEqual(ingress_identity.validate_identity(), expected)
 
 
 def free_port():
