@@ -183,6 +183,75 @@ class P8StagingIsolationTests(unittest.TestCase):
         self.assertIn('grep -Fxq "${canonical_ref}" <<<"${repo_digests}"', verifier)
         self.assertNotIn('[[ "${repo_digests}" == *"${exact_ref}"* ]]', verifier)
 
+    def test_runtime_verifier_has_stable_fail_closed_diagnostics(self):
+        verifier = (STAGING / "verify.sh").read_text()
+        self.assertIn("set -euo pipefail", verifier)
+        self.assertIn(
+            "P8_VERIFY_FAIL check=%s service=%s expected=%s actual=%s",
+            verifier,
+        )
+        sections = {
+            "verify_image": (
+                "image-running-config-mismatch",
+                "local-image-config-mismatch",
+                "canonical-repodigest-mismatch",
+            ),
+            "verify_labels": (
+                "source-revision-mismatch",
+                "pipeline-revision-mismatch",
+                "configuration-identity-mismatch",
+                "core-digest-mismatch",
+                "private-provider-digest-mismatch",
+                "p7-acceptance-mismatch",
+            ),
+            "verify_container_security": (
+                "uid-mismatch",
+                "readonly-rootfs-mismatch",
+                "no-new-privileges-missing",
+                "cap-drop-all-missing",
+            ),
+            "network": (
+                "execution-ports-exposed",
+                "execution-network-mode-mismatch",
+            ),
+            "health": (
+                "execution-not-locked",
+                "external-order-call-detected",
+                "external-cancel-call-detected",
+                "market-health-failed",
+            ),
+        }
+        for section, checks in sections.items():
+            with self.subTest(section=section):
+                for check in checks:
+                    self.assertIn(f"fail_check {check} ", verifier)
+
+        for forbidden in (
+            "PRIVATE_PROVIDER_FACTORY",
+            "docker inspect --format '{{json .Config.Env}}'",
+            "cat ${INSTALL_ROOT}/provider/factory",
+        ):
+            self.assertNotIn(forbidden, verifier)
+
+        function_start = verifier.index("fail_check() {")
+        function_end = verifier.index("\n}\n", function_start) + len("\n}\n")
+        result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                verifier[function_start:function_end]
+                + "\nfail_check canonical-repodigest-mismatch market-api sha256:expected missing",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(
+            result.stderr,
+            "P8_VERIFY_FAIL check=canonical-repodigest-mismatch "
+            "service=market-api expected=sha256:expected actual=missing\n",
+        )
+
     def test_workflow_uses_only_staging_environment_and_secrets(self):
         workflow = (ROOT / ".github/workflows/deploy-staging.yml").read_text()
         self.assertIn("environment: staging", workflow)

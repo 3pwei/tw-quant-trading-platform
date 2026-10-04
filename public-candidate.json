@@ -558,7 +558,7 @@
     },
     {
       "path": "deploy/staging/verify.sh",
-      "sha256": "1d3793cfeba89245f6183a841197033f597e09df5f8b5a36267c529c3ac91d0f"
+      "sha256": "f3e7d9adac9a0f74dd648283484f65d78374833d93e1a768b1e06e7f390d7571"
     },
     {
       "path": "docker-compose.yml",
@@ -794,7 +794,7 @@
     },
     {
       "path": "tests/test_p8_staging.py",
-      "sha256": "c751e673664616515f40813c86b3c0448eacf2aa417c48eb1d985d29f460a0a3"
+      "sha256": "2c99148267a66d2327784b490e9101848be0f9db585ef0fa0d32c1d51b0649aa"
     },
     {
       "path": "tests/test_paper_auto.py",
