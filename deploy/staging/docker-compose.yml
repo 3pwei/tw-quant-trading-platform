@@ -81,7 +81,7 @@ services:
     mem_limit: 256m
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8080/healthz"]
+      test: ["CMD-SHELL", "response=$$(curl --fail --silent --show-error --max-time 3 --write-out '%{http_code}' http://127.0.0.1:8080/healthz) && [ \"$$response\" = ok200 ]"]
       interval: 15s
       timeout: 5s
       retries: 4

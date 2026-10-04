@@ -6,8 +6,9 @@
 :8080 {
 	encode zstd gzip
 
-	@health path /healthz
-	respond @health "ok" 200
+	handle /healthz {
+		respond "ok" 200
+	}
 
 	request_body {
 		max_size {$API_MAX_REQUEST_BODY_BYTES:262144}
@@ -15,9 +16,15 @@
 
 	root * /srv
 	@backend path /api/* /ws/* /docs* /openapi.json /health/live
-	reverse_proxy @backend market-api:8000
-	try_files {path} {path}/index.html /404.html
-	file_server
+	handle @backend {
+		reverse_proxy market-api:8000
+	}
+
+	# Keep rewrites inside the static fallback so health/API matchers see the original URI.
+	handle {
+		try_files {path} {path}/index.html /404.html
+		file_server
+	}
 
 	header {
 		Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' http: ws:; manifest-src 'self'; worker-src 'self' blob:"
