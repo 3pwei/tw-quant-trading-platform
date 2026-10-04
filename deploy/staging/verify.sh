@@ -45,7 +45,9 @@ verify_image() {
   local_id="$(docker image inspect --format '{{.Id}}' "${exact_ref}")"
   repo_digests="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "${exact_ref}")"
   tagged_ref="${exact_ref%@*}"
-  repository="${tagged_ref%:*}"
+  repository="${tagged_ref}"
+  # A colon in the registry host is a port, not an image tag.
+  if [[ "${tagged_ref##*/}" == *:* ]]; then repository="${tagged_ref%:*}"; fi
   canonical_ref="${repository}@${exact_ref##*@}"
   [[ "${running_id}" == "${local_id}" ]] || \
     fail_check image-running-id-mismatch "${service}" "${local_id}" "${running_id}"

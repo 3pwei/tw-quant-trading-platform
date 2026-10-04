@@ -72,7 +72,7 @@ class ConfigBytesTests(unittest.TestCase):
 
 
 class VerifyImageTests(unittest.TestCase):
-    def verify(self, backend="classic", failure=""):
+    def verify(self, backend="classic", failure="", ref=REF):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "image.tar").write_bytes(archive_bytes(oci=backend == "containerd"))
@@ -103,7 +103,7 @@ else:
                  + 'verify_image market-api "$EXACT_REF" "$EXPECTED_CONFIG"\necho VERIFIED'],
                 env={**os.environ, "PATH": str(root) + ":" + os.environ["PATH"],
                      "INSTALL_ROOT": str(root), "ARCHIVE": str(root / "image.tar"),
-                     "FAILURE": failure, "EXACT_REF": REF, "CANONICAL": CANONICAL,
+                     "FAILURE": failure, "EXACT_REF": ref, "CANONICAL": CANONICAL,
                      "REGISTRY_DIGEST": REGISTRY_DIGEST,
                      "LOCAL_ID": CONFIG_DIGEST if backend == "classic" else REGISTRY_DIGEST,
                      "EXPECTED_CONFIG": REGISTRY_DIGEST if failure == "config" else CONFIG_DIGEST},
@@ -127,6 +127,12 @@ else:
                     self.assertNotEqual(result.returncode, 0)
                     self.assertNotIn("VERIFIED", result.stdout)
                     self.assertIn("P8_VERIFY_FAIL check=" + check, result.stderr)
+
+    def test_digest_only_reference_preserves_registry_port(self):
+        for backend in ("classic", "containerd"):
+            with self.subTest(backend=backend):
+                result = self.verify(backend, ref=CANONICAL)
+                self.assertEqual(result.returncode, 0, result.stderr)
 
 
 @unittest.skipUnless(os.environ.get("P8_IMAGE_STORE_INTEGRATION") == "1", "requires isolated CI Docker registry")

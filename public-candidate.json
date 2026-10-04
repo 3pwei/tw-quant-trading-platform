@@ -566,7 +566,7 @@
     },
     {
       "path": "deploy/staging/verify.sh",
-      "sha256": "7ef4f02463489373c2db08c57b4b690db02308c74f1cdf5ed18f7128e90636b5"
+      "sha256": "01d56440d6f89ae33cba6dca22046266a077f4ee4ad289010130be17164bf345"
     },
     {
       "path": "docker-compose.yml",
@@ -806,7 +806,7 @@
     },
     {
       "path": "tests/test_p8_image_identity.py",
-      "sha256": "9dd00e099777b097230407e9377846cc4c47445df5aa54d05a16361e77ab7fc9"
+      "sha256": "6d634b73ad4214dd1f507a346225a1d6b76663d5be584a22462860807e1c6a60"
     },
     {
       "path": "tests/test_p8_staging.py",
