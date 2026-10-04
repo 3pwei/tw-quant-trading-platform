@@ -39,20 +39,24 @@ wait_for_health() {
 
 verify_image() {
   local service="$1" exact_ref="$2" expected_config="$3"
-  local container_id running_config local_config repo_digests tagged_ref repository canonical_ref
+  local container_id running_id local_id local_config repo_digests tagged_ref repository canonical_ref
   container_id="$("${compose[@]}" ps -q "${service}")"
-  running_config="$(docker inspect --format '{{.Image}}' "${container_id}")"
-  local_config="$(docker image inspect --format '{{.Id}}' "${exact_ref}")"
+  running_id="$(docker inspect --format '{{.Image}}' "${container_id}")"
+  local_id="$(docker image inspect --format '{{.Id}}' "${exact_ref}")"
   repo_digests="$(docker image inspect --format '{{range .RepoDigests}}{{println .}}{{end}}' "${exact_ref}")"
   tagged_ref="${exact_ref%@*}"
   repository="${tagged_ref%:*}"
   canonical_ref="${repository}@${exact_ref##*@}"
-  [[ "${running_config}" == "${local_config}" ]] || \
-    fail_check image-running-config-mismatch "${service}" "${local_config}" "${running_config}"
-  [[ "${local_config}" == "${expected_config}" ]] || \
-    fail_check local-image-config-mismatch "${service}" "${expected_config}" "${local_config}"
+  [[ "${running_id}" == "${local_id}" ]] || \
+    fail_check image-running-id-mismatch "${service}" "${local_id}" "${running_id}"
   grep -Fxq "${canonical_ref}" <<<"${repo_digests}" || \
     fail_check canonical-repodigest-mismatch "${service}" "${exact_ref##*@}" missing
+  # Hash local config bytes independently of the Engine's image-store ID.
+  # Keep this offline: registry credentials have already been removed.
+  local_config="$(docker image save "${exact_ref}" | python3 "${INSTALL_ROOT}/bundle/image_config_digest.py")" || \
+    fail_check image-config-unreadable "${service}" readable invalid
+  [[ "${local_config}" == "${expected_config}" ]] || \
+    fail_check local-image-config-mismatch "${service}" "${expected_config}" "${local_config}"
 }
 
 verify_labels() {

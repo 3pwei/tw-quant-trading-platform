@@ -207,9 +207,11 @@ jobs:
           runtime_a_digest="$(digest "$RUNTIME_A_TAG")"
           runtime_b_digest="$(digest "$RUNTIME_B_TAG")"
           gateway_digest="$(digest "$GATEWAY_TAG")"
-          runtime_a_config="$(docker image inspect --format '{{.Id}}' "$RUNTIME_A_TAG")"
-          runtime_b_config="$(docker image inspect --format '{{.Id}}' "$RUNTIME_B_TAG")"
-          gateway_config="$(docker image inspect --format '{{.Id}}' "$GATEWAY_TAG")"
+          set -o pipefail
+          config_digest() { docker image save "$1" | python deploy/staging/image_config_digest.py; }
+          runtime_a_config="$(config_digest "$RUNTIME_A_TAG")"
+          runtime_b_config="$(config_digest "$RUNTIME_B_TAG")"
+          gateway_config="$(config_digest "$GATEWAY_TAG")"
           runtime_a_ref="${RUNTIME_A_TAG%@*}@${runtime_a_digest}"
           runtime_b_ref="${RUNTIME_B_TAG%@*}@${runtime_b_digest}"
           gateway_ref="${GATEWAY_TAG%@*}@${gateway_digest}"
