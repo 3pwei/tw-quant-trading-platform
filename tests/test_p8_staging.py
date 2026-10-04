@@ -116,14 +116,17 @@ class P8BuildBoundaryTests(unittest.TestCase):
             "      - name: Smoke gateway under exact staging security boundary"
         )
         end = workflow.index("\n      - name:", start + 1)
-        smoke = workflow[start:end]
+        self.assertIn('bash deploy/staging/smoke-gateway.sh "$GATEWAY_TAG"', workflow[start:end])
+        smoke = (STAGING / "smoke-gateway.sh").read_text()
         for expected in (
             '--network none --read-only --cap-drop ALL',
             '--security-opt no-new-privileges',
             '--tmpfs /data:rw,noexec,nosuid,nodev,size=16m,uid=10000,gid=10000,mode=0700',
             '--tmpfs /config:rw,noexec,nosuid,nodev,size=16m,uid=10000,gid=10000,mode=0700',
             '--tmpfs /tmp:rw,noexec,nosuid,nodev,size=16m,uid=10000,gid=10000,mode=1770',
-            'curl --fail --silent --show-error http://127.0.0.1:8080/healthz',
+            'curl --fail --silent --show-error --max-time 2',
+            'http://127.0.0.1:8080/healthz',
+            'cmp -s',
             "test \"$(docker inspect --format '{{.Config.User}}' \"$gateway_smoke\")\" = 10000:10000",
             'test "$(docker exec "$gateway_smoke" id -u)" = 10000',
             "touch /data/.p8-smoke /config/.p8-smoke /tmp/.p8-smoke",

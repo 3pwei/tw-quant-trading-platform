@@ -102,3 +102,11 @@ jobs:
           docker build --file deploy/lightsail/Dockerfile.gateway --tag platform-gateway:ci .
           bash deploy/lightsail/test-hardened-runtime.sh
           bash deploy/lightsail/test-gateway-auth.sh
+      - name: Exercise staging gateway security and route isolation
+        run: |
+          docker build --file deploy/staging/Dockerfile.gateway --tag platform-staging-gateway:ci .
+          bash deploy/staging/smoke-gateway.sh platform-staging-gateway:ci
+          container="$(docker create platform-staging-gateway:ci)"
+          trap 'docker rm --force "$container" >/dev/null 2>&1 || true' EXIT
+          docker cp "$container:/usr/bin/caddy" "${RUNNER_TEMP}/p8-caddy"
+          CADDY_BIN="${RUNNER_TEMP}/p8-caddy" python -m unittest discover -s tests -p 'test_p8_gateway.py' -v

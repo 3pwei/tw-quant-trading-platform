@@ -17,6 +17,25 @@ are each built once, exercised, scanned, assigned CycloneDX SBOMs, and only then
 pushed. The manifest binds registry digest, image configuration digest, source,
 pipeline, Core, provider, P7 and configuration identities.
 
+Gateway routing uses mutually exclusive health, backend and static `handle`
+blocks. Static `try_files` must stay inside the fallback block: Caddy sorts a
+top-level rewrite before health responses and backend proxy matchers, which can
+turn `/healthz` and API requests into HTTP 200 static error pages (Candidate #11).
+Both the candidate smoke and Compose healthcheck require HTTP 200 and exactly
+the two response bytes `ok`. The shared candidate/PR-CI smoke retains the
+non-root, read-only, cap-drop-ALL and no-new-privileges boundary. On failure it
+prints selected container state, bounded startup logs and a bounded hexadecimal
+health body before cleanup; it never dumps the container environment.
+
+PR CI builds the public staging gateway, runs that same container smoke, then
+extracts its Caddy binary to exercise the real routing configuration with local
+static fixtures and a mock backend. This covers API/query preservation, static
+asset collisions, headers and WebSocket upgrade forwarding without private
+provider credentials. Local routing tests accept `CADDY_BIN`; the CI step
+always supplies it. A Caddyfile change requires a new candidate build and new
+manifest; failed Candidate #11 must not be reused. Passing PR checks does not
+authorize candidate creation, Staging deployment, Production or P9.
+
 `P8 Deploy Staging` accepts only one successful candidate workflow run ID. It
 checks out that manifest's exact pipeline revision, uses a separate `staging`
 GitHub Environment and staging-only SSH credentials, and pulls exact digest
