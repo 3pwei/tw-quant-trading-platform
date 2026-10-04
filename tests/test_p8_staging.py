@@ -266,7 +266,8 @@ class P8StagingIsolationTests(unittest.TestCase):
                 "service-health-timeout",
             ),
             "verify_image": (
-                "image-running-config-mismatch",
+                "image-running-id-mismatch",
+                "image-config-unreadable",
                 "local-image-config-mismatch",
                 "canonical-repodigest-mismatch",
             ),

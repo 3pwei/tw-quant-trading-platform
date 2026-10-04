@@ -5,6 +5,62 @@ on:
 permissions:
   contents: read
 jobs:
+  p8-image-store:
+    name: P8 image identity (containerd=${{ matrix.containerd }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        containerd: [false, true]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify public source before runtime outputs
+        run: python tools/verify_public_candidate.py
+      - name: Set up isolated Docker image store
+        uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4 # v4
+        with:
+          version: v28.5.1
+          daemon-config: |
+            {"features":{"containerd-snapshotter":${{ matrix.containerd }}}}
+      - name: Verify config bytes across build, push, pull and container creation
+        env:
+          P8_CONTAINERD: ${{ matrix.containerd }}
+          P8_IMAGE_STORE_INTEGRATION: "1"
+        run: |
+          set -euo pipefail
+          docker version
+          docker info --format '{{json .DriverStatus}}'
+          docker run --detach --name p8-test-registry --publish 127.0.0.1:5000:5000 registry:3
+          trap 'docker rm --force p8-test-container p8-test-registry >/dev/null 2>&1 || true' EXIT
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5000/v2/ >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:5000/v2/ >/dev/null
+          fixture="$(mktemp -d)"
+          printf 'synthetic fixture\n' > "$fixture/marker"
+          printf 'FROM scratch\nCOPY marker /marker\nCMD ["/marker"]\n' > "$fixture/Dockerfile"
+          tag=localhost:5000/p8-fixture:one
+          docker build --provenance=false --sbom=false --tag "$tag" "$fixture"
+          P8_TEST_CONFIG_DIGEST="$(docker image save "$tag" | python deploy/staging/image_config_digest.py)"
+          export P8_TEST_CONFIG_DIGEST
+          docker push "$tag"
+          P8_TEST_IMAGE_REF="$(docker image inspect --format '{{index .RepoDigests 0}}' "$tag")"
+          export P8_TEST_IMAGE_REF
+          # Independent registry evidence: config is not the registry manifest digest.
+          registry_config="$(docker manifest inspect --insecure "$P8_TEST_IMAGE_REF" | python -c 'import json,sys; print(json.load(sys.stdin)["config"]["digest"])')"
+          test "$P8_TEST_CONFIG_DIGEST" = "$registry_config"
+          test "$P8_TEST_CONFIG_DIGEST" != "${P8_TEST_IMAGE_REF##*@}"
+          docker image rm "$tag"
+          if docker image inspect "$P8_TEST_IMAGE_REF" >/dev/null 2>&1; then docker image rm "$P8_TEST_IMAGE_REF"; fi
+          if docker image inspect "$P8_TEST_IMAGE_REF" >/dev/null 2>&1; then exit 1; fi
+          docker pull "$P8_TEST_IMAGE_REF"
+          P8_TEST_CONTAINER="$(docker create --name p8-test-container "$P8_TEST_IMAGE_REF")"
+          export P8_TEST_CONTAINER
+          python -m unittest discover -s tests -p 'test_p8_image_identity.py' -v
+
   python:
     runs-on: ubuntu-latest
     strategy:

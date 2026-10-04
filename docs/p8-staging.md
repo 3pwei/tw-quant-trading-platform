@@ -17,6 +17,30 @@ are each built once, exercised, scanned, assigned CycloneDX SBOMs, and only then
 pushed. The manifest binds registry digest, image configuration digest, source,
 pipeline, Core, provider, P7 and configuration identities.
 
+Staging #7 stopped at A's first image verification: the expected config digest
+was compared with Docker's local image ID, which was the registry manifest
+digest on that host. Image IDs are backend-specific (classic config ID versus
+containerd manifest/index ID); they must not be used as portable config digests.
+See Moby's `daemon/containerd/image_inspect.go` (`ID: target.Digest.String()`).
+Candidate creation and staging verification now hash original config bytes from
+the local `docker image save` stream. This works offline, writes no image/config
+contents to disk or logs, and rejects missing, corrupt or ambiguous config data.
+The running container ID must still match the locally resolved image ID, the
+canonical RepoDigest must still match the approved registry reference, and the
+config byte hash must independently match the candidate manifest. No check is
+replaced with an OR between unrelated digest types.
+
+PR CI uses isolated classic and containerd image stores to build a public
+synthetic fixture, push it to a loopback registry, compare its registry config
+descriptor, remove/re-pull it, and exercise the deployment verifier against a
+real container. Both backends must reject a wrong config digest. Unit regressions
+also reject running-ID drift, wrong repository digest and failed exports.
+Staging #7 and Candidate #12 remain immutable evidence; this fix does not authorize
+a rerun, merge, candidate creation or deployment. Because deployment checks out
+the candidate's pipeline revision, Candidate #12 cannot pick up this verifier
+fix. After review/merge and exact master gates, a newly authorized candidate is
+required before another staging attempt. P8 remains BLOCKED pending acceptance.
+
 Gateway routing uses mutually exclusive health, backend and static `handle`
 blocks. Static `try_files` must stay inside the fallback block: Caddy sorts a
 top-level rewrite before health responses and backend proxy matchers, which can
