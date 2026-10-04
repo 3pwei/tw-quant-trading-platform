@@ -22,17 +22,19 @@ fail_check() {
 }
 
 wait_for_health() {
-  local service="$1" container_id state
+  local service="$1" container_id state=missing
   for _ in {1..45}; do
     container_id="$("${compose[@]}" ps -q "${service}")"
     if [[ -n "${container_id}" ]]; then
       state="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "${container_id}")"
       [[ "${state}" == healthy || "${state}" == running ]] && return 0
-      [[ "${state}" == unhealthy || "${state}" == exited || "${state}" == dead ]] && return 1
+      if [[ "${state}" == unhealthy || "${state}" == exited || "${state}" == dead ]]; then
+        fail_check service-health-terminal "${service}" healthy "${state}"
+      fi
     fi
     sleep 2
   done
-  return 1
+  fail_check service-health-timeout "${service}" healthy "${state}"
 }
 
 verify_image() {

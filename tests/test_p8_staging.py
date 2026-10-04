@@ -175,6 +175,44 @@ class P8StagingIsolationTests(unittest.TestCase):
         self.assertIn('cp "${CURRENT}" "${PREVIOUS}.tmp"', script)
         self.assertLess(script.index('"${BUNDLE}/verify.sh" restart'), script.index('mv "${record}" "${CURRENT}"'))
 
+    def test_deployment_reports_pre_verifier_failures_without_sensitive_output(self):
+        script = (STAGING / "deploy.sh").read_text()
+        self.assertIn(
+            "P8_DEPLOY_FAIL check=%s service=%s expected=%s actual=%s",
+            script,
+        )
+        self.assertIn("fail_deploy compose-up-failed compose success failed", script)
+        self.assertIn(
+            "fail_deploy verifier-invocation-failed verify success failed",
+            script,
+        )
+        self.assertIn(
+            "fail_deploy verifier-invocation-failed restart success failed",
+            script,
+        )
+        self.assertIn('if ! "${compose[@]}" up --no-build --pull never', script)
+        self.assertIn('if ! "${BUNDLE}/verify.sh" verify; then', script)
+        self.assertIn('if ! "${BUNDLE}/verify.sh" restart; then', script)
+
+        function_start = script.index("fail_deploy() {")
+        function_end = script.index("\n}\n", function_start) + len("\n}\n")
+        result = subprocess.run(
+            [
+                "bash",
+                "-c",
+                script[function_start:function_end]
+                + "\nfail_deploy compose-up-failed compose success failed",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(
+            result.stderr,
+            "P8_DEPLOY_FAIL check=compose-up-failed service=compose "
+            "expected=success actual=failed\n",
+        )
+
     def test_runtime_verifier_compares_canonical_registry_digest(self):
         verifier = (STAGING / "verify.sh").read_text()
         self.assertIn('tagged_ref="${exact_ref%@*}"', verifier)
@@ -191,6 +229,10 @@ class P8StagingIsolationTests(unittest.TestCase):
             verifier,
         )
         sections = {
+            "wait_for_health": (
+                "service-health-terminal",
+                "service-health-timeout",
+            ),
             "verify_image": (
                 "image-running-config-mismatch",
                 "local-image-config-mismatch",
@@ -226,6 +268,10 @@ class P8StagingIsolationTests(unittest.TestCase):
                 for check in checks:
                     self.assertIn(f"fail_check {check} ", verifier)
 
+        wait_start = verifier.index("wait_for_health() {")
+        wait_end = verifier.index("\n}\n", wait_start) + len("\n}\n")
+        self.assertNotIn("return 1", verifier[wait_start:wait_end])
+
         for forbidden in (
             "PRIVATE_PROVIDER_FACTORY",
             "docker inspect --format '{{json .Config.Env}}'",
@@ -239,7 +285,8 @@ class P8StagingIsolationTests(unittest.TestCase):
             [
                 "bash",
                 "-c",
-                verifier[function_start:function_end]
+                "set -e\n"
+                + verifier[function_start:function_end]
                 + "\nfail_check canonical-repodigest-mismatch market-api sha256:expected missing",
             ],
             capture_output=True,
@@ -250,6 +297,52 @@ class P8StagingIsolationTests(unittest.TestCase):
             result.stderr,
             "P8_VERIFY_FAIL check=canonical-repodigest-mismatch "
             "service=market-api expected=sha256:expected actual=missing\n",
+        )
+
+        wait_function = verifier[wait_start:wait_end]
+        terminal = subprocess.run(
+            [
+                "bash",
+                "-c",
+                "set -e\n"
+                + verifier[function_start:function_end]
+                + wait_function
+                + "\nfake_compose() { printf 'container-id\\n'; }"
+                + "\ndocker() { printf 'exited\\n'; }"
+                + "\nsleep() { :; }"
+                + "\ncompose=(fake_compose)"
+                + "\nwait_for_health execution-worker",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        self.assertNotEqual(terminal.returncode, 0)
+        self.assertEqual(
+            terminal.stderr,
+            "P8_VERIFY_FAIL check=service-health-terminal "
+            "service=execution-worker expected=healthy actual=exited\n",
+        )
+
+        timeout = subprocess.run(
+            [
+                "bash",
+                "-c",
+                "set -e\n"
+                + verifier[function_start:function_end]
+                + wait_function
+                + "\nfake_compose() { return 0; }"
+                + "\nsleep() { :; }"
+                + "\ncompose=(fake_compose)"
+                + "\nwait_for_health gateway",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        self.assertNotEqual(timeout.returncode, 0)
+        self.assertEqual(
+            timeout.stderr,
+            "P8_VERIFY_FAIL check=service-health-timeout "
+            "service=gateway expected=healthy actual=missing\n",
         )
 
     def test_workflow_uses_only_staging_environment_and_secrets(self):
