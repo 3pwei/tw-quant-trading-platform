@@ -14,7 +14,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "4068948163e267193147d1e0edd7281b5a7eed71e6679d48c4ab7e505f07b989"
+      "sha256": "e4d5330bd6013e72bef8653a0f9cf5d267921d4a4514fdd91771de32e22357a3"
     },
     {
       "path": ".github/workflows/deploy-lightsail.yml",
@@ -622,7 +622,7 @@
     },
     {
       "path": "docs/p8-staging.md",
-      "sha256": "a84b1fd1429a01186a58efe3de0886022c968b7f0ae55dcb449c8a087626b607"
+      "sha256": "4a562cd0fa17c00cce60cc4a9c143abb7065974f1f961f4d874eb9e3bbfad425"
     },
     {
       "path": "docs/provenance.md",
@@ -647,6 +647,10 @@
     {
       "path": "tests/p8_compose_backend.py",
       "sha256": "ccb8079c76751c4b9c9b18f04043460caf682397d85a0214eaec430c98fcfd49"
+    },
+    {
+      "path": "tests/p8_deployment_boundary.py",
+      "sha256": "7544292eb3ce75079fafa46db93c9fc1948bf1bf74b1c731f5b07858b115266c"
     },
     {
       "path": "tests/public_fixtures.py",
@@ -778,7 +782,7 @@
     },
     {
       "path": "tests/test_level2_acceptance.py",
-      "sha256": "0943051552b3871491a0bb7bbc084bc1d05923815c900ea3cdbe56b7fda4bcd8"
+      "sha256": "8482fe601db8fc764e0bbac3d1e9fad25c67cd54147b3d15e213777e569af2b5"
     },
     {
       "path": "tests/test_live_aggregator.py",
@@ -843,6 +847,10 @@
     {
       "path": "tests/test_openssl_runtime.py",
       "sha256": "3c0341c5590e42de1fd262b2b7bfe4bedbae3221bf097251f4cfb45b1735f8ac"
+    },
+    {
+      "path": "tests/test_p8_deployment_flow.py",
+      "sha256": "823514b7cfeae0700b9c5e8561ba7d8e773b05e0a204b6119179b425f5aee44b"
     },
     {
       "path": "tests/test_p8_evidence.py",
