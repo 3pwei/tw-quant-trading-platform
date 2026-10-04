@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -423,6 +424,78 @@ class P8StagingIsolationTests(unittest.TestCase):
             "P8_VERIFY_FAIL check=service-health-timeout "
             "service=gateway expected=healthy actual=missing\n",
         )
+
+    def test_runtime_health_convergence_requires_healthy(self):
+        verifier = (STAGING / "verify.sh").read_text()
+        fail_start = verifier.index("fail_check() {")
+        fail_end = verifier.index("\n}\n", fail_start) + len("\n}\n")
+        wait_start = verifier.index("wait_for_health() {")
+        wait_end = verifier.index("\n}\n", wait_start) + len("\n}\n")
+        functions = verifier[fail_start:fail_end] + verifier[wait_start:wait_end]
+
+        def run(
+            states: list[str], service: str = "execution-worker"
+        ) -> subprocess.CompletedProcess[str]:
+            with tempfile.TemporaryDirectory() as directory:
+                state_file = Path(directory) / "states"
+                state_file.write_text("\n".join(states) + "\n")
+                quoted_state_file = shlex.quote(str(state_file))
+                return subprocess.run(
+                    [
+                        "bash",
+                        "-c",
+                        "set -e\n"
+                        + functions
+                        + "\nfake_compose() { printf 'container-id\\n'; }"
+                        + f"\nstate_file={quoted_state_file}"
+                        + "\ndocker() {\n"
+                        + "  state=$(head -n 1 \"${state_file}\")\n"
+                        + "  tail -n +2 \"${state_file}\" > \"${state_file}.next\"\n"
+                        + "  mv \"${state_file}.next\" \"${state_file}\"\n"
+                        + "  printf '%s\\n' \"${state}\"\n"
+                        + "}"
+                        + "\nsleep() { :; }"
+                        + "\ncompose=(fake_compose)"
+                        + f"\nwait_for_health {shlex.quote(service)}",
+                    ],
+                    capture_output=True,
+                    text=True,
+                )
+
+        with self.subTest(state="healthy"):
+            healthy = run(["healthy"])
+            self.assertEqual(healthy.returncode, 0, healthy.stderr)
+
+        with self.subTest(state="starting-then-healthy"):
+            starting = run(["starting", "healthy"])
+            self.assertEqual(starting.returncode, 0, starting.stderr)
+
+        with self.subTest(state="running"):
+            running = run(["running"] * 45)
+            self.assertNotEqual(running.returncode, 0)
+            self.assertEqual(
+                running.stderr,
+                "P8_VERIFY_FAIL check=service-health-timeout "
+                "service=execution-worker expected=healthy actual=running\n",
+            )
+
+        with self.subTest(state="unhealthy"):
+            unhealthy = run(["unhealthy"])
+            self.assertNotEqual(unhealthy.returncode, 0)
+            self.assertEqual(
+                unhealthy.stderr,
+                "P8_VERIFY_FAIL check=service-health-terminal "
+                "service=execution-worker expected=healthy actual=unhealthy\n",
+            )
+
+        with self.subTest(state="timeout"):
+            timeout = run(["starting"] * 45, service="gateway")
+            self.assertNotEqual(timeout.returncode, 0)
+            self.assertEqual(
+                timeout.stderr,
+                "P8_VERIFY_FAIL check=service-health-timeout "
+                "service=gateway expected=healthy actual=starting\n",
+            )
 
     def test_workflow_uses_only_staging_environment_and_secrets(self):
         workflow = (ROOT / ".github/workflows/deploy-staging.yml").read_text()
