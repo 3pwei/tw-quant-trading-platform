@@ -15,6 +15,13 @@ ACTIVE="${DEPLOYMENTS}/active-release.env"
 CURRENT="${DEPLOYMENTS}/current.env"
 PREVIOUS="${DEPLOYMENTS}/previous.env"
 
+fail_deploy() {
+  local check="$1" service="$2" expected="$3" actual="$4"
+  printf 'P8_DEPLOY_FAIL check=%s service=%s expected=%s actual=%s\n' \
+    "${check}" "${service}" "${expected}" "${actual}" >&2
+  return 1
+}
+
 case "${ACTION}" in
   deploy)
     [[ -f "${MANIFEST}" && "${RELEASE}" =~ ^(known_good|candidate)$ ]]
@@ -88,9 +95,15 @@ if "${compose[@]}" config | grep -qE '(^|/)(srv/trading-platform/|platform-produ
   echo "Production reference detected in staging configuration" >&2
   exit 4
 fi
-"${compose[@]}" up --no-build --pull never --detach --remove-orphans --force-recreate
-"${BUNDLE}/verify.sh" verify
-"${BUNDLE}/verify.sh" restart
+if ! "${compose[@]}" up --no-build --pull never --detach --remove-orphans --force-recreate; then
+  fail_deploy compose-up-failed compose success failed
+fi
+if ! "${BUNDLE}/verify.sh" verify; then
+  fail_deploy verifier-invocation-failed verify success failed
+fi
+if ! "${BUNDLE}/verify.sh" restart; then
+  fail_deploy verifier-invocation-failed restart success failed
+fi
 
 record="$(mktemp "${DEPLOYMENTS}/.record.XXXXXX")"
 cat "${target}" > "${record}"

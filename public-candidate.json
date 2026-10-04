@@ -534,7 +534,7 @@
     },
     {
       "path": "deploy/staging/deploy.sh",
-      "sha256": "6dc2292adf9df135d0846c49e4beccddcf459feda4cf63ab73b2b126ada7a2a8"
+      "sha256": "88795d6e28a5fc4ecc087ad969f845c9006340501c7a29b481d63bc70665db46"
     },
     {
       "path": "deploy/staging/docker-compose.yml",
@@ -558,7 +558,7 @@
     },
     {
       "path": "deploy/staging/verify.sh",
-      "sha256": "f3e7d9adac9a0f74dd648283484f65d78374833d93e1a768b1e06e7f390d7571"
+      "sha256": "bbd56a6a88d7cbc84db31e4688a2ec204e744c251fe5e1ad8d7fb6679d8e85b3"
     },
     {
       "path": "docker-compose.yml",
@@ -794,7 +794,7 @@
     },
     {
       "path": "tests/test_p8_staging.py",
-      "sha256": "2c99148267a66d2327784b490e9101848be0f9db585ef0fa0d32c1d51b0649aa"
+      "sha256": "05fc35faec336a8a6a63970051c84f3c59cec45144d72057251d2e6aa2638baa"
     },
     {
       "path": "tests/test_paper_auto.py",
