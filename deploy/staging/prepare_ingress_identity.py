@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Provision one locked host identity; never adopt conflicting UID/GID ownership."""
+import argparse
 import grp
 import os
 import pwd
@@ -35,6 +36,9 @@ def validate_identity():
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--check', action='store_true', help='validate without creating a user or group')
+    args = parser.parse_args()
     if os.geteuid() != 0:
         raise RuntimeError("host identity provisioning requires root")
     for tool in ("groupadd", "useradd"):
@@ -43,6 +47,9 @@ def main():
     if not os.path.isfile(SHELL):
         raise RuntimeError("host nologin shell is missing")
     user_exists, group_exists = validate_identity()
+    if args.check:
+        print("P8_INGRESS_IDENTITY_CHECK=PASS")
+        return
     if not group_exists:
         subprocess.run(["groupadd", "--system", "--gid", str(GID), NAME], check=True)
     if not user_exists:

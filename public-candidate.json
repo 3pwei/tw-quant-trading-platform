@@ -22,7 +22,7 @@
     },
     {
       "path": ".github/workflows/deploy-staging.yml",
-      "sha256": "99dec21700fd4a1370f6be487b1768e8a1e9791fad2ea4161f987b8df0433bcc"
+      "sha256": "488b143fe873b39bf6d5c2f67ac005f307d054ffde9b4a599068535eabf7ec7a"
     },
     {
       "path": ".github/workflows/security-exception-expiry.yml",
@@ -574,7 +574,7 @@
     },
     {
       "path": "deploy/staging/preflight.sh",
-      "sha256": "b02fa616bfa26ea6fb5cc25c98ab0b13bb96debf1f07b09ed5e829b47baaf2ea"
+      "sha256": "2562ff42c28c47873c5a93437e0e9a675be37952f4680ecb4a11132f4b906561"
     },
     {
       "path": "deploy/staging/prepare-host.sh",
@@ -582,7 +582,7 @@
     },
     {
       "path": "deploy/staging/prepare_ingress_identity.py",
-      "sha256": "5714337ded68379c028cdb28fc2cb9bc67e0a3a6e69e8e1828ce109a9eed06d9"
+      "sha256": "e1a814efb834329b4b015bc6f0ae66d8b440cefe39d09180867093892d24339f"
     },
     {
       "path": "deploy/staging/runtime_acceptance.py",
@@ -622,7 +622,7 @@
     },
     {
       "path": "docs/p8-staging.md",
-      "sha256": "deb653b77c5816ef316741ad530895abb7fc5f828d668daf6e5036cbd99a1cfe"
+      "sha256": "7f52a216882c7f416420ad7df5f4ce08f88d40613b5de9b01b50a64e711aa4b0"
     },
     {
       "path": "docs/provenance.md",
@@ -858,7 +858,7 @@
     },
     {
       "path": "tests/test_p8_ingress.py",
-      "sha256": "48c0f8c2440377a3ef4b6c24a6a8c863de2c0752e5b6cff597cc2346e778b8e8"
+      "sha256": "213fa28cec7fb9af02d6b012114379e2f92ad57e16fb87ac49cc7936279e4dff"
     },
     {
       "path": "tests/test_p8_recovery_provenance.py",

@@ -118,7 +118,8 @@ jobs:
       - name: Read-only staging preflight before host writes
         run: |
           install -d -m 700 p8-diagnostics
-          timeout --signal=TERM --kill-after=10s 90s ssh p8-staging "sudo bash -s" < deploy/staging/preflight.sh > p8-diagnostics/preflight.txt
+          timeout --signal=TERM --kill-after=10s 30s ssh p8-staging "sudo python3 - --check" < deploy/staging/prepare_ingress_identity.py > p8-diagnostics/preflight.txt
+          timeout --signal=TERM --kill-after=10s 90s ssh p8-staging "sudo bash -s" < deploy/staging/preflight.sh >> p8-diagnostics/preflight.txt
 
       - name: Stage exact pipeline bundle and owner-only provider factory
         id: staging_bundle
