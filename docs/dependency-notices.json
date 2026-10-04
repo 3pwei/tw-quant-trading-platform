@@ -61,7 +61,7 @@
     }
   ],
   "inputs": {
-    "Dockerfile": "42e7b046228ae141927500c79442652af246a403c9144da04d7db555b0cd1321",
+    "Dockerfile": "727d80a2314691deba494ebadfaae1c904056bdf7992187bd1059a635ab99de6",
     "dashboard/package-lock.json": "4a5c136c11df66771a0ccec9ce55fc812be93ed188dd5612f62a12c4e710e3e0",
     "deploy/lightsail/Dockerfile.gateway": "4265c6e16833f35b4652d8fc39dd616341c3faefabc1a226131f216f1b9d56c5",
     "uv.lock": "30f1af09c504171254155c28c7ee5faeff9e0028ffccba9eb2f7718d18b442a4"

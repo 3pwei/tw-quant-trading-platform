@@ -43,7 +43,7 @@ class SecurityExceptionPolicyTests(unittest.TestCase):
 
     def test_repository_ignore_file_is_well_formed_and_time_bounded(self) -> None:
         exceptions = POLICY.load_exceptions(ROOT / ".trivyignore.yaml")
-        self.assertEqual(len(exceptions), 21)
+        self.assertEqual(len(exceptions), 8)
         self.assertTrue(all(item.expired_at == date(2026, 10, 18) for item in exceptions))
 
     def test_malformed_or_duplicate_entries_are_rejected(self) -> None:

@@ -30,7 +30,7 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "d2db144a842749639ca1fab326f4864ad7f1c2a94d974139386ddbcd163637c2"
+      "sha256": "05a59151659eddae821552aa86a78027fffb49264d1f95cb909cc145f445f1b3"
     },
     {
       "path": ".github/workflows/staging-candidate.yml",
@@ -42,7 +42,7 @@
     },
     {
       "path": ".trivyignore.yaml",
-      "sha256": "6119889620abe7453040a49d3bfe9572e873a5ae32c9c945efad73abdcc06a0d"
+      "sha256": "9e1e5ee4b9564076e387a3a574ff27ddecde1a742773a37ef27bb6bbc80be8b1"
     },
     {
       "path": "AGENTS.md",
@@ -50,7 +50,7 @@
     },
     {
       "path": "Dockerfile",
-      "sha256": "42e7b046228ae141927500c79442652af246a403c9144da04d7db555b0cd1321"
+      "sha256": "727d80a2314691deba494ebadfaae1c904056bdf7992187bd1059a635ab99de6"
     },
     {
       "path": "README.md",
@@ -522,7 +522,7 @@
     },
     {
       "path": "deploy/staging/Dockerfile.runtime",
-      "sha256": "b75eaa3c2b9c98c9b30f18b92b46592dd9414ddb9c7980fdb9125c26cff1940a"
+      "sha256": "5c36a9073927169e6939ee33f4c38e99a734aad75cf280600cca314fbc17bf8f"
     },
     {
       "path": "deploy/staging/acceptance_evidence.py",
@@ -614,7 +614,7 @@
     },
     {
       "path": "docs/dependency-notices.json",
-      "sha256": "47f0b9d73b63902bf8d6450dfba3107136f9f186505ba0515c9829fff797cfba"
+      "sha256": "663fbba4d75aeaf13e456abfac87e14641546656c3fd1829c18b1a65e411e492"
     },
     {
       "path": "docs/deployment.md",
@@ -627,6 +627,10 @@
     {
       "path": "docs/provenance.md",
       "sha256": "f461f9e5b811bdcd0e480086fde408c6f4f5778223201e579c5396a8d178caf7"
+    },
+    {
+      "path": "docs/security-exception-review.md",
+      "sha256": "987d19400e37a97cfe282b5ce9069922354edcc70f046bf68b61f1193c64fea7"
     },
     {
       "path": "docs/third-party-license-texts.txt",
@@ -946,7 +950,7 @@
     },
     {
       "path": "tests/test_security_exception_policy.py",
-      "sha256": "b1559f0880dc8bde423e4457ee97174f8e2f26054a33dc522d3ab183057768cd"
+      "sha256": "c9065a642df83c8d2047dc0b77270731af31dea5155e4c0a2cf0f2889c06b6e2"
     },
     {
       "path": "tests/test_security_sast.py",

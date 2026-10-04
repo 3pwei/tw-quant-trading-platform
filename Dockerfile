@@ -1,6 +1,6 @@
 FROM python:3.14-slim@sha256:cad9a2c871761c413caa6fdd6441c783451e740a48aaeba60ae62a8b53525ef6 AS runtime
 
-# Debian stable OpenSSL and PCRE2 security backports; retain signed APT verification.
+# Debian stable security backports; retain signed APT verification.
 # Exact versions fail closed if no longer available; never fall back to an older package.
 RUN apt-get update \
     && apt-get install --yes --no-install-recommends --only-upgrade \
@@ -8,10 +8,16 @@ RUN apt-get update \
         openssl=3.5.7-1~deb13u3 \
         openssl-provider-legacy=3.5.7-1~deb13u3 \
         libpcre2-8-0=10.46-1~deb13u3 \
+        libsqlite3-0=3.46.1-7+deb13u2 \
+        perl-base=5.40.1-6+deb13u1 \
+        gzip=1.13-1+deb13u1 \
     && for package in libssl3t64 openssl openssl-provider-legacy; do \
         test "$(dpkg-query -W -f='${Version}' "$package")" = '3.5.7-1~deb13u3' || exit 1; \
     done \
     && test "$(dpkg-query -W -f='${Version}' libpcre2-8-0)" = '10.46-1~deb13u3' \
+    && test "$(dpkg-query -W -f='${Version}' libsqlite3-0)" = '3.46.1-7+deb13u2' \
+    && test "$(dpkg-query -W -f='${Version}' perl-base)" = '5.40.1-6+deb13u1' \
+    && test "$(dpkg-query -W -f='${Version}' gzip)" = '1.13-1+deb13u1' \
     && python -c "import ssl; print(ssl.OPENSSL_VERSION, flush=True); ssl.create_default_context()" \
     && rm -rf /var/lib/apt/lists/*
 
