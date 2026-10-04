@@ -28,6 +28,8 @@ jobs:
         run: |
           python deploy/security/exception_policy.py check \
             --ignore-file .trivyignore.yaml \
+            --npm-exceptions deploy/security/npm-audit-exceptions.json \
+            --lock-file dashboard/package-lock.json \
             --report /tmp/security-exception-report.json
       - name: Create or update the tracking issue
         env:

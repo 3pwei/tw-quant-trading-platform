@@ -26,7 +26,7 @@
     },
     {
       "path": ".github/workflows/security-exception-expiry.yml",
-      "sha256": "bb991312be0b78fdb89bf90e19c149487eb3f038743183c1c9b5c72be1d2d9ac"
+      "sha256": "4a7f0ede25b910d75506be455579ef4c85f82f8d9249eb9674edf7970d20e0e6"
     },
     {
       "path": ".github/workflows/security.yml",
@@ -498,7 +498,7 @@
     },
     {
       "path": "deploy/security/exception_policy.py",
-      "sha256": "1b89f49b5770e2bad2982656503ce90125c8e8d8123c6cd73f014d55c135aa9f"
+      "sha256": "6dcb882e0dcdd49c8586d89a1ed74f9b3f1ba6e0a44c89a1b47aa8244230fb33"
     },
     {
       "path": "deploy/security/npm-audit-exceptions.json",
@@ -631,6 +631,10 @@
     {
       "path": "docs/security-exception-review.md",
       "sha256": "987d19400e37a97cfe282b5ce9069922354edcc70f046bf68b61f1193c64fea7"
+    },
+    {
+      "path": "docs/security-expiry-notifications.md",
+      "sha256": "e5c4e6e8a4315eb5a586413a2b9243ae23e62803485f4d9dc51472f602e68a3d"
     },
     {
       "path": "docs/third-party-license-texts.txt",
@@ -951,6 +955,10 @@
     {
       "path": "tests/test_security_exception_policy.py",
       "sha256": "c9065a642df83c8d2047dc0b77270731af31dea5155e4c0a2cf0f2889c06b6e2"
+    },
+    {
+      "path": "tests/test_security_expiry_sources.py",
+      "sha256": "1ed124226f06e5ce8f901b11666fc43340e552b0845a09b6fb03cd6bd363f3dc"
     },
     {
       "path": "tests/test_security_sast.py",
