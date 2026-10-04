@@ -214,3 +214,13 @@ closed. No raw log bytes are uploaded. The final report records sample count,
 actual elapsed time, maximum gap and log coverage. Production deployment counts
 are `unknown-not-queried`, rather than a hard-coded zero; production auditing
 must be performed independently when a deployment is authorized.
+
+Follow-up regressions also cover rollback records that already contain deployment
+metadata: committing the rollback replaces `DEPLOYMENT_MODE` and `VERIFIED_AT`
+instead of duplicating them. Ledger continuity now links verified → restart-before
+and restart-after → committed, allowing only the intended current/previous record
+rotation, then links rollback committed → soak. A container replacement in these
+gaps cannot pass by presenting individually valid snapshots. Log reader errors,
+early EOF and partial follower startup fail closed; already-started followers are
+cleaned up on startup failure, and successful shutdown drains the readers before
+marking coverage complete. These regression checks do not replace staging evidence.

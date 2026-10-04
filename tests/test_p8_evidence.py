@@ -11,7 +11,7 @@ import sqlite3
 import sys
 import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 STAGING = Path(__file__).resolve().parents[1] / 'deploy/staging'
 
@@ -113,11 +113,61 @@ class ContinuityTests(unittest.TestCase):
             def __init__(self): self.parts = iter([b'Trace', b'back\n' + b'normal\n' * 3000, b''])
             def read1(self, size): return next(self.parts)
         monitor = object.__new__(evidence.LogMonitor)
+        monitor.closed = False
         monitor.stats = {'gateway': {'bytes': 0, 'policy_failed': False, 'overflow': False, 'complete': False}}
         process = type('Process', (), {'stdout': Stream()})()
         monitor.consume('gateway', process)
         self.assertTrue(monitor.stats['gateway']['policy_failed'])
         self.assertGreater(monitor.stats['gateway']['bytes'], 20000)
+
+    def test_log_reader_failure_or_early_eof_cannot_report_complete(self):
+        for error in (OSError('sensitive tool details'), None):
+            with self.subTest(error=type(error).__name__):
+                monitor = object.__new__(evidence.LogMonitor)
+                monitor.closed = False
+                monitor.stats = {'gateway': {'bytes': 0, 'policy_failed': False,
+                    'overflow': False, 'complete': False, 'read_failed': False, 'ended_early': False}}
+                process = Mock()
+                process.poll.return_value = None
+                process.stdout.read1.side_effect = error
+                process.stdout.read1.return_value = b''
+                monitor.processes = {'gateway': process}
+                monitor.threads = []
+                monitor.consume('gateway', process)
+                with self.assertRaises(ValueError): monitor.check()
+                monitor.close()
+                self.assertFalse(monitor.stats['gateway']['complete'])
+
+    def test_log_shutdown_drains_readers_before_marking_coverage_complete(self):
+        monitor = object.__new__(evidence.LogMonitor)
+        monitor.closed = False
+        monitor.processes, monitor.stats, monitor.threads = {}, {}, []
+        for service in evidence.SERVICES:
+            process = Mock()
+            process.poll.return_value = None
+            process.stdout.read1.side_effect = [b'normal log\n', b'']
+            monitor.processes[service] = process
+            monitor.stats[service] = {'bytes': 0, 'policy_failed': False, 'overflow': False,
+                'complete': False, 'read_failed': False, 'ended_early': False}
+            thread = Mock()
+            thread.is_alive.return_value = False
+            thread.join.side_effect = lambda timeout, s=service, p=process: monitor.consume(s, p)
+            monitor.threads.append(thread)
+        monitor.check()
+        monitor.close()
+        self.assertTrue(all(s['complete'] and s['bytes'] > 0 for s in monitor.stats.values()))
+        monitor.close()
+        for process in monitor.processes.values(): process.terminate.assert_called_once()
+
+    def test_log_startup_failure_closes_already_started_followers(self):
+        process = Mock()
+        process.poll.return_value = None
+        with patch.object(evidence.subprocess, 'Popen', side_effect=[process, OSError('private details')]), \
+                patch('threading.Thread'):
+            with self.assertRaises(OSError): evidence.LogMonitor(snapshot()['containers'], '2026-10-04T01:00:00Z')
+        process.terminate.assert_called_once()
+        process.wait.assert_called_once()
+        process.stdout.close.assert_called_once()
 
     def test_diagnostics_does_not_export_secrets_or_raw_tool_errors(self):
         def command(argv):
@@ -157,8 +207,12 @@ class LedgerTests(unittest.TestCase):
             after = copy.deepcopy(before)
             for service in evidence.SERVICES: after['containers'][service]['started'] = '2026-10-04T01:00:10Z'
             after['execution']['heartbeat_at'] = '2026-10-04T01:00:15Z'
-            for stage, data in [('verified', before), ('restart-before', before), ('restart-after', after), ('committed', after)]:
+            committed = copy.deepcopy(after)
+            committed['records'] = {'current': str(index + 4) * 64, 'active-release': str(index + 4) * 64,
+                                    'previous': before['records']['current']}
+            for stage, data in [('verified', before), ('restart-before', before), ('restart-after', after), ('committed', committed)]:
                 rows.append({**envelope, 'event': phase + '/' + stage, 'data': copy.deepcopy(data)})
+        after = committed
         rows.append({**envelope, 'event': 'soak', 'data': {'before': after, 'after': after, 'requested_minutes': 30,
             'elapsed_seconds': 1800, 'samples': 181, 'max_sample_gap_seconds': 10,
             'log_coverage': {s: {'complete': True} for s in evidence.SERVICES}}})
@@ -170,7 +224,8 @@ class LedgerTests(unittest.TestCase):
             output, baseline, after = self.fixture(root)
             def check(rows):
                 (output / 'ledger.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in rows))
-                with patch.object(evidence, 'capture', return_value=after), patch.object(evidence, 'run', side_effect=lambda argv: 'RELEASE_NAME=' + argv[-1] + '\n'):
+                final_snapshot = rows[-1]['data']['after'] if rows[-1]['event'] == 'soak' else after
+                with patch.object(evidence, 'capture', return_value=final_snapshot), patch.object(evidence, 'run', side_effect=lambda argv: 'RELEASE_NAME=' + argv[-1] + '\n'):
                     return evidence.final_check(root)
             self.assertEqual(check(baseline)['acceptance'], 'PASS')
             bad_cases = [baseline[:-1], [baseline[1], baseline[0], *baseline[2:]]]
@@ -180,6 +235,19 @@ class LedgerTests(unittest.TestCase):
                            lambda d: d[8]['data']['containers']['gateway'].update(image='sha256:' + 'f' * 64)):
                 modified = copy.deepcopy(baseline)
                 change(modified)
+                bad_cases.append(modified)
+            # Mutate a whole segment so its internal checks still pass: each gap
+            # must bind the preceding runtime to the following observation.
+            for indices in ((0,), (1, 2, 3), (3,), (12,)):
+                modified = copy.deepcopy(baseline)
+                for index in indices:
+                    snapshots = [modified[index]['data']] if index != 12 else [modified[index]['data']['before'], modified[index]['data']['after']]
+                    for item in snapshots:
+                        item['containers']['gateway']['id'] = 'f' * 64
+                bad_cases.append(modified)
+            for key in ('current', 'active-release', 'previous'):
+                modified = copy.deepcopy(baseline)
+                modified[3]['data']['records'][key] = 'f' * 64
                 bad_cases.append(modified)
             for rows in bad_cases:
                 with self.assertRaises(ValueError): check(rows)

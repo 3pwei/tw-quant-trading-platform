@@ -526,7 +526,7 @@
     },
     {
       "path": "deploy/staging/acceptance_evidence.py",
-      "sha256": "3d47969f30df1d605e98afa732051e675723887781524292ce6a63ee7288d936"
+      "sha256": "2dba5be2ed8ac072a18c92f49d0430002c4414a2b71834fe801c41b66dafe414"
     },
     {
       "path": "deploy/staging/candidate_manifest.py",
@@ -538,7 +538,7 @@
     },
     {
       "path": "deploy/staging/deploy.sh",
-      "sha256": "a1eaaf370459c1e0a19199103b218e8396e24d17d2b78d5f054b02e8c17d6f00"
+      "sha256": "030112da416dfe5c11a8f1938f018850502e85b119966e67c07139afa31050d2"
     },
     {
       "path": "deploy/staging/diagnostics.py",
@@ -622,7 +622,7 @@
     },
     {
       "path": "docs/p8-staging.md",
-      "sha256": "2104e988e0b86b30d288dd1dd1b3cb94ada2783c249c94d9ef16683ea366c8a8"
+      "sha256": "deb653b77c5816ef316741ad530895abb7fc5f828d668daf6e5036cbd99a1cfe"
     },
     {
       "path": "docs/provenance.md",
@@ -846,7 +846,7 @@
     },
     {
       "path": "tests/test_p8_evidence.py",
-      "sha256": "5646c53775e7444277c8e039f583d1f11350e097475b9c0f873584e9383337bf"
+      "sha256": "17ac88509cc1fca9a7a9a6d313e66d051f09e58519c92810204582f007d19485"
     },
     {
       "path": "tests/test_p8_gateway.py",
@@ -862,7 +862,7 @@
     },
     {
       "path": "tests/test_p8_recovery_provenance.py",
-      "sha256": "e80b062cb4948438253ca5132a2c7069a6b141c3bbdeee828db93f03450a455f"
+      "sha256": "bdc04afb30486f5223ef23337e1146ff2ff26fbdbc76bf2a06a90ddf3988961f"
     },
     {
       "path": "tests/test_p8_staging.py",

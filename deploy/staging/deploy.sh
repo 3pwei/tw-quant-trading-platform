@@ -145,7 +145,12 @@ if ! "${BUNDLE}/verify.sh" restart; then
 fi
 
 record="$(mktemp "${DEPLOYMENTS}/.record.XXXXXX")"
-cat "${target}" > "${record}"
+# A rollback target is a prior committed record and already carries metadata.
+# Replace those fields, retaining the immutable release identity exactly once.
+while IFS= read -r line; do
+  case "${line}" in DEPLOYMENT_MODE=*|VERIFIED_AT=*) continue ;; esac
+  printf '%s\n' "${line}"
+done < "${target}" > "${record}"
 {
   printf 'DEPLOYMENT_MODE=%s\n' "${ACTION}"
   printf 'VERIFIED_AT=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"

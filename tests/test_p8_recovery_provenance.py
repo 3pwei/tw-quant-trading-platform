@@ -102,6 +102,28 @@ class ProvenanceTests(unittest.TestCase):
 
 
 class RecoveryTests(unittest.TestCase):
+    def test_rollback_record_replaces_metadata_without_duplicate_fields(self):
+        source = (STAGING / 'deploy.sh').read_text()
+        commit_record = source[source.index('record="$(mktemp'):source.index('\ntrap - EXIT\nrm -f')]
+        evidence = module('acceptance_evidence')
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            a = 'RELEASE_NAME=known_good\nCONFIGURATION_IDENTITY=p8-a-123-1\nDEPLOYMENT_MODE=deploy\nVERIFIED_AT=2026-10-01T00:00:00Z\n'
+            b = a.replace('known_good', 'candidate').replace('p8-a-', 'p8-b-')
+            (root / 'target').write_text(a)
+            (root / 'current').write_text(b)
+            result = subprocess.run(['bash', '-eu', '-c', commit_record], env={**os.environ,
+                'DEPLOYMENTS': directory, 'target': str(root / 'target'), 'CURRENT': str(root / 'current'),
+                'ACTIVE': str(root / 'active'), 'PREVIOUS': str(root / 'previous'), 'ACTION': 'rollback'},
+                capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            current = evidence.release_values(root / 'current')
+            self.assertEqual(current['DEPLOYMENT_MODE'], 'rollback')
+            self.assertEqual(current['RELEASE_NAME'], 'known_good')
+            self.assertNotEqual(current['VERIFIED_AT'], '2026-10-01T00:00:00Z')
+            self.assertEqual((root / 'previous').read_text(), b)
+            self.assertEqual((root / 'active').read_text(), (root / 'current').read_text())
+
     def test_compensation_reloads_a_and_preserves_original_failure(self):
         source = (STAGING / "deploy.sh").read_text()
         function = source[source.index("restore_prior() {"):source.index("trap restore_prior EXIT")]

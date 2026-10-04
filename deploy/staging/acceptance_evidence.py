@@ -118,9 +118,14 @@ def capture(root=ROOT):
             'records': record_hashes(root)}
 
 
-def continuity(before, after, *, restarted=False):
+def continuity(before, after, *, restarted=False, committed=False):
     require(before['durable'] == after['durable'], 'durable-state-drift')
-    require(before['records'] == after['records'], 'release-record-drift')
+    if committed:
+        records = after['records']
+        require(records['current'] is not None and records['current'] == records['active-release'] and
+                records['previous'] == before['records']['current'], 'commit-record-transition-invalid')
+    else:
+        require(before['records'] == after['records'], 'release-record-drift')
     require(before['release'] == after['release'] and before['expected_images'] == after['expected_images'], 'release-image-drift')
     for service in SERVICES:
         a, b = before['containers'][service], after['containers'][service]
@@ -185,12 +190,15 @@ def final_check(root=ROOT):
     for row in rows:
         require(all(row[k] == envelope[k] for k in ('session', 'candidate_run_id', 'pipeline')), 'ledger-provenance-drift')
     for offset in (0, 4, 8):
+        continuity(rows[offset]['data'], rows[offset + 1]['data'])
         continuity(rows[offset + 1]['data'], rows[offset + 2]['data'], restarted=True)
+        continuity(rows[offset + 2]['data'], rows[offset + 3]['data'], committed=True)
         role = 'candidate' if offset == 4 else 'known_good'
         require(all(rows[i]['data']['release']['name'] == role for i in range(offset, offset + 4)), 'stage-release-mismatch')
     durable = rows[0]['data']['durable']
     require(all(row['data']['durable'] == durable for row in rows[:-1]), 'cross-release-durable-drift')
     before, after = rows[-1]['data']['before'], rows[-1]['data']['after']
+    continuity(rows[11]['data'], before)
     continuity(before, after)
     require(after['durable'] == durable, 'soak-durable-drift')
     current, active, previous = [release_values(root / 'deployments' / (x + '.env')) for x in ('current', 'active-release', 'previous')]
@@ -230,37 +238,49 @@ class LogMonitor:
         self.threads = []
         self.stats = {}
         self.closed = False
-        for service in SERVICES:
-            process = subprocess.Popen(['docker', 'logs', '--follow', '--timestamps', '--since', since,
-                containers[service]['id']], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            self.processes[service] = process
-            self.stats[service] = {'bytes': 0, 'policy_failed': False, 'overflow': False, 'complete': False}
-            thread = threading.Thread(target=self.consume, args=(service, process), daemon=True)
-            thread.start()
-            self.threads.append(thread)
+        try:
+            for service in SERVICES:
+                process = subprocess.Popen(['docker', 'logs', '--follow', '--timestamps', '--since', since,
+                    containers[service]['id']], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                self.processes[service] = process
+                self.stats[service] = {'bytes': 0, 'policy_failed': False, 'overflow': False,
+                                      'read_failed': False, 'ended_early': False, 'complete': False}
+                thread = threading.Thread(target=self.consume, args=(service, process), daemon=True)
+                thread.start()
+                self.threads.append(thread)
+        except Exception:
+            self.close()
+            raise
 
     def consume(self, service, process):
         state = self.stats[service]
         tail = b''
         pattern = re.compile(rb'(traceback|secret[=:][^\s]+|token[=:][^\s]+|credential[=:][^\s]+)', re.I)
-        while True:
-            chunk = process.stdout.read1(65536)
-            if not chunk:
-                break
-            state['bytes'] += len(chunk)
-            state['overflow'] |= state['bytes'] > 64 * 1024 * 1024
-            state['policy_failed'] |= pattern.search(tail + chunk) is not None
-            tail = (tail + chunk)[-256:]
+        try:
+            while True:
+                chunk = process.stdout.read1(65536)
+                if not chunk:
+                    state['ended_early'] = not self.closed
+                    break
+                state['bytes'] += len(chunk)
+                state['overflow'] |= state['bytes'] > 64 * 1024 * 1024
+                state['policy_failed'] |= pattern.search(tail + chunk) is not None
+                tail = (tail + chunk)[-256:]
+        except Exception:
+            # A reader failure must reach the acceptance gate, never leak a raw
+            # exception from a background thread or leave a false complete flag.
+            state['read_failed'] = True
 
     def check(self):
         require(all(p.poll() is None for p in self.processes.values()), 'log-stream-ended-early')
+        require(all(not s['read_failed'] and not s['ended_early'] for s in self.stats.values()), 'log-reader-failed')
         require(all(not s['policy_failed'] and not s['overflow'] for s in self.stats.values()), 'log-policy-or-limit-failed')
 
     def close(self):
         if self.closed:
             return
         self.closed = True
-        alive = all(p.poll() is None for p in self.processes.values())
+        alive = len(self.processes) == len(SERVICES) and all(p.poll() is None for p in self.processes.values())
         for process in self.processes.values():
             if process.poll() is None:
                 process.terminate()
@@ -274,7 +294,8 @@ class LogMonitor:
             thread.join(timeout=5)
             alive &= not thread.is_alive()
         for service, state in self.stats.items():
-            state['complete'] = alive and not state['policy_failed'] and not state['overflow']
+            state['complete'] = (alive and not state['policy_failed'] and not state['overflow']
+                                 and not state['read_failed'] and not state['ended_early'])
             self.processes[service].stdout.close()
 
 
