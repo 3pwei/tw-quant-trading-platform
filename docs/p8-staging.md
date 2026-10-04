@@ -224,3 +224,11 @@ gaps cannot pass by presenting individually valid snapshots. Log reader errors,
 early EOF and partial follower startup fail closed; already-started followers are
 cleaned up on startup failure, and successful shutdown drains the readers before
 marking coverage complete. These regression checks do not replace staging evidence.
+
+The read-only workflow preflight runs the exact pipeline's identity helper with
+`--check` before transferring the provider or preparing the host. It validates
+both account name and numeric UID/GID, home, shell and group membership using the
+same rules as provisioning, without creating users or groups. Listener inspection
+errors/timeouts fail closed. An occupied port is accepted only for one exact
+127.0.0.1:18080 listener with the active staging socket unit; wildcard, extra or
+foreign listeners are rejected before host writes.

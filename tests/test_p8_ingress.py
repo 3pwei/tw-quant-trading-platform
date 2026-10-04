@@ -35,6 +35,8 @@ class HostIdentityTests(unittest.TestCase):
         group = SimpleNamespace(gr_name="p8-staging-ingress", gr_gid=10000, gr_mem=[])
         foreign_user = SimpleNamespace(**{**vars(user), "pw_name": "existing-owner"})
         foreign_group = SimpleNamespace(**{**vars(group), "gr_name": "existing-owner"})
+        wrong_uid = SimpleNamespace(**{**vars(user), "pw_uid": 10002})
+        member_group = SimpleNamespace(**{**vars(group), "gr_mem": ["foreign-member"]})
         login_user = SimpleNamespace(**{**vars(user), "pw_shell": "/bin/bash"})
         cases = (
             ([None, None, None, None], (False, False)),
@@ -43,6 +45,8 @@ class HostIdentityTests(unittest.TestCase):
             ([None, None, None, foreign_group], None),
             ([login_user, login_user, group, group], None),
             ([user, None, group, group], None),
+            ([wrong_uid, None, group, group], None),
+            ([user, user, member_group, member_group], None),
         )
         for records, expected in cases:
             with self.subTest(expected=expected, records=records):
@@ -52,6 +56,42 @@ class HostIdentityTests(unittest.TestCase):
                             ingress_identity.validate_identity()
                     else:
                         self.assertEqual(ingress_identity.validate_identity(), expected)
+
+
+class PreflightTests(unittest.TestCase):
+    def test_identity_check_mode_never_creates_users_or_groups(self):
+        for existing in ((False, False), (True, True)):
+            with self.subTest(existing=existing), patch.object(ingress_identity.os, 'geteuid', return_value=0), \
+                    patch.object(ingress_identity.shutil, 'which', return_value='/usr/sbin/tool'), \
+                    patch.object(ingress_identity.os.path, 'isfile', return_value=True), \
+                    patch.object(ingress_identity, 'validate_identity', return_value=existing), \
+                    patch.object(ingress_identity.subprocess, 'run') as mutate, \
+                    patch('sys.argv', ['prepare_ingress_identity.py', '--check']), redirect_stdout(io.StringIO()):
+                ingress_identity.main()
+                mutate.assert_not_called()
+
+    def test_listener_inspection_fails_closed(self):
+        source = (STAGING / 'preflight.sh').read_text()
+        segment = source[source.index('# An existing approved socket'):source.index("python3 - <<'PY'")]
+        mocks = '''
+ss() { printf '%s\\n' "$LISTENERS"; return "$SS_STATUS"; }
+timeout() { shift; "$@"; }
+systemctl() {
+  if [[ "$1" == is-active ]]; then return "$UNIT_STATUS"; fi
+  printf '%s\\n' "$UNIT_LISTEN"
+}
+'''
+        local = 'LISTEN 0 4096 127.0.0.1:18080 0.0.0.0:*'
+        cases = [(0, '', 0, True), (0, local, 0, True), (1, '', 0, False),
+                 (0, local, 3, False), (0, local.replace('127.0.0.1', '0.0.0.0'), 0, False),
+                 (0, local + '\n' + local.replace('127.0.0.1', '[::]'), 0, False)]
+        for status, listeners, unit_status, success in cases:
+            with self.subTest(status=status, listeners=listeners, unit_status=unit_status):
+                result = subprocess.run(['bash', '-eu', '-o', 'pipefail', '-c', mocks + segment],
+                    env={**os.environ, 'SS_STATUS': str(status), 'LISTENERS': listeners,
+                         'UNIT_STATUS': str(unit_status), 'UNIT_LISTEN': '127.0.0.1:18080 (Stream)'},
+                    capture_output=True, text=True)
+                self.assertEqual(result.returncode == 0, success, result.stdout + result.stderr)
 
 
 def free_port():
