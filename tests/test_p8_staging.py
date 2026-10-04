@@ -105,6 +105,49 @@ class P8BuildBoundaryTests(unittest.TestCase):
         push = workflow.index("docker push")
         self.assertNotIn("DOCKER_BUILDKIT=1 docker build", workflow[push:])
 
+    def test_candidate_and_staging_share_runtime_acceptance_path_before_push(self):
+        workflow = (ROOT / ".github/workflows/staging-candidate.yml").read_text()
+        verifier = (STAGING / "verify.sh").read_text()
+        target = "target=/app/p8_runtime_acceptance.py,readonly"
+        command = "python /app/p8_runtime_acceptance.py"
+
+        self.assertIn('for image in "$RUNTIME_A_TAG" "$RUNTIME_B_TAG"; do', workflow)
+        for text in (workflow, verifier):
+            self.assertIn(target, text)
+            self.assertIn(command, text)
+            self.assertNotIn("target=/runtime_acceptance.py,readonly", text)
+            self.assertNotIn("python /runtime_acceptance.py", text)
+        self.assertLess(workflow.index(target), workflow.index("docker push"))
+
+    def test_runtime_acceptance_preserves_candidate_and_staging_security_boundary(self):
+        workflow = (ROOT / ".github/workflows/staging-candidate.yml").read_text()
+        verifier = (STAGING / "verify.sh").read_text()
+        dockerfile = (STAGING / "Dockerfile.runtime").read_text()
+        candidate_start = workflow.index(
+            "      - name: Verify installed private composition and zero credential persistence"
+        )
+        candidate_end = workflow.index("\n      - name:", candidate_start + 1)
+        candidate = workflow[candidate_start:candidate_end]
+        staging_start = verifier.index(
+            "  docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges"
+        )
+        staging_end = verifier.index("\n  docker run", staging_start + 1)
+        staging = verifier[staging_start:staging_end]
+
+        for text in (candidate, staging):
+            for expected in (
+                "--network none --read-only --cap-drop ALL",
+                "--security-opt no-new-privileges",
+                "--tmpfs /tmp:rw,noexec,nosuid,nodev,size=128m,uid=10001,gid=10001",
+                "target=/run/staging-provider/factory,readonly",
+                "target=/app/p8_runtime_acceptance.py,readonly",
+                "PRIVATE_PROVIDER_WHEEL_SHA256=",
+                "python /app/p8_runtime_acceptance.py",
+            ):
+                self.assertIn(expected, text)
+            self.assertNotIn("--user 0", text)
+        self.assertIn("USER 10001:10001", dockerfile)
+
     def test_gateway_candidate_smoke_matches_staging_security_boundary(self):
         dockerfile = (STAGING / "Dockerfile.gateway").read_text()
         workflow = (ROOT / ".github/workflows/staging-candidate.yml").read_text()

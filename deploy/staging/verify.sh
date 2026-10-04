@@ -165,9 +165,9 @@ verify_once() {
   docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
     --tmpfs /tmp:rw,noexec,nosuid,nodev,size=128m,uid=10001,gid=10001 \
     --mount "type=bind,source=${INSTALL_ROOT}/provider/factory,target=/run/staging-provider/factory,readonly" \
-    --mount "type=bind,source=${INSTALL_ROOT}/bundle/runtime_acceptance.py,target=/runtime_acceptance.py,readonly" \
+    --mount "type=bind,source=${INSTALL_ROOT}/bundle/runtime_acceptance.py,target=/app/p8_runtime_acceptance.py,readonly" \
     --env "PRIVATE_PROVIDER_WHEEL_SHA256=${PRIVATE_PROVIDER_WHEEL_SHA256}" \
-    "${STAGING_RUNTIME_IMAGE}" python /runtime_acceptance.py
+    "${STAGING_RUNTIME_IMAGE}" python /app/p8_runtime_acceptance.py
   docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
     --tmpfs /tmp:rw,noexec,nosuid,nodev,size=128m,uid=10001,gid=10001 \
     --mount "type=bind,source=${INSTALL_ROOT}/bundle/runtime-tests,target=/runtime-tests,readonly" \
