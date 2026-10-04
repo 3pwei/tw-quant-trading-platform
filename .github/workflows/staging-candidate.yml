@@ -132,10 +132,11 @@ jobs:
           for image in "$RUNTIME_A_TAG" "$RUNTIME_B_TAG"; do
             docker run --rm --network none --read-only --cap-drop ALL \
               --security-opt no-new-privileges \
-              --tmpfs /tmp:rw,noexec,nosuid,nodev,size=64m,uid=10001,gid=10001 \
+              --tmpfs /tmp:rw,noexec,nosuid,nodev,size=128m,uid=10001,gid=10001 \
               --mount "type=bind,source=${RUNNER_TEMP}/provider-factory,target=/run/staging-provider/factory,readonly" \
+              --mount "type=bind,source=${GITHUB_WORKSPACE}/deploy/staging/runtime_acceptance.py,target=/app/p8_runtime_acceptance.py,readonly" \
               --env PRIVATE_PROVIDER_WHEEL_SHA256=a5cbd8147bfd517e0297f6e70fdbbf33b63c22ab58e570a35bfdbdfc26993ee5 \
-              "$image" python -c 'from staging_composition import load_provider; from tw_quant.strategy_registry import RegistryStrategies; s=RegistryStrategies(provider=load_provider()); assert s.catalog(); assert s.identity_snapshot()["artifact_digest"] == "sha256:a5cbd8147bfd517e0297f6e70fdbbf33b63c22ab58e570a35bfdbdfc26993ee5"'
+              "$image" python /app/p8_runtime_acceptance.py
             docker run --rm --network none "$image" sh -c "! find / -xdev -type f -name '*.whl' -print -quit 2>/dev/null | grep -q ."
             docker history --no-trunc "$image" > "${RUNNER_TEMP}/history.txt"
             docker image inspect "$image" > "${RUNNER_TEMP}/inspect.json"

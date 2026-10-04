@@ -34,7 +34,7 @@
     },
     {
       "path": ".github/workflows/staging-candidate.yml",
-      "sha256": "36ab1c48f64888231068cfd8e73912035763284f5fb8204374aa6d9452ab09e6"
+      "sha256": "0fbbc92c705f3d6b69c096e40e027dfc250e196f705364fa37bff6e13d71bd03"
     },
     {
       "path": ".gitignore",
@@ -602,7 +602,7 @@
     },
     {
       "path": "deploy/staging/verify.sh",
-      "sha256": "28635d399eeff857286e363f638b02cea57b589b792407777eb63baea8d29b77"
+      "sha256": "722bf9872a9a9b26be27e6b0e05f7a3faabd265c1c49faf6a5730a13c4daf5fa"
     },
     {
       "path": "deploy/staging/verify_candidate_artifact.py",
@@ -658,7 +658,7 @@
     },
     {
       "path": "tests/p8_deployment_boundary.py",
-      "sha256": "7544292eb3ce75079fafa46db93c9fc1948bf1bf74b1c731f5b07858b115266c"
+      "sha256": "54c51ecc196d964bf4f050ad60a776ff75bf6c522638aca0fb3fbf7addf5d49a"
     },
     {
       "path": "tests/public_fixtures.py",
@@ -882,7 +882,7 @@
     },
     {
       "path": "tests/test_p8_staging.py",
-      "sha256": "1dc01863ed8302e3c8f604102cb2b55e60a93c96702edd0b43273cb23afc3f16"
+      "sha256": "7d246a99ab14d8f0f6d2a3439dbae36b18bfc418945aab06c3b55c1bd26c4318"
     },
     {
       "path": "tests/test_paper_auto.py",

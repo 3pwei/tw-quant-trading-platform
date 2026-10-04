@@ -163,7 +163,7 @@ def docker(args):
             durable_probe.PATH = str(ROOT / 'volumes/platform-staging_staging-data/staging.sqlite3')
             os.environ.update(BROKER_PROVIDER='disabled', LIVE_TRADING_ENABLED='false')
             durable_probe.seed()
-        elif '/runtime_acceptance.py' in args or 'unittest' in args:
+        elif '/app/p8_runtime_acceptance.py' in args or 'unittest' in args:
             # Deliberately no private provider in a public orchestration fixture.
             with (ROOT / 'private-boundary-calls').open('a') as stream: stream.write('stub\n')
         elif 'tw_quant.synthetic_data' not in args:
