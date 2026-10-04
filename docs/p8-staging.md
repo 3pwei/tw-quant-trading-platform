@@ -232,3 +232,13 @@ same rules as provisioning, without creating users or groups. Listener inspectio
 errors/timeouts fail closed. An occupied port is accepted only for one exact
 127.0.0.1:18080 listener with the active staging socket unit; wildcard, extra or
 foreign listeners are rejected before host writes.
+
+Soak duration is pinned from the workflow request when the session is initialized.
+The collector rejects a different duration before observing runtime state, and
+the uploaded final report is checked against the original workflow input. Every
+sample records a monotonic offset; final acceptance recomputes elapsed time,
+sample count and maximum gap instead of trusting aggregate counters. Missing,
+duplicate, non-finite or inconsistent offsets cannot produce acceptance. The
+bounded offset list contains no log content or runtime secrets. Virtual-clock
+regressions validate the collector and failure paths; they are not evidence of
+an actual 30–360 minute staging observation.

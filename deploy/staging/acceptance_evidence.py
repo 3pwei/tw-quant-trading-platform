@@ -4,6 +4,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -159,7 +160,8 @@ def append(event, data, root=ROOT):
         os.fsync(f.fileno())
 
 
-def init(root=ROOT):
+def init(minutes, root=ROOT):
+    require(type(minutes) is int and 30 <= minutes <= 360, 'invalid-soak-duration')
     from candidate_manifest import validate
     document = json.loads((root / 'bundle/candidate-manifest.json').read_text())
     validate(document)
@@ -167,7 +169,8 @@ def init(root=ROOT):
     directory.mkdir(parents=True, mode=0o700, exist_ok=False)
     (directory / 'session.json').write_text(json.dumps({'session': directory.name,
         'candidate_run_id': document['provenance']['run_id'], 'pipeline': document['pipeline_revision'],
-        'manifest_sha256': hashlib.sha256((root / 'bundle/candidate-manifest.json').read_bytes()).hexdigest()}))
+        'manifest_sha256': hashlib.sha256((root / 'bundle/candidate-manifest.json').read_bytes()).hexdigest(),
+        'requested_minutes': minutes}))
 
 
 def release_values(path):
@@ -177,6 +180,25 @@ def release_values(path):
         require(key not in values, 'duplicate-release-field')
         values[key] = value
     return values
+
+
+def validate_soak(soak, requested_minutes):
+    require(type(requested_minutes) is int and 30 <= requested_minutes <= 360, 'invalid-soak-duration')
+    require(type(soak.get('requested_minutes')) is int and
+            soak['requested_minutes'] == requested_minutes, 'soak-duration-mismatch')
+    offsets = soak.get('sample_offsets_seconds')
+    require(isinstance(offsets, list) and 2 <= len(offsets) <= 2162, 'soak-samples-invalid')
+    numeric = lambda value: type(value) in (int, float) and math.isfinite(value) and value >= 0
+    require(all(numeric(value) for value in offsets), 'soak-samples-invalid')
+    gaps = [offsets[0], *(b - a for a, b in zip(offsets, offsets[1:]))]
+    require(all(gap > 0 for gap in gaps[1:]) and max(gaps) <= 30, 'soak-sample-gap')
+    require(requested_minutes * 60 <= offsets[-1] <= requested_minutes * 60 + 30, 'soak-coverage-incomplete')
+    require(type(soak.get('samples')) is int and soak['samples'] == len(offsets), 'soak-sample-count-mismatch')
+    for field, expected in (('elapsed_seconds', offsets[-1]), ('max_sample_gap_seconds', max(gaps))):
+        require(numeric(soak.get(field)) and math.isclose(soak[field], expected, rel_tol=0, abs_tol=1e-6),
+                'soak-summary-mismatch')
+    return {'requested_minutes': requested_minutes, 'elapsed_seconds': offsets[-1],
+            'samples': len(offsets), 'max_sample_gap_seconds': max(gaps)}
 
 
 def final_check(root=ROOT):
@@ -213,13 +235,11 @@ def final_check(root=ROOT):
     for service in SERVICES:
         require(rows[0]['data']['containers'][service]['image'] == rows[8]['data']['containers'][service]['image'], 'rollback-image-mismatch')
     soak = rows[-1]['data']
-    require(soak['elapsed_seconds'] >= soak['requested_minutes'] * 60 and
-            30 <= soak['requested_minutes'] <= 360 and soak['samples'] >= 2 and
-            soak['max_sample_gap_seconds'] <= 30, 'soak-coverage-incomplete')
+    soak_summary = validate_soak(soak, envelope.get('requested_minutes'))
     require(all(x['complete'] is True for x in soak['log_coverage'].values()) and
             set(soak['log_coverage']) == set(SERVICES), 'log-coverage-incomplete')
     continuity(after, capture(root))
-    result = {**envelope, 'acceptance': 'PASS', 'stages': expected,
+    result = {**envelope, 'acceptance': 'PASS', 'stages': expected, 'soak': soak_summary,
               'final_release': 'known_good', 'previous_release': 'candidate',
               'production_deployments': 'unknown-not-queried',
               'live_reconciliation': 'not-applicable-disabled',
@@ -300,13 +320,16 @@ class LogMonitor:
 
 
 def soak(minutes, root=ROOT):
-    require(30 <= minutes <= 360, 'invalid-soak-duration')
+    require(type(minutes) is int and 30 <= minutes <= 360, 'invalid-soak-duration')
+    envelope = json.loads((session_dir(root) / 'session.json').read_text())
+    requested = envelope.get('requested_minutes')
+    require(type(requested) is int and minutes == requested, 'soak-duration-mismatch')
     before = capture(root)
     require(before['records']['current'] == before['records']['active-release'] and
             before['records']['current'] is not None, 'release-records-not-aligned')
     logs = LogMonitor(before['containers'], before['observed_at'])
     started = previous = time.monotonic()
-    samples, max_gap = 0, 0.0
+    offsets, max_gap = [], 0.0
     try:
         while True:
             after = capture(root)
@@ -317,16 +340,18 @@ def soak(minutes, root=ROOT):
             max_gap = max(max_gap, now - previous)
             require(max_gap <= 30, 'soak-sample-gap')
             previous = now
-            samples += 1
+            offsets.append(now - started)
             if now - started >= minutes * 60:
                 break
             time.sleep(min(10, max(0, minutes * 60 - (now - started))))
     finally:
         logs.close()
     require(all(s['complete'] for s in logs.stats.values()), 'log-coverage-incomplete')
-    append('soak', {'before': before, 'after': after, 'samples': samples, 'requested_minutes': minutes,
-                   'elapsed_seconds': now - started, 'max_sample_gap_seconds': max_gap,
-                   'log_coverage': logs.stats}, root)
+    data = {'before': before, 'after': after, 'samples': len(offsets), 'requested_minutes': minutes,
+            'sample_offsets_seconds': offsets, 'elapsed_seconds': now - started,
+            'max_sample_gap_seconds': max_gap, 'log_coverage': logs.stats}
+    validate_soak(data, requested)
+    append('soak', data, root)
 
 
 def main():
@@ -337,7 +362,7 @@ def main():
     args = parser.parse_args()
     require(os.environ.get('INSTALL_ROOT', str(ROOT)) == str(ROOT), 'non-staging-root')
     if args.command == 'init':
-        init()
+        init(args.minutes)
     elif args.command == 'capture':
         append(args.event, capture())
     elif args.command == 'restart-check':

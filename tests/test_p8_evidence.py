@@ -29,7 +29,7 @@ diagnostics = load('diagnostics')
 
 
 def snapshot():
-    return {'containers': {s: {'id': str(i) * 64, 'image': 'sha256:' + str(i) * 64,
+    return {'observed_at': '2026-10-04T01:00:15Z', 'containers': {s: {'id': str(i) * 64, 'image': 'sha256:' + str(i) * 64,
         'started': '2026-10-04T01:00:00Z', 'restarts': 0, 'network_mode': 'none' if s == 'execution-worker' else 'internal'}
         for i, s in enumerate(evidence.SERVICES, 1)}, 'durable': {'locked_target_sha256': 'f' * 64},
         'records': {'current': 'a' * 64, 'active-release': 'a' * 64, 'previous': 'b' * 64},
@@ -190,7 +190,7 @@ class LedgerTests(unittest.TestCase):
         (root / 'bundle/candidate-manifest.json').write_text('{}')
         directory = root / 'deployments/evidence/123-1'
         directory.mkdir(parents=True)
-        envelope = {'session': '123-1', 'candidate_run_id': '456', 'pipeline': 'a' * 40,
+        envelope = {'session': '123-1', 'candidate_run_id': '456', 'pipeline': 'a' * 40, 'requested_minutes': 30,
                     'manifest_sha256': hashlib.sha256(b'{}').hexdigest()}
         (directory / 'session.json').write_text(json.dumps(envelope))
         records = [('current', 'known_good', 'rollback'), ('active-release', 'known_good', 'rollback'), ('previous', 'candidate', 'deploy')]
@@ -215,6 +215,7 @@ class LedgerTests(unittest.TestCase):
         after = committed
         rows.append({**envelope, 'event': 'soak', 'data': {'before': after, 'after': after, 'requested_minutes': 30,
             'elapsed_seconds': 1800, 'samples': 181, 'max_sample_gap_seconds': 10,
+            'sample_offsets_seconds': list(range(0, 1801, 10)),
             'log_coverage': {s: {'complete': True} for s in evidence.SERVICES}}})
         return directory, rows, after
 
@@ -231,6 +232,13 @@ class LedgerTests(unittest.TestCase):
             bad_cases = [baseline[:-1], [baseline[1], baseline[0], *baseline[2:]]]
             for change in (lambda d: d[-1]['data'].update(elapsed_seconds=1799),
                            lambda d: d[-1]['data']['log_coverage']['gateway'].update(complete=False),
+                           lambda d: d[-1]['data'].update(samples=2),
+                           lambda d: d[-1]['data'].update(max_sample_gap_seconds=-1),
+                           lambda d: d[-1]['data'].update(elapsed_seconds=float('inf')),
+                           lambda d: d[-1]['data'].update(sample_offsets_seconds=[0, 1800]),
+                           lambda d: d[-1]['data']['sample_offsets_seconds'].__setitem__(2, 10),
+                           lambda d: d[-1]['data']['sample_offsets_seconds'].__setitem__(2, float('nan')),
+                           lambda d: d[-1]['data']['sample_offsets_seconds'].__setitem__(2, True),
                            lambda d: d[0].update(pipeline='b' * 40),
                            lambda d: d[8]['data']['containers']['gateway'].update(image='sha256:' + 'f' * 64)):
                 modified = copy.deepcopy(baseline)
@@ -251,8 +259,63 @@ class LedgerTests(unittest.TestCase):
                 bad_cases.append(modified)
             for rows in bad_cases:
                 with self.assertRaises(ValueError): check(rows)
+            session = json.loads((output / 'session.json').read_text())
+            (output / 'session.json').write_text(json.dumps({**session, 'requested_minutes': 60}))
+            with self.assertRaises(ValueError): check(baseline)
+            (output / 'session.json').write_text(json.dumps(session))
             (root / 'deployments/previous.env').write_text('RELEASE_NAME=known_good\n')
             with self.assertRaises(ValueError): check(baseline)
+
+    def test_session_initialization_pins_duration_and_rejects_invalid_requests(self):
+        from test_p8_recovery_provenance import candidate, manifest
+        for minutes in (None, True, 29, 361, '60', 60):
+            with self.subTest(minutes=minutes), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                (root / 'bundle').mkdir()
+                (root / 'bundle/acceptance-session').write_text('123-1')
+                (root / 'bundle/candidate-manifest.json').write_text(json.dumps(candidate()))
+                with patch.dict(sys.modules, {'candidate_manifest': manifest}):
+                    if minutes != 60 or type(minutes) is not int:
+                        with self.assertRaisesRegex(ValueError, 'invalid-soak-duration'): evidence.init(minutes, root)
+                        self.assertFalse((root / 'deployments').exists())
+                    else:
+                        evidence.init(minutes, root)
+                        session = json.loads((root / 'deployments/evidence/123-1/session.json').read_text())
+                        self.assertEqual(session['requested_minutes'], 60)
+                        with self.assertRaises(FileExistsError): evidence.init(minutes, root)
+
+    def test_soak_rejects_duration_mismatch_before_observing_runtime(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.fixture(root)
+            with patch.object(evidence, 'capture', side_effect=AssertionError('runtime observation before duration check')) as capture:
+                with self.assertRaisesRegex(ValueError, 'soak-duration-mismatch'):
+                    evidence.soak(60, root)
+                capture.assert_not_called()
+
+    def test_soak_collector_records_each_sample_and_stops_on_a_gap(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.fixture(root)
+            logs = Mock()
+            logs.stats = {s: {'complete': True} for s in evidence.SERVICES}
+            for clock, success in (([0, *range(0, 1801, 10)], True), ([0, 31], False)):
+                with self.subTest(success=success), patch.object(evidence, 'capture', side_effect=lambda root: snapshot()), \
+                        patch.object(evidence, 'LogMonitor', return_value=logs), \
+                        patch.object(evidence, 'run'), patch.object(evidence, 'append') as append, \
+                        patch.object(evidence.time, 'monotonic', side_effect=clock), patch.object(evidence.time, 'sleep'):
+                    if success:
+                        evidence.soak(30, root)
+                        data = append.call_args.args[1]
+                        self.assertEqual(data['sample_offsets_seconds'], list(range(0, 1801, 10)))
+                        self.assertEqual(data['samples'], 181)
+                        self.assertEqual(data['elapsed_seconds'], 1800)
+                        self.assertEqual(data['max_sample_gap_seconds'], 10)
+                    else:
+                        with self.assertRaisesRegex(ValueError, 'soak-sample-gap'): evidence.soak(30, root)
+                        append.assert_not_called()
+                    logs.close.assert_called_once()
+                    logs.reset_mock()
 
 
 if __name__ == '__main__': unittest.main()
