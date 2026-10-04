@@ -202,6 +202,12 @@ jobs:
           GHCR_TOKEN: ${{ github.token }}
         run: |
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          curl --fail --silent --show-error \
+            --header "Authorization: Bearer ${GHCR_TOKEN}" \
+            --header 'Accept: application/vnd.github+json' \
+            "https://api.github.com/users/${GITHUB_REPOSITORY_OWNER}/packages/container/tw-quant-trading-platform-staging" \
+            --output "${RUNNER_TEMP}/package.json"
+          python -c 'import json,os; d=json.load(open(os.environ["RUNNER_TEMP"]+"/package.json")); assert d["visibility"] == "private"'
           for image in "$RUNTIME_A_TAG" "$RUNTIME_B_TAG" "$GATEWAY_TAG"; do docker push "$image"; done
           curl --fail --silent --show-error \
             --header "Authorization: Bearer ${GHCR_TOKEN}" \

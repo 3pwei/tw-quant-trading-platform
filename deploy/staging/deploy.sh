@@ -41,27 +41,59 @@ chmod 600 "${target}"
 set -a
 source "${target}"
 set +a
+export P8_PHASE="${ACTION}-${RELEASE:-rollback}"
 for ref in "${STAGING_RUNTIME_IMAGE}" "${STAGING_GATEWAY_IMAGE}"; do
   docker image inspect "${ref}" >/dev/null
 done
 
 prior=""
+prior_previous=""
 if [[ -f "${CURRENT}" ]]; then
   prior="$(mktemp "${DEPLOYMENTS}/.prior.XXXXXX")"
   cp "${CURRENT}" "${prior}"
   chmod 600 "${prior}"
 fi
+if [[ -f "${PREVIOUS}" ]]; then
+  prior_previous="$(mktemp "${DEPLOYMENTS}/.previous.XXXXXX")"
+  cp "${PREVIOUS}" "${prior_previous}"
+  chmod 600 "${prior_previous}"
+fi
 
 restore_prior() {
   local status=$?
+  trap - EXIT
+  # Preserve the original deployment failure, even when compensation also fails.
+  set +e
   if [[ ${status} -ne 0 && -n "${prior}" && -f "${prior}" ]]; then
-    cp "${prior}" "${ACTIVE}"
-    chmod 600 "${ACTIVE}"
-    docker compose --env-file "${COMPOSE_ENV}" --env-file "${ACTIVE}" \
-      -f "${COMPOSE_FILE}" up --no-build --pull never --detach --remove-orphans --force-recreate || true
-    "${BUNDLE}/verify.sh" verify || true
+    if (
+      cp "${prior}" "${ACTIVE}.restore" &&
+      chmod 600 "${ACTIVE}.restore" &&
+      mv "${ACTIVE}.restore" "${ACTIVE}" &&
+      # Shell interpolation wins over --env-file: replace every exported B value.
+      set -a &&
+      source "${ACTIVE}" &&
+      set +a &&
+      export P8_PHASE=compensation &&
+      docker compose --env-file "${COMPOSE_ENV}" --env-file "${ACTIVE}" \
+        -f "${COMPOSE_FILE}" up --no-build --pull never --detach --remove-orphans --force-recreate &&
+      "${BUNDLE}/verify.sh" verify &&
+      cp "${prior}" "${CURRENT}.restore" &&
+      chmod 600 "${CURRENT}.restore" &&
+      mv "${CURRENT}.restore" "${CURRENT}" &&
+      if [[ -n "${prior_previous}" ]]; then
+        cp "${prior_previous}" "${PREVIOUS}.restore" &&
+        chmod 600 "${PREVIOUS}.restore" &&
+        mv "${PREVIOUS}.restore" "${PREVIOUS}"
+      else
+        rm -f "${PREVIOUS}"
+      fi
+    ); then
+      echo 'P8_RESTORE=PASS acceptance=false' >&2
+    else
+      echo 'P8_RESTORE=FAIL acceptance=false operator_intervention_required=true' >&2
+    fi
   fi
-  rm -f "${target}" "${prior:-}"
+  rm -f "${target}" "${prior:-}" "${prior_previous:-}"
   exit ${status}
 }
 trap restore_prior EXIT
@@ -89,6 +121,13 @@ if ! docker run --rm --network none \
   echo "Synthetic staging data preparation failed" >&2
   exit 1
 fi
+
+# A persisted, permanently locked synthetic target proves restart continuity.
+docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+  --mount source=platform-staging_staging-data,target=/data \
+  --mount "type=bind,source=${BUNDLE}/durable_probe.py,target=/durable_probe.py,readonly" \
+  --env BROKER_PROVIDER=disabled --env LIVE_TRADING_ENABLED=false \
+  "${STAGING_RUNTIME_IMAGE}" python /durable_probe.py seed >/dev/null
 
 "${compose[@]}" config --quiet
 if "${compose[@]}" config | grep -qE '(^|/)(srv/trading-platform/|platform-production|production\.sqlite3)'; then
@@ -122,5 +161,6 @@ cp "${CURRENT}" "${ACTIVE}"
 chmod 600 "${ACTIVE}"
 
 trap - EXIT
-rm -f "${target}" "${prior:-}"
+rm -f "${target}" "${prior:-}" "${prior_previous:-}"
+python3 "${BUNDLE}/acceptance_evidence.py" capture --event "${P8_PHASE}/committed"
 echo "P8 staging ${ACTION}: PASS release=${RELEASE:-previous} configuration=${CONFIGURATION_IDENTITY}"
