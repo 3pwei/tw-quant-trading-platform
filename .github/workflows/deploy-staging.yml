@@ -64,39 +64,29 @@ jobs:
             --header 'Accept: application/vnd.github+json' \
             "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}/artifacts" \
             --output "${RUNNER_TEMP}/artifacts.json"
-          artifact_url="$(python -c 'import json,sys; d=json.load(open(sys.argv[1])); a=[x for x in d["artifacts"] if x["name"]=="p8-staging-candidate-manifest" and not x["expired"]]; assert len(a)==1; print(a[0]["archive_download_url"])' "${RUNNER_TEMP}/artifacts.json")"
-          curl --fail --location --silent --show-error \
+          artifact_url="$(python deploy/staging/verify_candidate_artifact.py --artifacts "${RUNNER_TEMP}/artifacts.json" --run-id "$RUN_ID")"
+          curl --fail --location --silent --show-error --max-filesize 131072 \
             --header "Authorization: Bearer ${API_TOKEN}" \
             --header 'Accept: application/vnd.github+json' \
             "$artifact_url" --output "${RUNNER_TEMP}/candidate.zip"
-          unzip -q "${RUNNER_TEMP}/candidate.zip" -d candidate-artifact
-          python deploy/staging/candidate_manifest.py verify candidate-artifact/candidate-manifest.json
-
-      - name: Verify candidate workflow and exact pipeline revision
-        env:
-          API_TOKEN: ${{ github.token }}
-          RUN_ID: ${{ inputs.candidate_run_id }}
-        run: |
-          curl --fail --silent --show-error \
-            --header "Authorization: Bearer ${API_TOKEN}" \
-            --header 'Accept: application/vnd.github+json' \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN_ID}" \
-            --output "${RUNNER_TEMP}/run.json"
-          pipeline_sha="$(python -c 'import json; print(json.load(open("candidate-artifact/candidate-manifest.json"))["pipeline_revision"])')"
-          python - "$RUNNER_TEMP/run.json" "$pipeline_sha" <<'PY'
-          import json, sys
-          run = json.load(open(sys.argv[1]))
-          assert run["name"] == "P8 Staging Candidate"
-          assert run["event"] == "workflow_dispatch"
-          assert run["status"] == "completed" and run["conclusion"] == "success"
-          assert run["head_branch"] == "master" and run["head_sha"] == sys.argv[2]
-          PY
-          git cat-file -e "${pipeline_sha}^{commit}"
-          git checkout --detach "$pipeline_sha"
-          test "$(git rev-parse HEAD)" = "$pipeline_sha"
-          python deploy/staging/candidate_manifest.py verify candidate-artifact/candidate-manifest.json
+          for resource in "runs/${RUN_ID}" "workflows/staging-candidate.yml"; do
+            name=run
+            if [[ "$resource" == workflows/* ]]; then name=workflow; fi
+            curl --fail --silent --show-error \
+              --header "Authorization: Bearer ${API_TOKEN}" \
+              --header 'Accept: application/vnd.github+json' \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/${resource}" \
+              --output "${RUNNER_TEMP}/${name}.json"
+          done
+          python deploy/staging/verify_candidate_artifact.py \
+            --artifacts "${RUNNER_TEMP}/artifacts.json" --run-id "$RUN_ID" \
+            --archive "${RUNNER_TEMP}/candidate.zip" --run "${RUNNER_TEMP}/run.json" \
+            --workflow "${RUNNER_TEMP}/workflow.json" --pipeline "$GITHUB_SHA" \
+            --output candidate-artifact/candidate-manifest.json
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
 
       - name: Configure isolated staging SSH
+        id: staging_ssh
         env:
           SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
           SSH_HOST_KEY: ${{ secrets.STAGING_SSH_HOST_KEY }}
@@ -125,7 +115,13 @@ jobs:
           EOF
           chmod 600 ~/.ssh/config
 
+      - name: Read-only staging preflight before host writes
+        run: |
+          install -d -m 700 p8-diagnostics
+          timeout --signal=TERM --kill-after=10s 90s ssh p8-staging "sudo bash -s" < deploy/staging/preflight.sh > p8-diagnostics/preflight.txt
+
       - name: Stage exact pipeline bundle and owner-only provider factory
+        id: staging_bundle
         env:
           PRIVATE_PROVIDER_FACTORY: ${{ secrets.PRIVATE_PROVIDER_FACTORY }}
         run: |
@@ -144,6 +140,10 @@ jobs:
           install -m 644 deploy/staging/prepare_ingress_identity.py "${RUNNER_TEMP}/p8-bundle/prepare_ingress_identity.py"
           install -m 644 deploy/staging/p8-staging-ingress.socket "${RUNNER_TEMP}/p8-bundle/p8-staging-ingress.socket"
           install -m 644 deploy/staging/p8-staging-ingress.service "${RUNNER_TEMP}/p8-bundle/p8-staging-ingress.service"
+          for tool in acceptance_evidence.py durable_probe.py; do
+            install -m 644 "deploy/staging/${tool}" "${RUNNER_TEMP}/p8-bundle/${tool}"
+          done
+          printf '%s-%s\n' "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" > "${RUNNER_TEMP}/p8-bundle/acceptance-session"
           install -d -m 755 "${RUNNER_TEMP}/p8-bundle/runtime-tests"
           for test_file in \
             tests/test_broker_contract.py \
@@ -160,7 +160,7 @@ jobs:
           printf '%s' "$PRIVATE_PROVIDER_FACTORY" | timeout --signal=TERM --kill-after=10s 90s ssh p8-staging \
             "sudo install -d -m 700 /srv/trading-platform-staging/provider && sudo install -o 10001 -g 10001 -m 400 /dev/stdin /srv/trading-platform-staging/provider/factory"
           timeout --signal=TERM --kill-after=30s 3m ssh p8-staging \
-            "set -e; sudo install -d -m 755 /srv/trading-platform-staging/bundle; sudo tar -xzf /tmp/p8-bundle.tar.gz -C /srv/trading-platform-staging/bundle --strip-components=1; rm -f /tmp/p8-bundle.tar.gz; sudo /srv/trading-platform-staging/bundle/prepare-host.sh"
+            "set -e; sudo install -d -m 755 /srv/trading-platform-staging/bundle; sudo tar -xzf /tmp/p8-bundle.tar.gz -C /srv/trading-platform-staging/bundle --strip-components=1; rm -f /tmp/p8-bundle.tar.gz; sudo /srv/trading-platform-staging/bundle/prepare-host.sh; sudo python3 /srv/trading-platform-staging/bundle/acceptance_evidence.py init"
 
       - name: Pull exact approved digests on staging without persistent registry token
         env:
@@ -194,25 +194,55 @@ jobs:
           SOAK_MINUTES: ${{ inputs.soak_minutes }}
         run: |
           timeout --signal=TERM --kill-after=30s "$((SOAK_MINUTES + 15))m" ssh p8-staging \
-            "sudo /srv/trading-platform-staging/bundle/soak.sh '${SOAK_MINUTES}'"
+            "sudo flock -w 30 /var/lock/tw-quant-staging.lock /srv/trading-platform-staging/bundle/soak.sh '${SOAK_MINUTES}'"
 
-      - name: Capture non-secret P8 acceptance records
+      - name: Capture safe diagnostics on success or failure
+        if: ${{ always() && steps.staging_ssh.outcome == 'success' }}
+        run: |
+          install -d -m 700 p8-diagnostics
+          timeout --signal=TERM --kill-after=10s 90s ssh p8-staging "sudo python3 -" < deploy/staging/diagnostics.py > p8-diagnostics/status.json
+          if [[ "${{ steps.staging_bundle.outcome }}" == success ]]; then
+            for name in session.json ledger.jsonl acceptance.json; do
+              timeout --signal=TERM --kill-after=10s 90s ssh p8-staging \
+                "sudo cat /srv/trading-platform-staging/deployments/evidence/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/${name}" \
+                > "p8-diagnostics/${name}" || rm -f "p8-diagnostics/${name}"
+            done
+          fi
+
+      - name: Upload P8 diagnostics including failed runs
+        if: ${{ always() && steps.staging_ssh.outcome == 'success' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: p8-staging-diagnostics
+          path: p8-diagnostics
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Capture verified P8 acceptance ledger
         if: success()
         run: |
           install -d -m 700 p8-acceptance
-          timeout --signal=TERM --kill-after=10s 90s ssh p8-staging \
-            "sudo cat /srv/trading-platform-staging/deployments/current.env" > p8-acceptance/current.env
-          timeout --signal=TERM --kill-after=10s 90s ssh p8-staging \
-            "sudo cat /srv/trading-platform-staging/deployments/previous.env" > p8-acceptance/previous.env
+          for name in session.json ledger.jsonl acceptance.json; do
+            timeout --signal=TERM --kill-after=10s 90s ssh p8-staging \
+              "sudo cat /srv/trading-platform-staging/deployments/evidence/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/${name}" \
+              > "p8-acceptance/${name}"
+          done
           cp candidate-artifact/candidate-manifest.json p8-acceptance/
-          {
-            echo '### P8 staging acceptance'
-            echo '- Known-good A: deployed and verified'
-            echo '- Candidate B: same CI-built digest deployed and verified'
-            echo '- Rollback: previous record A restored without rebuild'
-            echo "- Soak: ${{ inputs.soak_minutes }} minutes passed"
-            echo '- Production deployments: 0'
-          } >> "$GITHUB_STEP_SUMMARY"
+          python - <<'PYCODE'
+          import hashlib, json, os
+          from pathlib import Path
+          report = json.loads(Path('p8-acceptance/acceptance.json').read_text())
+          assert report['acceptance'] == 'PASS'
+          assert report['session'] == os.environ['GITHUB_RUN_ID'] + '-' + os.environ['GITHUB_RUN_ATTEMPT']
+          assert report['pipeline'] == os.environ['GITHUB_SHA']
+          assert report['manifest_sha256'] == hashlib.sha256(Path('p8-acceptance/candidate-manifest.json').read_bytes()).hexdigest()
+          assert report['ledger_sha256'] == hashlib.sha256(Path('p8-acceptance/ledger.jsonl').read_bytes()).hexdigest()
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('### P8 staging acceptance\n')
+              summary.write('- A / B / restart / rollback / soak: verified by ordered ledger\n')
+              summary.write('- Live reconciliation: not applicable; execution remains disabled\n')
+              summary.write('- Production deployments: unknown (not queried by this workflow)\n')
+          PYCODE
 
       - name: Upload P8 staging acceptance
         if: success()

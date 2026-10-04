@@ -177,7 +177,11 @@ verify_once() {
 
 verify_once
 if [[ "${MODE}" == restart ]]; then
+  python3 "${INSTALL_ROOT}/bundle/acceptance_evidence.py" capture --event "${P8_PHASE:?}/restart-before"
   "${compose[@]}" restart market-api execution-worker gateway
   verify_once
+  python3 "${INSTALL_ROOT}/bundle/acceptance_evidence.py" restart-check --event "${P8_PHASE}/restart-after"
+elif [[ "${P8_PHASE:-}" != compensation ]]; then
+  python3 "${INSTALL_ROOT}/bundle/acceptance_evidence.py" capture --event "${P8_PHASE:?}/verified"
 fi
 echo "P8 staging runtime verification: PASS (${MODE})"

@@ -15,6 +15,7 @@ IDENTITY_FILE = Path(__file__).resolve().with_name("identities.conf")
 if not IDENTITY_FILE.is_file():
     IDENTITY_FILE = ROOT / "deploy/staging/identities.conf"
 IDENTITIES = {}
+IMAGE_REPOSITORY = "ghcr.io/3pwei/tw-quant-trading-platform-staging"
 for line in IDENTITY_FILE.read_text().splitlines():
     if line and not line.startswith("#"):
         key, value = line.split("=", 1)
@@ -42,7 +43,8 @@ def image(ref: str, digest: str, config_digest: str) -> dict[str, str]:
 
 
 def validate(document: dict) -> None:
-    require(document.get("schema_version") == 1, "unknown manifest schema")
+    require(isinstance(document, dict), "manifest must be an object")
+    require(type(document.get("schema_version")) is int and document["schema_version"] == 1, "unknown manifest schema")
     require(document.get("platform_source_sha") == IDENTITIES["PLATFORM_SOURCE_SHA"], "Platform source mismatch")
     require(re.fullmatch(r"[0-9a-f]{40}", str(document.get("pipeline_revision", ""))) is not None, "invalid pipeline revision")
     require(document.get("core") == {
@@ -55,10 +57,20 @@ def validate(document: dict) -> None:
         "p7_acceptance_sha": IDENTITIES["P7_ACCEPTANCE_SHA"],
     }, "private provider identity mismatch")
     images = document.get("images")
+    provenance = document.get("provenance")
+    require(isinstance(provenance, dict), "provenance is missing")
+    require(provenance.get("build_once") is True, "build-once declaration is required")
+    require(provenance.get("builder") == "github-actions/hosted-linux-x64", "builder mismatch")
+    for key in ("run_id", "run_attempt"):
+        require(isinstance(provenance.get(key), str) and re.fullmatch(r"[1-9][0-9]*", provenance[key]) is not None,
+                "candidate " + key + " is invalid")
+    suffix = provenance["run_id"] + "-" + provenance["run_attempt"]
     require(isinstance(images, dict), "images are missing")
     gateway = images.get("gateway")
     require(isinstance(gateway, dict), "gateway image is missing")
     image(gateway.get("ref", ""), gateway.get("digest", ""), gateway.get("config_digest", ""))
+    require(gateway["ref"] == IMAGE_REPOSITORY + ":gateway-" + suffix + "@" + gateway["digest"],
+            "gateway repository or run tag mismatch")
     releases = images.get("releases")
     require(isinstance(releases, dict) and set(releases) == {"known_good", "candidate"}, "release pair is invalid")
     identities = set()
@@ -66,17 +78,16 @@ def validate(document: dict) -> None:
     for name, release in releases.items():
         require(isinstance(release, dict), "release is invalid")
         config = release.get("configuration_identity")
-        require(re.fullmatch(r"p8-[ab]-[0-9]+-[0-9]+", str(config)) is not None, "configuration identity is invalid")
+        role = "a" if name == "known_good" else "b"
+        require(config == "p8-" + role + "-" + suffix, "configuration identity does not match provenance")
         identities.add(config)
         runtime = release.get("runtime")
         require(isinstance(runtime, dict), "runtime image is missing")
         image(runtime.get("ref", ""), runtime.get("digest", ""), runtime.get("config_digest", ""))
+        require(runtime["ref"] == IMAGE_REPOSITORY + ":runtime-" + role + "-" + suffix + "@" + runtime["digest"],
+                "runtime repository or run tag mismatch")
         runtime_digests.add(runtime["digest"])
     require(len(identities) == 2 and len(runtime_digests) == 2, "rollback releases must be distinct immutable images")
-    provenance = document.get("provenance")
-    require(isinstance(provenance, dict), "provenance is missing")
-    require(str(provenance.get("run_id", "")).isdigit(), "candidate run ID is invalid")
-    require(str(provenance.get("run_attempt", "")).isdigit(), "candidate run attempt is invalid")
 
 
 def main() -> int:

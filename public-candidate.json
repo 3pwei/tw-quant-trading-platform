@@ -14,7 +14,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "4c11ffe8fcef4560bb698381238629d8e614f764e7f20e2e6c5cb4d8b2c70226"
+      "sha256": "4068948163e267193147d1e0edd7281b5a7eed71e6679d48c4ab7e505f07b989"
     },
     {
       "path": ".github/workflows/deploy-lightsail.yml",
@@ -22,7 +22,7 @@
     },
     {
       "path": ".github/workflows/deploy-staging.yml",
-      "sha256": "2492f3755bf845a03b59f1146e237dc151150f3b3c8cb284bb30ca07d2ac3975"
+      "sha256": "99dec21700fd4a1370f6be487b1768e8a1e9791fad2ea4161f987b8df0433bcc"
     },
     {
       "path": ".github/workflows/security-exception-expiry.yml",
@@ -34,7 +34,7 @@
     },
     {
       "path": ".github/workflows/staging-candidate.yml",
-      "sha256": "82fa8c556ac6e03090f3c1089035a8a140482793459a032eeaca4139fc1fd453"
+      "sha256": "36ab1c48f64888231068cfd8e73912035763284f5fb8204374aa6d9452ab09e6"
     },
     {
       "path": ".gitignore",
@@ -525,8 +525,12 @@
       "sha256": "b75eaa3c2b9c98c9b30f18b92b46592dd9414ddb9c7980fdb9125c26cff1940a"
     },
     {
+      "path": "deploy/staging/acceptance_evidence.py",
+      "sha256": "2dba5be2ed8ac072a18c92f49d0430002c4414a2b71834fe801c41b66dafe414"
+    },
+    {
       "path": "deploy/staging/candidate_manifest.py",
-      "sha256": "347485247de9b77db2aa44435307d8c854958a067b2d6ab99e942107fd0df822"
+      "sha256": "5869497802c2c71a16b7d139775a4103a9ae680dca0f227862bc0f9dbc0cf5da"
     },
     {
       "path": "deploy/staging/composition.py",
@@ -534,11 +538,19 @@
     },
     {
       "path": "deploy/staging/deploy.sh",
-      "sha256": "88795d6e28a5fc4ecc087ad969f845c9006340501c7a29b481d63bc70665db46"
+      "sha256": "030112da416dfe5c11a8f1938f018850502e85b119966e67c07139afa31050d2"
+    },
+    {
+      "path": "deploy/staging/diagnostics.py",
+      "sha256": "5aef4e945a8e2e02f922ef86c28be7a6844d3044456ff5e501829ca7ef2d78f9"
     },
     {
       "path": "deploy/staging/docker-compose.yml",
       "sha256": "1c5a8655a60ea3860755908729222c02c3d01275ec185214a0881a65b0b984c4"
+    },
+    {
+      "path": "deploy/staging/durable_probe.py",
+      "sha256": "2f1448e9a2e49b466436f68238044ca6df25abb3c702b4d650d67b439660bfd9"
     },
     {
       "path": "deploy/staging/identities.conf",
@@ -561,6 +573,10 @@
       "sha256": "8afbae3bbeb2079facbeaf3ada5ae7b9773cebb1900403f857b5fa4e91c4ef53"
     },
     {
+      "path": "deploy/staging/preflight.sh",
+      "sha256": "b02fa616bfa26ea6fb5cc25c98ab0b13bb96debf1f07b09ed5e829b47baaf2ea"
+    },
+    {
       "path": "deploy/staging/prepare-host.sh",
       "sha256": "814236d04a7b809a2359bebb0af30c5d037ce44a7e4f61d488492c2b266c5720"
     },
@@ -578,15 +594,19 @@
     },
     {
       "path": "deploy/staging/smoke_compose.py",
-      "sha256": "368f99a819ff38209404e8e21a50968443da9806ee68f49a399d3473c9c74935"
+      "sha256": "b57b87fcfb9782fcba6caefbbe13d6a0b65a42e6a1e27b7d32e323db1fef560f"
     },
     {
       "path": "deploy/staging/soak.sh",
-      "sha256": "caf4fe89cb708966b68cd91787c203b27e24f226ce0a59c7a919b5286699f6ac"
+      "sha256": "3006ed8524e9106c831f33f23bb6bf11c7b5ed4c87ad292ec1ab9f78df6faefc"
     },
     {
       "path": "deploy/staging/verify.sh",
-      "sha256": "0627c418eb2114a6448c34678cc37d324c9e5ce34e2c6d08fecf0a8652f45c20"
+      "sha256": "28635d399eeff857286e363f638b02cea57b589b792407777eb63baea8d29b77"
+    },
+    {
+      "path": "deploy/staging/verify_candidate_artifact.py",
+      "sha256": "2805a6350a4f7550bd60c87ddc82590c52cfcbb1de682c5709e836c1308b85d5"
     },
     {
       "path": "docker-compose.yml",
@@ -602,7 +622,7 @@
     },
     {
       "path": "docs/p8-staging.md",
-      "sha256": "8c44795cd137947a55f927b0774492dc4b573ae5414f2e87c4bb3261fc5ca1ca"
+      "sha256": "deb653b77c5816ef316741ad530895abb7fc5f828d668daf6e5036cbd99a1cfe"
     },
     {
       "path": "docs/provenance.md",
@@ -825,6 +845,10 @@
       "sha256": "3c0341c5590e42de1fd262b2b7bfe4bedbae3221bf097251f4cfb45b1735f8ac"
     },
     {
+      "path": "tests/test_p8_evidence.py",
+      "sha256": "17ac88509cc1fca9a7a9a6d313e66d051f09e58519c92810204582f007d19485"
+    },
+    {
       "path": "tests/test_p8_gateway.py",
       "sha256": "93e141b668d1df2451b80632f784edf9c9c85b0eb60344c1e2321fb73d4f1835"
     },
@@ -837,8 +861,12 @@
       "sha256": "48c0f8c2440377a3ef4b6c24a6a8c863de2c0752e5b6cff597cc2346e778b8e8"
     },
     {
+      "path": "tests/test_p8_recovery_provenance.py",
+      "sha256": "bdc04afb30486f5223ef23337e1146ff2ff26fbdbc76bf2a06a90ddf3988961f"
+    },
+    {
       "path": "tests/test_p8_staging.py",
-      "sha256": "472b6582e14e96bfc56faf54a48d88f02c140845726e1e5310b10b4221716a20"
+      "sha256": "1dc01863ed8302e3c8f604102cb2b55e60a93c96702edd0b43273cb23afc3f16"
     },
     {
       "path": "tests/test_paper_auto.py",

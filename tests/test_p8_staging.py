@@ -38,11 +38,11 @@ class P8IdentityTests(unittest.TestCase):
             command = [
                 str(script), "create", "--output", str(path),
                 "--pipeline-revision", "1" * 40, "--run-id", "123", "--run-attempt", "1",
-                "--runtime-a-ref", "ghcr.io/example/runtime:a@" + digest_a,
+                "--runtime-a-ref", "ghcr.io/3pwei/tw-quant-trading-platform-staging:runtime-a-123-1@" + digest_a,
                 "--runtime-a-digest", digest_a, "--runtime-a-config-digest", config_a,
-                "--runtime-b-ref", "ghcr.io/example/runtime:b@" + digest_b,
+                "--runtime-b-ref", "ghcr.io/3pwei/tw-quant-trading-platform-staging:runtime-b-123-1@" + digest_b,
                 "--runtime-b-digest", digest_b, "--runtime-b-config-digest", config_b,
-                "--gateway-ref", "ghcr.io/example/gateway:g@" + digest_g,
+                "--gateway-ref", "ghcr.io/3pwei/tw-quant-trading-platform-staging:gateway-123-1@" + digest_g,
                 "--gateway-digest", digest_g, "--gateway-config-digest", config_g,
             ]
             created = subprocess.run(command, capture_output=True, text=True)
@@ -198,7 +198,7 @@ class P8StagingIsolationTests(unittest.TestCase):
         self.assertIn('python3 "${BUNDLE}/candidate_manifest.py" verify', deploy)
         self.assertIn('python3 "${BUNDLE}/candidate_manifest.py" emit-env', deploy)
         self.assertIn("python3 -c 'import json,sys", verify)
-        self.assertIn("python3 -c 'import json,sys", soak)
+        self.assertIn('python3 "${BUNDLE}/acceptance_evidence.py" soak', soak)
 
     def test_deployment_has_atomic_records_rollback_and_no_build(self):
         script = (STAGING / "deploy.sh").read_text()

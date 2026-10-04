@@ -17,6 +17,8 @@ import sys
 import tempfile
 import time
 
+from acceptance_evidence import INSPECT, check_health, continuity
+
 HERE = Path(__file__).resolve().parent
 
 
@@ -43,8 +45,8 @@ def main():
         reservation.bind(("127.0.0.1", 18080))
     env = {k: v for k, v in os.environ.items() if not k.startswith("STAGING_")}
 
-    def run(*argv, timeout=60):
-        result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=timeout)
+    def run(*argv, timeout=60, data=None):
+        result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=timeout, input=data)
         if result.returncode:
             if argv[:2] == ("python3", str(HERE / "ingress_probe.py")):
                 # This probe emits only bounded status fields, never response bytes.
@@ -120,10 +122,18 @@ def main():
                 run("docker", "run", "--rm", "--pull=never", "--network", "none", "--mount",
                     "source=" + project + "_staging-data,target=/data", runtime,
                     "python", "-m", "tw_quant.synthetic_data", "--output", "/data/synthetic.csv")
+                run("docker", "run", "--rm", "--pull=never", "--network", "none", "--read-only", "--cap-drop", "ALL",
+                    "--security-opt", "no-new-privileges", "--mount", "source=" + project + "_staging-data,target=/data",
+                    "--mount", "type=bind,source=" + str(HERE / "durable_probe.py") + ",target=/durable_probe.py,readonly",
+                    "--env", "BROKER_PROVIDER=disabled", "--env", "LIVE_TRADING_ENABLED=false",
+                    runtime, "python", "/durable_probe.py", "seed")
+                baseline = None
                 run(*compose, "up", "--no-build", "--pull", "never", "--detach", "--force-recreate", timeout=180)
                 for phase in ("initial", "restart"):
                     if phase == "restart":
                         run(*compose, "restart", "market-api", "execution-worker", "gateway", timeout=120)
+                    observed = {"containers": {}, "records": {}, "release": release,
+                                "expected_images": {"runtime": runtime, "gateway": args.gateway}}
                     for service in ("market-api", "execution-worker", "gateway"):
                         cid = run(*compose, "ps", "-q", service)
                         deadline = time.monotonic() + 90
@@ -136,17 +146,24 @@ def main():
                         assert "no-new-privileges:true" in json.loads(inspect(cid, "{{json .HostConfig.SecurityOpt}}"))
                         assert not any((json.loads(inspect(cid, "{{json .NetworkSettings.Ports}}")) or {}).values())
                         assert inspect(cid, "{{.Config.User}}") == ("10000:10000" if service == "gateway" else "10001:10001")
+                        observed["containers"][service] = json.loads(inspect(cid, INSPECT))
                         expected_image = args.gateway if service == "gateway" else runtime
                         assert inspect(cid, "{{.Image}}") == run("docker", "image", "inspect", "--format", "{{.Id}}", expected_image)
                         if service == "execution-worker":
                             assert inspect(cid, "{{.HostConfig.NetworkMode}}") == "none"
                             health = json.loads(run("docker", "exec", cid, "cat", "/run/tw-quant-execution/health.json"))
+                            observed["execution"] = check_health(health, observed["containers"][service]["started"])
+                            observed["durable"] = json.loads(run("docker", "exec", "-i", cid, "python", "-", "snapshot",
+                                data=(HERE / "durable_probe.py").read_text()))
                             assert health["locked"] is True and health["external_order_calls"] == 0 and health["external_cancel_calls"] == 0
                         else:
                             networks = json.loads(inspect(cid, "{{json .NetworkSettings.Networks}}"))
                             assert len(networks) == 1
                             for network in networks:
                                 assert run("docker", "network", "inspect", "--format", "{{.Internal}}", network) == "true"
+                    if baseline is not None:
+                        continuity(baseline, observed, restarted=True)
+                    baseline = observed
                     sock = ingress / "gateway.sock"
                     state = sock.stat()
                     assert sock.is_socket() and state.st_uid == 10000 and state.st_gid == 10000 and state.st_mode & 0o777 == 0o600

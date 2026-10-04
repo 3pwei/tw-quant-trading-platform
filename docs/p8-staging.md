@@ -162,3 +162,65 @@ durable order/outbox-before-submit behavior on the staging artifact bytes.
 
 This work does not authorize Production deployment, Production database access,
 real broker credentials, real orders, or P9.
+
+## Deployment debt follow-up (pending remote gates)
+
+The follow-up is staged after the ingress PR. None of these source changes is a
+P8 acceptance result. All require review, exact-head CI/Security, a new Candidate,
+and a separately authorized staging run. Do not rerun Candidate #13 or Staging #8.
+
+| Audit | Implemented contract | Remaining evidence |
+| --- | --- | --- |
+| D1 | Complete Compose A/B gate, host ingress and restart; locked target seeded before each release | Real CI and new private Candidate |
+| D2 | Compensation reloads A into the shell; restores current/previous records only after verification; original failure retained | Mandatory public CI real-Docker failure injection |
+| D3 | Strict positive run/attempt, build-once boolean, role/tag/registry binding; API run/workflow identity, archive digest and manifest checksum before host access | New artifact from exact deployment pipeline |
+| D4 | Bounded shared ingress probe; exact health body and distinct upstream failures | New Candidate and Staging |
+| D5 | Fixed container IDs, start times, images, current/active/previous records, durable target and fresh locked heartbeat; continuous bounded log streams | Real 30–360 minute staging observation |
+| D6 | Same permanently locked synthetic target survives actual service restarts; disabled worker observes it; no secret loading or broker calls | CI Compose restart, then staging restart |
+| D7 | Read-only tool/version/disk/identity/listener preflight before host writes; allowlisted diagnostics uploaded even on failure | Authorized host preflight/failure artifact |
+| D8 | Ordered per-session A/B/rollback/restart/soak ledger; final current=active=A and previous=B, archive hashes and measured soak coverage | Successful new staging acceptance ledger |
+
+Failure compensation is safety recovery, never a successful rollback drill. It
+cannot advance the acceptance ledger, and failed recovery explicitly requires
+operator intervention. The failing deployment keeps its original nonzero status.
+
+Candidate artifacts must come from the same master SHA as the deployment
+workflow. An older candidate cannot select an older verifier via checkout. The
+approved registry is `ghcr.io/3pwei/tw-quant-trading-platform-staging`; role tags
+must match the run and attempt. Package privacy is checked both before and after
+push. Missing artifact digest metadata fails closed rather than skipping integrity.
+
+The synthetic continuity fixture is one owned, permanently locked target in the
+staging database. It has no real account, broker or usable secret reference.
+Seeding refuses to overwrite any existing target; unexpected rows or an unlocked
+fixture abort verification. Container startup must report both execution disabled
+and inactive persisted target. This proves persistence and fail-closed startup;
+**live broker reconciliation is not applicable in this disabled mode**, and the
+ledger labels it accordingly. Existing offline reconciliation tests remain
+separate evidence and are not represented as live broker reconciliation.
+
+Each staging workflow attempt initializes an exclusive evidence directory named
+by its run/attempt, before acceptance starts. A reused session is refused. The
+ledger records exact expected image refs/config digests, observed local image IDs,
+container IDs/start times, record hashes and the synthetic target hash. Partial
+or out-of-order stages cannot generate a PASS report. Failure diagnostics are a
+separate artifact and cannot substitute for acceptance.
+
+Soak permits no container replacement, manual/automatic restart, record drift,
+stale heartbeat, external calls or synthetic state change. Samples must remain
+within 30 seconds; log followers cover the observation window without a tail
+limit. A prematurely ended stream, policy failure or over 64 MiB per service fails
+closed. No raw log bytes are uploaded. The final report records sample count,
+actual elapsed time, maximum gap and log coverage. Production deployment counts
+are `unknown-not-queried`, rather than a hard-coded zero; production auditing
+must be performed independently when a deployment is authorized.
+
+Follow-up regressions also cover rollback records that already contain deployment
+metadata: committing the rollback replaces `DEPLOYMENT_MODE` and `VERIFIED_AT`
+instead of duplicating them. Ledger continuity now links verified → restart-before
+and restart-after → committed, allowing only the intended current/previous record
+rotation, then links rollback committed → soak. A container replacement in these
+gaps cannot pass by presenting individually valid snapshots. Log reader errors,
+early EOF and partial follower startup fail closed; already-started followers are
+cleaned up on startup failure, and successful shutdown drains the readers before
+marking coverage complete. These regression checks do not replace staging evidence.
