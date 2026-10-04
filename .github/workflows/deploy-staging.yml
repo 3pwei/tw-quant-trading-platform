@@ -125,6 +125,7 @@ jobs:
         id: staging_bundle
         env:
           PRIVATE_PROVIDER_FACTORY: ${{ secrets.PRIVATE_PROVIDER_FACTORY }}
+          SOAK_MINUTES: ${{ inputs.soak_minutes }}
         run: |
           test -n "$PRIVATE_PROVIDER_FACTORY"
           install -d -m 700 "${RUNNER_TEMP}/p8-bundle"
@@ -161,7 +162,7 @@ jobs:
           printf '%s' "$PRIVATE_PROVIDER_FACTORY" | timeout --signal=TERM --kill-after=10s 90s ssh p8-staging \
             "sudo install -d -m 700 /srv/trading-platform-staging/provider && sudo install -o 10001 -g 10001 -m 400 /dev/stdin /srv/trading-platform-staging/provider/factory"
           timeout --signal=TERM --kill-after=30s 3m ssh p8-staging \
-            "set -e; sudo install -d -m 755 /srv/trading-platform-staging/bundle; sudo tar -xzf /tmp/p8-bundle.tar.gz -C /srv/trading-platform-staging/bundle --strip-components=1; rm -f /tmp/p8-bundle.tar.gz; sudo /srv/trading-platform-staging/bundle/prepare-host.sh; sudo python3 /srv/trading-platform-staging/bundle/acceptance_evidence.py init"
+            "set -e; sudo install -d -m 755 /srv/trading-platform-staging/bundle; sudo tar -xzf /tmp/p8-bundle.tar.gz -C /srv/trading-platform-staging/bundle --strip-components=1; rm -f /tmp/p8-bundle.tar.gz; sudo /srv/trading-platform-staging/bundle/prepare-host.sh; sudo python3 /srv/trading-platform-staging/bundle/acceptance_evidence.py init --minutes '${SOAK_MINUTES}'"
 
       - name: Pull exact approved digests on staging without persistent registry token
         env:
@@ -221,6 +222,8 @@ jobs:
 
       - name: Capture verified P8 acceptance ledger
         if: success()
+        env:
+          SOAK_MINUTES: ${{ inputs.soak_minutes }}
         run: |
           install -d -m 700 p8-acceptance
           for name in session.json ledger.jsonl acceptance.json; do
@@ -234,6 +237,7 @@ jobs:
           from pathlib import Path
           report = json.loads(Path('p8-acceptance/acceptance.json').read_text())
           assert report['acceptance'] == 'PASS'
+          assert report['requested_minutes'] == report['soak']['requested_minutes'] == int(os.environ['SOAK_MINUTES'])
           assert report['session'] == os.environ['GITHUB_RUN_ID'] + '-' + os.environ['GITHUB_RUN_ATTEMPT']
           assert report['pipeline'] == os.environ['GITHUB_SHA']
           assert report['manifest_sha256'] == hashlib.sha256(Path('p8-acceptance/candidate-manifest.json').read_bytes()).hexdigest()
