@@ -34,7 +34,7 @@
     },
     {
       "path": ".github/workflows/staging-candidate.yml",
-      "sha256": "a35485cb342c5c8958dab88d2e41f3a84f70b168386e806993bfa19d00fbc580"
+      "sha256": "43e44ac790092a6333fd826c7c31e9b00e5e212b805f2eee95c8b889c9b4483c"
     },
     {
       "path": ".gitignore",
@@ -518,7 +518,7 @@
     },
     {
       "path": "deploy/staging/Dockerfile.gateway",
-      "sha256": "9902028eeecdbc23e2f6997bf228729048cf1202dfbd360b1c2711b5aede375a"
+      "sha256": "244d23b7aa9307d7503c93d5f795dcb7801e2eb5e7cb1a94ed36bbb6ba2fd266"
     },
     {
       "path": "deploy/staging/Dockerfile.runtime",
@@ -794,7 +794,7 @@
     },
     {
       "path": "tests/test_p8_staging.py",
-      "sha256": "05fc35faec336a8a6a63970051c84f3c59cec45144d72057251d2e6aa2638baa"
+      "sha256": "e6f61df2d6ac86fddb175413b57e651332ebb238a970a2898f5783ef35af603a"
     },
     {
       "path": "tests/test_paper_auto.py",

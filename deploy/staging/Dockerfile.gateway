@@ -10,13 +10,12 @@ RUN npm run build
 FROM alpine:3.23.6@sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0
 RUN set -eux; \
     test "$(apk --print-arch)" = x86_64; \
-    apk add --no-cache ca-certificates curl libcap mailcap; \
+    apk add --no-cache ca-certificates curl mailcap; \
     wget -O /tmp/caddy.tar.gz https://github.com/caddyserver/caddy/releases/download/v2.11.6/caddy_2.11.6_linux_amd64.tar.gz; \
     echo '22c84f8d2d4e4e0e2d422f8049fdd0fc1ed8d5665d0fe166f506c7fd863b4555  /tmp/caddy.tar.gz' | sha256sum -c -; \
     tar xzf /tmp/caddy.tar.gz -C /usr/bin caddy; \
     rm -f /tmp/caddy.tar.gz; \
     chmod 0755 /usr/bin/caddy; \
-    setcap cap_net_bind_service=+ep /usr/bin/caddy; \
     mkdir -p /data /config /srv; \
     addgroup -g 10000 -S caddy \
     && adduser -u 10000 -D -S -G caddy caddy \
