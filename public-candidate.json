@@ -14,7 +14,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "e700d92c137ee39a2c91893c0e88f26de830bcfa308b1080696350211bebeef5"
+      "sha256": "4c11ffe8fcef4560bb698381238629d8e614f764e7f20e2e6c5cb4d8b2c70226"
     },
     {
       "path": ".github/workflows/deploy-lightsail.yml",
@@ -22,7 +22,7 @@
     },
     {
       "path": ".github/workflows/deploy-staging.yml",
-      "sha256": "cc575607aa778473ee68dcc52f91f54df12b4c4cf9990b14bca3e7db78f86df5"
+      "sha256": "b924edc14664e8ef8432a113f9c91fff88c3732db8739c137e73f2412f794095"
     },
     {
       "path": ".github/workflows/security-exception-expiry.yml",
@@ -34,7 +34,7 @@
     },
     {
       "path": ".github/workflows/staging-candidate.yml",
-      "sha256": "f2fa0dc383192cb4ca5a80465ada5cb9de259707327ecd5ebf91eb2c0cd3f8b7"
+      "sha256": "82fa8c556ac6e03090f3c1089035a8a140482793459a032eeaca4139fc1fd453"
     },
     {
       "path": ".gitignore",
@@ -514,7 +514,7 @@
     },
     {
       "path": "deploy/staging/Caddyfile",
-      "sha256": "756a8efec7090c66ad7d230907e10e13a717ece6687ec46d8568f31f4acfcf38"
+      "sha256": "fdb1eafd167de24d2c14098f9b8a789e65db170af16c5811a629f1fab88ec5ef"
     },
     {
       "path": "deploy/staging/Dockerfile.gateway",
@@ -538,7 +538,7 @@
     },
     {
       "path": "deploy/staging/docker-compose.yml",
-      "sha256": "403d5739fa7626d32c915cd12b4559e6ca90d924038e335eaf884ad787160f8b"
+      "sha256": "1c5a8655a60ea3860755908729222c02c3d01275ec185214a0881a65b0b984c4"
     },
     {
       "path": "deploy/staging/identities.conf",
@@ -549,8 +549,20 @@
       "sha256": "cf792c02db40283c2639d2c23a4ca9948ad5786786dc58987b18eb251297678e"
     },
     {
+      "path": "deploy/staging/ingress_probe.py",
+      "sha256": "0ae82f7422af149b237026666792ba88c3a75ed2d232dec18c7be56795665806"
+    },
+    {
+      "path": "deploy/staging/p8-staging-ingress.service",
+      "sha256": "06bab8af7dcecbdd739b64f701c96dde1985133606a5314ede5cb7463b3894a4"
+    },
+    {
+      "path": "deploy/staging/p8-staging-ingress.socket",
+      "sha256": "8afbae3bbeb2079facbeaf3ada5ae7b9773cebb1900403f857b5fa4e91c4ef53"
+    },
+    {
       "path": "deploy/staging/prepare-host.sh",
-      "sha256": "1cbe2228ba9c8421b2821977bbfddd1c524fd08b8e76d2160333e5fb0c32372b"
+      "sha256": "0cda697b9d6dbc5f391d7aeb3ed35647a6c5ce49ef536cd2fb8b0e53831ebb26"
     },
     {
       "path": "deploy/staging/runtime_acceptance.py",
@@ -561,12 +573,16 @@
       "sha256": "b851f883d70f2cfd465ade54364a06e7bdbdb0fa536be5c763c82e3720d12855"
     },
     {
+      "path": "deploy/staging/smoke_compose.py",
+      "sha256": "f0c7053fb51c0f2870465c000ada74ac740aa20fc63eee71da491175e82e6319"
+    },
+    {
       "path": "deploy/staging/soak.sh",
-      "sha256": "a9ac08bc171be78182c676b4d0dbe51bd62ae45063e6c34870a353c761dc44e9"
+      "sha256": "caf4fe89cb708966b68cd91787c203b27e24f226ce0a59c7a919b5286699f6ac"
     },
     {
       "path": "deploy/staging/verify.sh",
-      "sha256": "01d56440d6f89ae33cba6dca22046266a077f4ee4ad289010130be17164bf345"
+      "sha256": "0627c418eb2114a6448c34678cc37d324c9e5ce34e2c6d08fecf0a8652f45c20"
     },
     {
       "path": "docker-compose.yml",
@@ -582,7 +598,7 @@
     },
     {
       "path": "docs/p8-staging.md",
-      "sha256": "cf0c3d6708f83de883dbf22759a85c3dab63f81aa833cb314719b5dd8b6b063b"
+      "sha256": "845777d1ef0fe9933b43bba209ae24d748b7ebdee01fe4fbcd578a2039ccd9b3"
     },
     {
       "path": "docs/provenance.md",
@@ -603,6 +619,10 @@
     {
       "path": "tests/gateway_auth_app.py",
       "sha256": "07697f5aba8c308840edff9ed1a379df0b872c153fc6d7535a2c2450b709316f"
+    },
+    {
+      "path": "tests/p8_compose_backend.py",
+      "sha256": "ccb8079c76751c4b9c9b18f04043460caf682397d85a0214eaec430c98fcfd49"
     },
     {
       "path": "tests/public_fixtures.py",
@@ -809,8 +829,12 @@
       "sha256": "6d634b73ad4214dd1f507a346225a1d6b76663d5be584a22462860807e1c6a60"
     },
     {
+      "path": "tests/test_p8_ingress.py",
+      "sha256": "2bb388086d08957dcc86ae55d1cc9522438f88b5464b0ee028fbd446eef61848"
+    },
+    {
       "path": "tests/test_p8_staging.py",
-      "sha256": "7f70d71fbf4bccb83d8fcc043d233f28d10c5794873844fa9536adc736b90f8d"
+      "sha256": "472b6582e14e96bfc56faf54a48d88f02c140845726e1e5310b10b4221716a20"
     },
     {
       "path": "tests/test_paper_auto.py",

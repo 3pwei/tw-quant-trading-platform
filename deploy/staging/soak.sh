@@ -31,7 +31,7 @@ while (( $(date +%s) < deadline )); do
   done
   health="$("${compose[@]}" exec -T execution-worker cat /run/tw-quant-execution/health.json)"
   python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["locked"] is True; assert d["external_order_calls"] == 0; assert d["external_cancel_calls"] == 0; assert not d.get("reconciliation_in_progress", False)' <<<"${health}"
-  curl --fail --silent http://127.0.0.1:18080/healthz >/dev/null
+  python3 "${BUNDLE}/ingress_probe.py"
   samples=$((samples + 1))
   sleep 10
 done

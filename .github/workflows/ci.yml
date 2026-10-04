@@ -136,6 +136,7 @@ jobs:
           STAGING_EXECUTION_ENV_FILE=/tmp/staging-execution.env \
           STAGING_GATEWAY_ENV_FILE=/tmp/staging-gateway.env \
           STAGING_PROVIDER_FACTORY_FILE=/tmp/staging-provider-factory \
+          STAGING_INGRESS_DIRECTORY=/tmp/staging-ingress \
             docker compose --file deploy/staging/docker-compose.yml config --quiet
       - name: Build public-only runtime images
         run: |
@@ -166,3 +167,11 @@ jobs:
           trap 'docker rm --force "$container" >/dev/null 2>&1 || true' EXIT
           docker cp "$container:/usr/bin/caddy" "${RUNNER_TEMP}/p8-caddy"
           CADDY_BIN="${RUNNER_TEMP}/p8-caddy" python -m unittest discover -s tests -p 'test_p8_gateway.py' -v
+          command -v systemd-socket-activate
+          test -x /usr/lib/systemd/systemd-socket-proxyd
+          CADDY_BIN="${RUNNER_TEMP}/p8-caddy" python -m unittest discover -s tests -p 'test_p8_ingress.py' -v
+      - name: Exercise isolated staging Compose and loopback ingress
+        run: |
+          sudo python3 deploy/staging/smoke_compose.py \
+            --runtime-a platform-market-api:ci --runtime-b platform-market-api:ci \
+            --gateway platform-staging-gateway:ci --public-fixture tests/p8_compose_backend.py

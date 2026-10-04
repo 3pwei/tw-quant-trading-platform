@@ -140,6 +140,9 @@ jobs:
           install -m 755 deploy/staging/soak.sh "${RUNNER_TEMP}/p8-bundle/soak.sh"
           install -m 644 deploy/staging/runtime_acceptance.py "${RUNNER_TEMP}/p8-bundle/runtime_acceptance.py"
           install -m 644 deploy/staging/image_config_digest.py "${RUNNER_TEMP}/p8-bundle/image_config_digest.py"
+          install -m 644 deploy/staging/ingress_probe.py "${RUNNER_TEMP}/p8-bundle/ingress_probe.py"
+          install -m 644 deploy/staging/p8-staging-ingress.socket "${RUNNER_TEMP}/p8-bundle/p8-staging-ingress.socket"
+          install -m 644 deploy/staging/p8-staging-ingress.service "${RUNNER_TEMP}/p8-bundle/p8-staging-ingress.service"
           install -d -m 755 "${RUNNER_TEMP}/p8-bundle/runtime-tests"
           for test_file in \
             tests/test_broker_contract.py \

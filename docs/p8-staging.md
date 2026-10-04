@@ -73,6 +73,67 @@ mount, no port and all live/read-only/canary/auto/Guardian switches disabled. Th
 gateway binds only to host loopback port 18080. Data is deterministic synthetic
 input. All host scripts reject a Production-named or non-staging install root.
 
+## Loopback ingress with preserved network isolation
+
+Staging #8 reached A's first host HTTP probe, then failed with curl exit 7.
+Read-only collection showed a requested Docker port binding but no effective
+binding, while both the gateway-local health endpoint and its API upstream
+returned HTTP 200. The gateway was attached only to the internal bridge. This
+is evidence of a missing host ingress path, not a failed application health
+endpoint. Do not assume `ports:` in a Compose source proves a published port.
+
+The replacement keeps both gateway and API on the internal bridge and the
+execution worker on `network_mode: none`. It does not add an external bridge,
+host networking, or firewall exceptions to those containers. Caddy listens on
+container loopback for its healthcheck, and on a filesystem Unix socket for
+host ingress. The socket directory `/var/lib/tw-quant-staging-ingress` is owned
+by UID/GID 10000 with mode 0700; the socket itself has mode 0600. This directory
+contains no credentials and is the gateway's only new host mount.
+
+The host's `p8-staging-ingress.socket` listens exclusively on 127.0.0.1:18080.
+Socket activation passes that listening descriptor to the distribution's
+`systemd-socket-proxyd`, which forwards bytes to the Unix socket. The service
+runs as UID/GID 10000 without capabilities, with no-new-privileges and only
+AF_UNIX socket creation. It cannot create outbound IP sockets. The TCP byte
+forwarder also supports HTTP upgrade/WebSocket traffic. `prepare-host.sh`
+requires systemd and its socket proxy before making changes, installs the two
+reviewed units, and enables only the staging loopback socket. A failed bind is
+fatal; it never terminates an existing listener or changes firewall rules.
+These host changes occur only during a separately authorized deployment.
+
+The verifier requires a single internal gateway network, no Docker host port
+bindings, the exact loopback systemd listener, and the Unix socket's type,
+owner and permissions. Its bounded HTTP probe requires 200 and exactly `ok`
+for `/healthz`, then HTTP 200 for `/health/live`. It distinguishes ingress from
+upstream failure without logging response bodies or environment variables.
+Soak uses the same probe, so it cannot accept a static error page as health.
+
+Before scanning/publishing, Candidate runs `smoke_compose.py` on a disposable
+systemd/Docker runner using both already-built runtime images and the same
+gateway bytes. It uses the checked-in Compose and host environment templates,
+installs the exact systemd units transiently, and exercises initial/start and
+restart for A and B. It checks image IDs, UID, read-only rootfs, capabilities,
+network isolation, locked execution/zero external calls and both host HTTP
+paths. A healthy container without the host listener is a required negative
+case. The proxy stays running across gateway recreation, exercising the stable
+Unix socket path rather than retaining a stale container IP. No build or pull
+occurs in this gate. Its temporary project/volumes/units are removed afterward;
+it refuses an existing staging installation, ingress directory or ingress unit.
+
+PR CI uses public images with an explicitly inert backend command override;
+it does not access private artifacts. Candidate uses the real private runtime
+composition with no backend override. These are distinct levels of evidence.
+PR CI also requires real Caddy + systemd Unix socket tests for missing sockets,
+restart, API and WebSocket forwarding. Workspaces that prohibit AF_UNIX can
+explicitly skip that test locally; the skip is prohibited when CI is set.
+Passing local HTTP tests is not a substitute for either mandatory CI gate.
+
+Candidate #13 and Staging #8 must not be rerun to test these changed bytes or
+pipeline files. The changes require review, exact master gates, a new Candidate
+and separate Staging authorization. P8 remains BLOCKED. The separately found
+failure-compensation environment bug and provenance/acceptance-evidence gaps
+remain follow-up work; this ingress change does not claim to close that audit.
+
 The drill is fail-closed:
 
 1. deploy and verify known-good A;

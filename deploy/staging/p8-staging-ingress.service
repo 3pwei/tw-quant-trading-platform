@@ -1,0 +1,23 @@
+[Unit]
+Description=P8 staging loopback to isolated gateway socket
+Requires=p8-staging-ingress.socket
+After=p8-staging-ingress.socket
+
+[Service]
+User=10000
+Group=10000
+ExecStart=/usr/lib/systemd/systemd-socket-proxyd /var/lib/tw-quant-staging-ingress/gateway.sock
+NoNewPrivileges=true
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_UNIX
+IPAddressDeny=any
+IPAddressAllow=localhost
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true

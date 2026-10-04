@@ -69,11 +69,12 @@ services:
     depends_on:
       market-api:
         condition: service_healthy
-    ports:
-      - "127.0.0.1:${STAGING_GATEWAY_PORT:-18080}:8080"
+    environment:
+      STAGING_GATEWAY_SOCKET_BIND: "unix//run/staging-ingress/gateway.sock|0600"
     volumes:
       - gateway-data:/data
       - gateway-config:/config
+      - "${STAGING_INGRESS_DIRECTORY:?staging ingress directory is required}:/run/staging-ingress"
     tmpfs:
       - /tmp:rw,noexec,nosuid,nodev,size=32m,uid=10000,gid=10000,mode=1770
     networks: [staging-internal]
