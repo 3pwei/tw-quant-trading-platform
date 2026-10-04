@@ -142,6 +142,13 @@ jobs:
         run: |
           docker build --target market-api --tag platform-market-api:ci .
           docker build --target execution-worker --tag platform-execution-worker:ci .
+      - name: Verify full deployment shell orchestration in a disposable container
+        run: |
+          docker run --rm --network none --read-only --user 0:0 --cap-drop ALL --security-opt no-new-privileges \
+            --tmpfs /tmp:rw,nosuid,nodev,size=128m --tmpfs /srv:rw,nosuid,nodev,size=128m \
+            --mount "type=bind,source=$PWD,target=/source,readonly" --workdir /source \
+            --env P8_DEPLOYMENT_CONTRACT_TEST=1 --env P8_LITERAL_STAGING_ROOT=1 \
+            --entrypoint python platform-execution-worker:ci /source/tests/test_p8_deployment_flow.py -v
       - name: Verify automatic failure compensation with real Docker
         env:
           P8_RECOVERY_DOCKER_TEST: "1"

@@ -242,3 +242,31 @@ duplicate, non-finite or inconsistent offsets cannot produce acceptance. The
 bounded offset list contains no log content or runtime secrets. Virtual-clock
 regressions validate the collector and failure paths; they are not evidence of
 an actual 30–360 minute staging observation.
+
+## Deployment orchestration contract gate
+
+Public-image CI also executes the complete checked-in `deploy.sh`, `verify.sh`,
+`soak.sh`, manifest validator and acceptance ledger together inside a disposable,
+network-none container. At the literal staging path their source bytes are
+unchanged. It runs A → B → rollback A → virtual-clock soak → final report,
+checks all 13 ledger events and current/active/previous records, then injects a B
+health failure and verifies automatic restoration of A, unchanged records and
+ledger, and rejection/removal of the stale acceptance report.
+
+This gate uses explicit Docker, systemd, ingress and private-provider boundary
+doubles; unknown operations fail. SQLite target persistence, manifest validation,
+config-byte hashing, shell control flow and ledger generation are real. The test
+is paired with existing real Docker/Compose/Unix ingress gates, and does not claim
+that private composition or an actual 30-minute staging soak has passed. Local
+execution remaps only the literal staging root into a temporary directory; CI
+uses unmodified root guards and scripts. No bypass is added to deployed code.
+
+The short Level-2 performance test previously observed only 0.25 seconds. A local
+fault-injection experiment with a single 235ms write produced four ticks and
+average tick/database times of about 59/29ms, reproducing the CI failure pattern.
+At two seconds the same injected write remains in the measurements but no longer
+dominates the averages. The test now samples two seconds, emits the full synthetic
+report, and keeps every existing latency budget and SQLite durability setting.
+Negative tests retain rejection of sustained slow writes and over-budget peak
+writes. This demonstrates short-window sensitivity; the exact cause of the past
+shared-runner stall remains unproven because its operation-level trace was absent.

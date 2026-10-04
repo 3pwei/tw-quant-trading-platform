@@ -1,26 +1,49 @@
 from __future__ import annotations
 
+import json
 import sqlite3
+import time
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
-from tw_quant.level2_acceptance import run_level2_soak
+from tw_quant.level2_acceptance import run_level2_soak, SQLiteBarRepository
 from tw_quant.maintenance import backup_sqlite, restore_sqlite, verify_sqlite
 
 
 class Level2SoakAcceptanceTests(unittest.IsolatedAsyncioTestCase):
     async def test_tick_callback_queue_and_sqlite_stay_within_ci_budget(self):
         report = await run_level2_soak(
-            0.25,
+            2.0,
             tick_interval_seconds=0.005,
         )
-        self.assertTrue(report.passed, report.failures)
+        # Preserve all original latency budgets and include startup writes. A
+        # 250ms run can be dominated by one sub-budget cold commit (four ticks).
+        diagnostic = json.dumps(report.to_dict(), sort_keys=True)
+        print('LEVEL2_SOAK_REPORT=' + diagnostic)
+        self.assertTrue(report.passed, diagnostic)
         self.assertGreaterEqual(report.emitted_ticks, 10)
         self.assertEqual(report.processed_ticks, report.emitted_ticks)
         self.assertEqual(report.dropped_ticks, 0)
         self.assertEqual(report.final_queue_depth, 0)
         self.assertLess(report.max_callback_ms, 10)
+
+    async def test_slow_writes_still_fail_unchanged_average_and_peak_budgets(self):
+        original = SQLiteBarRepository.remember_tick
+        for every_write, delay, expected_failure in ((True, 0.05, 'average_database_write_ms'),
+                                                      (False, 0.55, 'max_database_write_ms')):
+            calls = 0
+            def delayed_write(repository, *args):
+                nonlocal calls
+                calls += 1
+                if every_write or calls == 1:
+                    time.sleep(delay)
+                return original(repository, *args)
+            with self.subTest(every_write=every_write), patch.object(SQLiteBarRepository, 'remember_tick', delayed_write):
+                report = await run_level2_soak(0.3, tick_interval_seconds=0.005)
+                self.assertFalse(report.passed)
+                self.assertTrue(any(f.startswith(expected_failure + '=') for f in report.failures), report.to_dict())
 
 
 class SQLiteRecoveryAcceptanceTests(unittest.TestCase):
