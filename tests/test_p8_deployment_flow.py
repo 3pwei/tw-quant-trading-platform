@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 REPOSITORY = Path(__file__).resolve().parents[1]
@@ -107,7 +108,17 @@ class DeploymentFlowTests(unittest.TestCase):
         print('P8_DEPLOYMENT_CONTRACT=PASS A-B-rollback-ledger-and-compensation fixture=true live_acceptance=false')
 
     def run_process(self, argv, env, success=True):
-        result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=180)
+        started = time.monotonic()
+        print('P8_CONTRACT_STEP=' + ' '.join(argv), flush=True)
+        # Each observation launches real subprocesses at the CLI boundary. The
+        # container runner can take much longer than the local mapped-path run;
+        # this watchdog is separate from every production acceptance budget.
+        try:
+            result = subprocess.run(argv, env=env, capture_output=True, text=True, timeout=600)
+        except subprocess.TimeoutExpired as error:
+            self.fail('contract watchdog expired: ' + str(error) + '\n' +
+                      repr(error.stdout)[-6000:] + '\n' + repr(error.stderr)[-6000:])
+        print(f'P8_CONTRACT_STEP_SECONDS={time.monotonic() - started:.3f}', flush=True)
         self.assertEqual(result.returncode == 0, success, result.stdout[-6000:] + result.stderr[-6000:])
         return result
 
