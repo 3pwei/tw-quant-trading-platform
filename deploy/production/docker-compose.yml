@@ -55,7 +55,8 @@
       "volumes": [
         "/srv/trading-platform-p9/data:/data",
         "/srv/trading-platform-p9/health:/run/tw-quant-execution:ro",
-        "/srv/trading-platform-p9/provider/factory:/run/staging-provider/factory:ro"
+        "/srv/trading-platform-p9/provider/factory:/run/staging-provider/factory:ro",
+        "/srv/trading-platform-p9/config/replay.csv:/run/production-market/replay.csv:ro"
       ],
       "tmpfs": [
         "/tmp:rw,noexec,nosuid,nodev,size=64m,uid=10001,gid=10001,mode=1770"

@@ -72,6 +72,7 @@ jobs:
       P9_SSH_HOST_KEY: ${{ secrets.P9_PRODUCTION_SSH_HOST_KEY }}
       P9_CONFIG_HASHES: ${{ vars.P9_PRODUCTION_CONFIG_SHA256_JSON }}
       P9_ROLLBACK_SHA256: ${{ vars.P9_PRODUCTION_ROLLBACK_SHA256 }}
+      PUBLIC_DASHBOARD_URL: ${{ vars.PUBLIC_DASHBOARD_URL }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -91,16 +92,6 @@ jobs:
       - name: Cutover exact immutable P8 images with retained Legacy rollback
         id: cutover
         run: python deploy/production/transport.py cutover --evidence p9-evidence
-      - name: Verify public origin from external runner before acceptance
-        id: public_origin
-        env:
-          PUBLIC_DASHBOARD_URL: ${{ vars.PUBLIC_DASHBOARD_URL }}
-        run: |
-          python deploy/lightsail/verify-public-origin.py --base-url "$PUBLIC_DASHBOARD_URL" \
-            --attempts 1 --timeout 10 --retry-delay 0
-      - name: Finalize only verified Production acceptance
-        id: finalize
-        run: python deploy/production/transport.py finalize --evidence p9-evidence
       - name: Capture sanitized Production evidence
         id: capture
         if: ${{ always() && steps.cutover.outcome != 'skipped' }}
@@ -117,7 +108,7 @@ jobs:
           assert d['real_order'] == 'disabled' and d['legacy_retained'] is True
           PY
       - name: Recover exact retained Legacy after any first forward failure
-        if: ${{ always() && (steps.cutover.outcome == 'failure' || steps.public_origin.outcome == 'failure' || steps.finalize.outcome == 'failure' || steps.capture.outcome == 'failure' || steps.acceptance.outcome == 'failure' || cancelled()) }}
+        if: ${{ always() && (steps.cutover.outcome == 'failure' || steps.capture.outcome == 'failure' || steps.acceptance.outcome == 'failure' || cancelled()) }}
         env:
           PUBLIC_DASHBOARD_URL: ${{ vars.PUBLIC_DASHBOARD_URL }}
         run: |

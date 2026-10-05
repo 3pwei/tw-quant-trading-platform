@@ -41,7 +41,7 @@ Use GitHub environment `lightsail-production`, with Production-only credentials:
   `P9_STAGING_HOST_IDENTITY` (the actual Staging host, which must differ),
   `PUBLIC_DASHBOARD_URL` (the existing HTTPS Production origin).
 - `P9_PRODUCTION_CONFIG_SHA256_JSON`: approved SHA256 values keyed by
-  `market.env`, `execution.env`, `gateway.env`, `factory`.
+  `market.env`, `execution.env`, `gateway.env`, `factory`, `replay.csv`.
 - `P9_PRODUCTION_ROLLBACK_SHA256`: approved SHA256 of the sealed rollback inventory.
 
 Host files are independently provisioned under `/srv/trading-platform-p9`.
@@ -52,7 +52,20 @@ Config files are regular, root-owned mode 400/600 files in `config/`; factory is
 regular UID 10001-owned mode 400/600 file at `provider/factory`. Symlinks and
 Staging paths/config markers are rejected. Market must enforce Production
 Cloudflare authentication/authorization and declare the pinned provider digest.
-Both services use `/data/platform.sqlite3`; worker uses the generation-health
+The independently provisioned `config/replay.csv` must be UID 10001-owned mode
+400/600 and its checksum must match the existing Production replay file. Market
+must use `MARKET_DATA_PROVIDER=replay` and
+`MARKET_REPLAY_CSV=/run/production-market/replay.csv`.
+
+**Capability review gate:** the approved P8 Dockerfile installs `server` extras,
+not the broker SDK extra present in the Legacy image. These exact immutable P8
+images therefore cannot preserve an SDK-backed Production market feed. Preflight
+hard-fails if the current Production provider is not replay/mock; do not switch
+the feed to replay to pass this gate. If Production currently uses a broker SDK,
+a separately authorized image/Candidate/P8 acceptance cycle is required before
+P9 can be dispatched. This PR never installs packages or rebuilds to bypass it.
+
+Both new services use `/data/platform.sqlite3`; worker uses the generation-health
 path `/run/tw-quant-execution/health.json`. Worker must set
 `BROKER_PROVIDER=disabled` and `LIVE_TRADING_ENABLED=false`. All live/shadow,
 canary, auto, guardian and broker-read-only flags must be false; live confirmation
@@ -87,7 +100,13 @@ All listed backup files reside in `rollback/`, root-owned mode 400/600. Image
 archives are independent single-image `docker image save` archives, whose actual
 config bytes are hashed with the existing offline P8 helper. `config.tar` is an
 uncompressed archive of exactly the four regular Legacy
-`config/{compose,market,execution,gateway}.env` files, matching current bytes.
+`config/{compose,market,execution,gateway}.env` files under `/opt/tw-quant`,
+matching current bytes. The Legacy approved revision uses root `/opt/tw-quant`
+and Compose project `tw-quant-lightsail`; it is not the newer Public repository
+Production root/project. The exact worker database path is read from its retained
+container config, never guessed from the new runtime filename. Current market and
+worker must share that same database; separate databases require a separately
+reviewed migration and are rejected rather than silently dropping market/user state.
 `data.sqlite3` is a consistent SQLite backup with integrity PASS and all execution
 targets locked. Its complete logical table/schema inventory must match current
 Production during read-only preflight **and again after stopping Legacy**. Any
@@ -118,7 +137,10 @@ or data-loss exception is permitted.
    Live reconciliation is explicitly not applicable while disabled; durable
    reconciliation and generation checks remain required.
 8. Verify HTTPS/auth boundaries locally and the formal public origin from the
-   external runner. Only then reverify unchanged runtime and write acceptance.
+   external runner while retaining the same host flock. The authenticated SSH
+   session supplies an exact-manifest acknowledgement; a negative/missing response
+   fails and compensates. Only then reverify unchanged runtime, Legacy rollback
+   identity/config and write acceptance. There is no unlocked finalize window.
 
 The accepted P8 gateway has a Staging Caddyfile embedded in its image. Production
 mounts a reviewed Production Caddyfile preserving the existing TLS, forward-auth,

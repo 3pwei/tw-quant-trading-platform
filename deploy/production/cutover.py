@@ -19,7 +19,7 @@ import tarfile
 import time
 
 ROOT = Path('/srv/trading-platform-p9')
-LEGACY = Path('/srv/trading-platform')
+LEGACY = Path('/opt/tw-quant')
 SERVICES = ('market-api', 'execution-worker', 'gateway')
 DISABLED = ('LIVE_TRADING_ENABLED', 'LIVE_CANARY_ENABLED', 'LIVE_AUTO_ENABLED',
             'LIVE_POSITION_GUARDIAN_ENABLED', 'LIVE_BROKER_READ_ONLY_ENABLED',
@@ -106,7 +106,7 @@ def legacy_state(pins, rollback, *, stopped=False, recovering=False):
     values = parse_env('\n'.join(k.upper() + '=' + v for k, v in (line.split('=', 1) for line in record.read_text().splitlines())))
     require(values['DEPLOYED_SHA'] == pins['legacy_revision'], 'production-record-revision')
     current = {}
-    ids = run(['docker', 'ps', '-aq', '--no-trunc', '--filter', 'label=com.docker.compose.project=platform-production']).decode().split()
+    ids = run(['docker', 'ps', '-aq', '--no-trunc', '--filter', 'label=com.docker.compose.project=tw-quant-lightsail']).decode().split()
     require(set(ids) == {rollback['containers'][s]['id'] for s in SERVICES}, 'production-container-mismatch')
     for service in SERVICES:
         approved = rollback['containers'][service]
@@ -162,7 +162,7 @@ def verify_backup(pins, expected):
 
 
 def config_check(pins, hashes):
-    require(set(hashes) == {'market.env', 'execution.env', 'gateway.env', 'factory'}, 'config-hashes-missing')
+    require(set(hashes) == {'market.env', 'execution.env', 'gateway.env', 'factory', 'replay.csv'}, 'config-hashes-missing')
     envs = {}
     for name in ('market.env', 'execution.env', 'gateway.env'):
         path = ROOT / 'config' / name
@@ -172,7 +172,10 @@ def config_check(pins, hashes):
     factory = ROOT / 'provider/factory'
     protected(factory, hashes['factory'], uid=10001)
     require(re.fullmatch('[A-Za-z_][A-Za-z0-9_.]*:[A-Za-z_][A-Za-z0-9_]*\n?', factory.read_text()), 'factory-invalid')
+    protected(ROOT / 'config/replay.csv', hashes['replay.csv'], uid=10001)
     market = envs['market.env']
+    require(market.get('MARKET_DATA_PROVIDER') == 'replay' and
+            market.get('MARKET_REPLAY_CSV') == '/run/production-market/replay.csv', 'accepted-runtime-market-capability')
     require(market.get('PLATFORM_ENVIRONMENT') == 'production' and
             market.get('PLATFORM_AUTHORIZATION_MODE') == 'enforced' and
             market.get('MARKET_ACCESS_MODE') == 'cloudflare', 'production-auth-missing')
@@ -190,6 +193,11 @@ def snapshot(container, code):
     return json.loads(run(['docker', 'exec', '-i', container, 'python', '-'], code))
 
 
+def market_compatibility(env):
+    provider = env.get('MARKET_DATA_PROVIDER', env.get('MARKET_MODE', 'mock')).lower().strip()
+    require(provider in ('mock', 'replay'), 'accepted-runtime-market-capability')
+
+
 def preflight(pins, expected_rollback, hashes, durable_code):
     require(os.geteuid() == 0 and ROOT.resolve() == ROOT and LEGACY.resolve() == LEGACY, 'production-root')
     for directory in (ROOT, ROOT / 'config', ROOT / 'provider', ROOT / 'rollback'):
@@ -199,6 +207,16 @@ def preflight(pins, expected_rollback, hashes, durable_code):
     config_check(pins, hashes)
     backup = verify_backup(pins, expected_rollback)
     state = legacy_state(pins, backup)
+    market = inspect(state['market-api']['id'])
+    market_env = dict(v.split('=', 1) for v in market['Config']['Env'])
+    market_compatibility(market_env)
+    worker_env = dict(v.split('=', 1) for v in inspect(state['execution-worker']['id'])['Config']['Env'])
+    require(market_env.get('MARKET_DB_PATH') == worker_env.get('LIVE_EXECUTION_DB_PATH') and
+            market_env.get('MARKET_DB_PATH'), 'legacy-database-boundary-mismatch')
+    # Preserve the approved existing Production replay bytes; never substitute Staging fixtures.
+    probe = b"import hashlib,os; from pathlib import Path; print(hashlib.sha256(Path(os.environ['MARKET_REPLAY_CSV']).read_bytes()).hexdigest())"
+    replay_hash = run(['docker', 'exec', '-i', state['market-api']['id'], 'python', '-'], probe).decode().strip()
+    require(replay_hash == hashes['replay.csv'], 'production-market-source-mismatch')
     durable = snapshot(state['execution-worker']['id'], durable_code)
     # Compare every table to a fresh sealed backup; fail on lost user/order/strategy state.
     backup_state = json.loads(run(['python3', '-c', durable_code.decode(), str(ROOT / 'rollback/data.sqlite3')]))
@@ -387,7 +405,11 @@ class Host:
         worker = inspect(self.legacy['execution-worker']['id'])
         data = [m for m in worker['Mounts'] if m['Destination'] == '/data']
         require(len(data) == 1, 'legacy-data-mount')
-        database = Path(data[0]['Source']) / 'platform.sqlite3'
+        env = dict(v.split('=', 1) for v in worker['Config']['Env'])
+        relative = Path(env['LIVE_EXECUTION_DB_PATH'])
+        require(relative.is_absolute() and relative.parts[:2] == ('/', 'data') and len(relative.parts) == 3 and
+                relative.name not in ('.', '..'), 'legacy-database-path')
+        database = Path(data[0]['Source']) / relative.name
         current = json.loads(run(['python3', '-c', self.durable_code.decode(), str(database)]))
         require(current == self.durable, 'quiesced-backup-drift')
 
@@ -451,6 +473,17 @@ class Host:
                   'before_restart': before, 'after_restart': after, 'real_order': 'disabled',
                   'legacy_retained': True, 'accepted_at': datetime.now(timezone.utc).isoformat()}
         write_json(ROOT / 'pending.json', result)
+        # Keep the host flock held while the authenticated runner verifies public origin.
+        print('P9_READY_FOR_EXTERNAL_GATE', flush=True)
+        acknowledgement = sys.stdin.readline().strip()
+        require(acknowledgement == 'P9_EXTERNAL_GATE_PASS ' + self.pins['manifest_sha256'], 'external-runner-gate-failed')
+        config_check(self.pins, self.hashes)
+        verify_backup(self.pins, self.rollback_digest)
+        legacy_state(self.pins, self.backup, stopped=True)
+        final = self.verify()
+        require(final['durable'] == after['durable'] and final['containers'] == after['containers'], 'finalize-runtime-drift')
+        result['external_runner_public_gate'] = 'PASS'
+        write_json(ROOT / 'acceptance.json', result)
 
     def failure(self, exc):
         write_json(ROOT / 'failure.json', {'acceptance': 'FAIL', 'first_invariant': str(exc) if isinstance(exc, ValueError) and re.fullmatch('[a-z-]+', str(exc)) else 'forward-stage-failed',
@@ -463,7 +496,7 @@ class Host:
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('mode', choices=('preflight', 'cutover', 'recover', 'finalize'))
+    parser.add_argument('mode', choices=('preflight', 'cutover', 'recover'))
     parser.add_argument('--pins', required=True)
     parser.add_argument('--rollback-sha256', required=True)
     parser.add_argument('--config-hashes', required=True)
@@ -481,16 +514,6 @@ def main():
         require(journal['rollback_sha256'] == args.rollback_sha256, 'recovery-journal-mismatch')
         backup = verify_backup(pins, args.rollback_sha256)
         rollback(pins, backup, durable_code)
-    elif args.mode == 'finalize':
-        pending = json.loads((ROOT / 'pending.json').read_text())
-        require(pending['rollback_sha256'] == args.rollback_sha256 and
-                pending['gate'] == json.loads(base64.b64decode(args.gate)), 'finalize-identity')
-        config_check(pins, hashes)
-        after = verify(pins, durable_code)
-        require(after['durable'] == pending['after_restart']['durable'] and
-                after['containers'] == pending['after_restart']['containers'], 'finalize-runtime-drift')
-        pending['external_runner_public_gate'] = 'PASS'
-        write_json(ROOT / 'acceptance.json', pending)
     else:
         require(args.gate is not None, 'gate-required')
         gate = json.loads(base64.b64decode(args.gate))

@@ -118,6 +118,14 @@ class HostGateTests(unittest.TestCase):
             self.assertTrue((root / 'rollback-result.json').exists())
             self.assertFalse(any('compose' in c or 'build' in c or 'rm' in c for c in calls))
 
+    def test_legacy_topology_and_market_capability_are_bound(self):
+        self.assertEqual(str(cutover.LEGACY), '/opt/tw-quant')
+        for env in ({'MARKET_DATA_PROVIDER': 'replay'}, {'MARKET_MODE': 'mock'}):
+            cutover.market_compatibility(env)
+        for provider in ('shioaji', 'unknown', 'disabled'):
+            with self.subTest(provider=provider), self.assertRaisesRegex(ValueError, 'accepted-runtime-market-capability'):
+                cutover.market_compatibility({'MARKET_DATA_PROVIDER': provider})
+
     def test_real_order_and_canary_enabled_hard_fail(self):
         baseline = {'BROKER_PROVIDER': 'disabled', 'LIVE_TRADING_ENABLED': 'false'}
         cutover.disabled(baseline, execution=True)
@@ -232,6 +240,17 @@ class Backend:
 
 
 class TransactionTests(unittest.TestCase):
+    def test_external_runner_nack_cannot_commit_acceptance(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            host = cutover.Host(PINS, '0' * 64, {}, b'fixture', {})
+            host.backup = {}
+            with patch.object(cutover, 'ROOT', root), patch.object(cutover.sys, 'stdin', io.StringIO('P9_EXTERNAL_GATE_FAIL\n')), \
+                 patch.object(cutover.sys, 'stdout', io.StringIO()), self.assertRaisesRegex(ValueError, 'external-runner-gate-failed'):
+                host.commit({}, {})
+            self.assertTrue((root / 'pending.json').exists())
+            self.assertFalse((root / 'acceptance.json').exists())
+
     def test_every_first_failure_preserves_exact_rollback_and_stops_forward_progress(self):
         for stage in ('stop', 'deploy', 'verify', 'restart', 'public', 'commit'):
             backend = Backend(stage)
@@ -304,9 +323,10 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('environment: lightsail-production', text)
         self.assertIn('group: lightsail-production', text)
         self.assertIn('cancel-in-progress: false', text)
-        self.assertIn('--attempts 1', text)
+        self.assertIn("'--attempts', '1'", (ROOT / 'deploy/production/transport.py').read_text())
         self.assertIn('transport.py recover', text)
-        self.assertLess(text.index('id: public_origin'), text.index('id: finalize'))
+        self.assertIn('P9_READY_FOR_EXTERNAL_GATE', (ROOT / 'deploy/production/cutover.py').read_text())
+        self.assertIn('P9_EXTERNAL_GATE_PASS', (ROOT / 'deploy/production/transport.py').read_text())
 
     def test_no_rebuild_on_production_and_health_contract_preserved(self):
         d = json.loads((ROOT / 'deploy/production/docker-compose.yml').read_text())

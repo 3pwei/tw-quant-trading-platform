@@ -8,7 +8,10 @@ from pathlib import Path
 import re
 import shlex
 import socket
+import selectors
+import time
 import subprocess
+import sys
 import tarfile
 import tempfile
 
@@ -33,7 +36,7 @@ def b64(value):
 
 def command(mode, gate=None):
     hashes = json.loads(os.environ['P9_CONFIG_HASHES'])
-    require(set(hashes) == {'market.env', 'execution.env', 'gateway.env', 'factory'} and
+    require(set(hashes) == {'market.env', 'execution.env', 'gateway.env', 'factory', 'replay.csv'} and
             all(re.fullmatch('[0-9a-f]{64}', str(v)) for v in hashes.values()), 'config-approval-missing')
     rollback = os.environ['P9_ROLLBACK_SHA256']
     require(re.fullmatch('[0-9a-f]{64}', rollback), 'rollback-approval-missing')
@@ -72,7 +75,7 @@ def in_memory():
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument('mode', choices=('cutover', 'recover', 'finalize', 'capture'))
+    p.add_argument('mode', choices=('cutover', 'recover', 'capture'))
     p.add_argument('--evidence', type=Path, required=True)
     args = p.parse_args()
     ssh = configure()
@@ -89,7 +92,7 @@ def main():
                 json.loads(r.stdout)
                 (args.evidence / 'host' / name).write_bytes(r.stdout)
         return
-    if args.mode in ('recover', 'finalize'):
+    if args.mode == 'recover':
         # Recover uses current reviewed bytes from the runner, not possibly partial upload.
         remote = 'sudo flock -w 300 /var/lock/tw-quant-deploy.lock python3 - ' + command(args.mode, gate)
         run(ssh + [remote], in_memory(), timeout=600)
@@ -123,11 +126,48 @@ def main():
     require(re.fullmatch('[A-Za-z0-9-]+', actor), 'registry-actor')
     script = ('set -eu; registry_dir=$(mktemp -d /run/p9-registry.XXXXXX); '
               'trap \'rm -rf "$registry_dir"\' EXIT; export DOCKER_CONFIG="$registry_dir"; '
-              'docker login ghcr.io --username ' + shlex.quote(actor) + ' --password-stdin >/dev/null; '
+              'IFS= read -r registry_token; printf \'%s\' \"$registry_token\" | docker login ghcr.io --username ' + shlex.quote(actor) + ' --password-stdin >/dev/null; unset registry_token; '
               'timeout --signal=TERM --kill-after=90s 15m flock -w 30 /var/lock/tw-quant-deploy.lock python3 /srv/trading-platform-p9/bundle/cutover.py ' + command('cutover', gate))
     # Mark attempts before sending SSH so interrupted clients still invoke independent recovery.
     (args.evidence / 'cutover-attempted').write_text('yes\n')
-    run(ssh + ['sudo bash -c ' + shlex.quote(script)], os.environ['GITHUB_TOKEN'].encode(), timeout=1200)
+    process = subprocess.Popen(ssh + ['sudo bash -c ' + shlex.quote(script)], stdin=subprocess.PIPE,
+                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    selector = selectors.DefaultSelector()
+    selector.register(process.stdout, selectors.EVENT_READ)
+    ready = False
+    external_failed = False
+    deadline = time.monotonic() + 1200
+    try:
+        process.stdin.write(os.environ['GITHUB_TOKEN'].encode() + b'\n'); process.stdin.flush()
+        while process.poll() is None:
+            require(time.monotonic() < deadline, 'cutover-transport-deadline')
+            if not selector.select(timeout=1):
+                continue
+            line = process.stdout.readline(4097)
+            require(len(line) <= 4096, 'unexpected-host-output')
+            if line.strip() == b'P9_READY_FOR_EXTERNAL_GATE':
+                require(not ready, 'duplicate-external-gate-request')
+                ready = True
+                try:
+                    run([sys.executable, str(ROOT / 'deploy/lightsail/verify-public-origin.py'),
+                         '--base-url', os.environ['PUBLIC_DASHBOARD_URL'], '--attempts', '1',
+                         '--timeout', '10', '--retry-delay', '0'], timeout=30)
+                    ack = 'P9_EXTERNAL_GATE_PASS ' + pins['manifest_sha256']
+                except Exception:
+                    external_failed = True
+                    ack = 'P9_EXTERNAL_GATE_FAIL'
+                process.stdin.write((ack + '\n').encode()); process.stdin.flush()
+        require(process.returncode == 0 and ready and not external_failed, 'cutover-or-public-gate-failed')
+    finally:
+        selector.close()
+        process.stdin.close(); process.stdout.close()
+        if process.poll() is None:
+            process.terminate()
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                process.kill(); process.wait()
+
 
 
 if __name__ == '__main__':

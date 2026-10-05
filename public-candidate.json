@@ -22,7 +22,7 @@
     },
     {
       "path": ".github/workflows/deploy-production.yml",
-      "sha256": "0271e09fa68849c0c8693b11cacb48f5df1fff5e9ba59f8a42218e615397db7a"
+      "sha256": "6a6899bf397c6c1a2be9fdbfac13afffcc5af336bdb1f2ee1bc49152c84b3be3"
     },
     {
       "path": ".github/workflows/deploy-staging.yml",
@@ -502,11 +502,11 @@
     },
     {
       "path": "deploy/production/cutover.py",
-      "sha256": "ad2100cccb9b0d2c3939aa0ae7c6b34f724d394a990a3a8fca0f1b9cfc85a34a"
+      "sha256": "2a288bd9e616a764f7305b8bbdcff11f438820e685c25411adf4c5c32777916e"
     },
     {
       "path": "deploy/production/docker-compose.yml",
-      "sha256": "2776d78bf9f6caffedf0bc069b5aca35af587d1e16e3b174fb6b7c99e1c293d5"
+      "sha256": "fd6fc398aeea414c37c934525ba4729242bf9d84062daf475ea79230650af05f"
     },
     {
       "path": "deploy/production/durable_state.py",
@@ -518,7 +518,7 @@
     },
     {
       "path": "deploy/production/transport.py",
-      "sha256": "129a9af70a82592772a2cb4f7e0fc51efb9f269613bc0f65ab07f17ad4d7d17e"
+      "sha256": "c6250d71e5b8c532f35bf0dfc5c1367ad4980672ccd1dbfa08827631b06a1eb5"
     },
     {
       "path": "deploy/security/codeql_eligibility.py",
@@ -662,7 +662,7 @@
     },
     {
       "path": "docs/p9-production-cutover.md",
-      "sha256": "105ff9196b8e4d40462ebb921401c3e272020f002b79a1a0093c4b5ece6f3947"
+      "sha256": "16a1a1c228751e9a454e039aff50d110c1b591c42c1af3463def0505e07678e8"
     },
     {
       "path": "docs/provenance.md",
@@ -934,7 +934,7 @@
     },
     {
       "path": "tests/test_p9_production_cutover.py",
-      "sha256": "890a9a7f7f0f460c3f312ed1d4792fd8240a65d4bae56e4f529e1c26f95c2d61"
+      "sha256": "3940913b816a66e240a3dec85212508d6aea6a4e1fd23876c0f69fb562e5ab2d"
     },
     {
       "path": "tests/test_paper_auto.py",
