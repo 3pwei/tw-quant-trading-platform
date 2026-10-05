@@ -27,10 +27,13 @@ wait_for_health() {
     container_id="$("${compose[@]}" ps -q "${service}")"
     if [[ -n "${container_id}" ]]; then
       state="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "${container_id}")"
-      [[ "${state}" == healthy || "${state}" == running ]] && return 0
-      if [[ "${state}" == unhealthy || "${state}" == exited || "${state}" == dead ]]; then
-        fail_check service-health-terminal "${service}" healthy "${state}"
-      fi
+      case "${state}" in
+        healthy) return 0 ;;
+        unhealthy|exited|dead)
+          fail_check service-health-terminal "${service}" healthy "${state}"
+          ;;
+        starting|running) ;;
+      esac
     fi
     sleep 2
   done
