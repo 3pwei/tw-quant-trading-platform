@@ -106,7 +106,7 @@ def legacy_state(pins, rollback, *, stopped=False, recovering=False):
     values = parse_env('\n'.join(k.upper() + '=' + v for k, v in (line.split('=', 1) for line in record.read_text().splitlines())))
     require(values['DEPLOYED_SHA'] == pins['legacy_revision'], 'production-record-revision')
     current = {}
-    ids = run(['docker', 'ps', '-aq', '--filter', 'label=com.docker.compose.project=platform-production']).decode().split()
+    ids = run(['docker', 'ps', '-aq', '--no-trunc', '--filter', 'label=com.docker.compose.project=platform-production']).decode().split()
     require(set(ids) == {rollback['containers'][s]['id'] for s in SERVICES}, 'production-container-mismatch')
     for service in SERVICES:
         approved = rollback['containers'][service]
@@ -323,7 +323,7 @@ def write_json(path, document):
 def rollback(pins, backup, durable_code):
     # No git checkout, compose up, image rebuild or mutable tag during rollback.
     # Legacy containers, env and data were retained intact, so start exact IDs.
-    p9_ids = run(['docker', 'ps', '-aq', '--filter', 'label=com.docker.compose.project=platform-p9-production']).decode().split()
+    p9_ids = run(['docker', 'ps', '-aq', '--no-trunc', '--filter', 'label=com.docker.compose.project=platform-p9-production']).decode().split()
     for cid in p9_ids:
         require(re.fullmatch('[0-9a-f]{64}', cid), 'invalid-p9-container')
         run(['docker', 'stop', '--time', '30', cid], timeout=60)

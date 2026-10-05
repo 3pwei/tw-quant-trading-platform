@@ -140,6 +140,36 @@ class HostGateTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 cutover.protected(link, uid=path.stat().st_uid)
 
+    def test_full_container_ids_and_exact_legacy_image_inventory(self):
+        containers = {s: {'id': str(i) * 64, 'image_id': 'sha256:' + str(i) * 64} for i, s in enumerate(cutover.SERVICES, 1)}
+        with tempfile.TemporaryDirectory() as tmp:
+            legacy = Path(tmp); (legacy / 'deployments').mkdir()
+            record = legacy / 'deployments/current.env'
+            record.write_text('deployed_sha=' + PINS['legacy_revision'] + '\ndeployment_mode=deploy\n')
+            backup = {'containers': containers, 'record_sha256': cutover.file_sha(record), 'domain': 'production.example.invalid'}
+            def run(argv, *args, **kwargs):
+                if argv[0] == 'git': return PINS['legacy_revision'].encode()
+                if argv[:3] == ['docker', 'ps', '-aq']:
+                    # Model the actual Docker default: short IDs unless explicitly disabled.
+                    ids = [v['id'] if '--no-trunc' in argv else v['id'][:12] for v in containers.values()]
+                    return '\n'.join(ids).encode()
+                if argv[:3] == ['docker', 'image', 'inspect']:
+                    return json.dumps([{'Config': {'Labels': {'org.opencontainers.image.revision': PINS['legacy_revision']}}}]).encode()
+                return b'ok'
+            def inspect(cid):
+                service = next(s for s, v in containers.items() if v['id'] == cid)
+                return {'Id': cid, 'Image': containers[service]['image_id'],
+                        'Config': {'Labels': {'com.docker.compose.service': service}, 'Env': ['LIVE_TRADING_ENABLED=false']},
+                        'State': {'Running': True, 'StartedAt': '2026-10-05T00:00:00Z', 'Health': {'Status': 'healthy'}},
+                        'HostConfig': {'ReadonlyRootfs': True, 'CapDrop': ['ALL'], 'SecurityOpt': ['no-new-privileges:true']}}
+            with patch.object(cutover, 'LEGACY', legacy), patch.object(cutover, 'run', side_effect=run), \
+                 patch.object(cutover, 'inspect', side_effect=inspect), patch.object(cutover, 'worker_locked'):
+                result = cutover.legacy_state(PINS, backup)
+                self.assertEqual({s: v['id'] for s, v in result.items()}, {s: v['id'] for s, v in containers.items()})
+                bad = copy.deepcopy(backup); bad['containers']['market-api']['image_id'] = 'sha256:' + 'f' * 64
+                with self.assertRaisesRegex(ValueError, 'production-image-or-state-mismatch'):
+                    cutover.legacy_state(PINS, bad)
+
     def test_production_revision_mismatch_before_container_commands(self):
         with patch.object(cutover, 'run', return_value=b'0' * 40), self.assertRaisesRegex(ValueError, 'production-revision-mismatch'):
             cutover.legacy_state(PINS, {})
