@@ -31,6 +31,7 @@ class ExecutionServiceSettings:
     allowed_account_ids: frozenset[str] = frozenset()
     database_path: str = "/data/market.sqlite3"
     health_path: str = "/run/tw-quant-execution/health.json"
+    generation_path: str = "/tmp/tw-quant-execution-generation"
     broker_secret_root: str = "/run/live-secrets/brokers"
     heartbeat_seconds: float = 5.0
     reconciliation_interval_seconds: float = 45.0
@@ -98,6 +99,10 @@ class ExecutionServiceSettings:
             health_path=values.get(
                 "LIVE_EXECUTION_HEALTH_PATH",
                 "/run/tw-quant-execution/health.json",
+            ).strip(),
+            generation_path=values.get(
+                "LIVE_EXECUTION_GENERATION_PATH",
+                "/tmp/tw-quant-execution-generation",
             ).strip(),
             broker_secret_root=values.get(
                 "LIVE_BROKER_SECRET_ROOT", "/run/live-secrets/brokers"
@@ -258,6 +263,8 @@ class ExecutionServiceSettings:
             issues.append("missing_execution_database_path")
         if not self.health_path:
             issues.append("missing_execution_health_path")
+        if not self.generation_path or not os.path.isabs(self.generation_path):
+            issues.append("invalid_execution_generation_path")
         if not self.broker_secret_root or not os.path.isabs(self.broker_secret_root):
             issues.append("invalid_broker_secret_root")
         if self.heartbeat_seconds <= 0:

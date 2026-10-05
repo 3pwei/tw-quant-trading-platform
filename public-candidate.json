@@ -770,7 +770,7 @@
     },
     {
       "path": "tests/test_execution_security_boundary.py",
-      "sha256": "431a41465b05428cde986dd246d0b1ff76f7ac5c5c3158dfc6ad1f5ab5246a0e"
+      "sha256": "17bb2112f9ea9e5374489796c2e023bc661e45caf543e73768751dbd4bfafa14"
     },
     {
       "path": "tests/test_execution_targets.py",
@@ -1230,15 +1230,15 @@
     },
     {
       "path": "tw_quant/execution_service/__main__.py",
-      "sha256": "4f0356753ce57b240c38017cc6390411074d307d69e826626520e25800f044d9"
+      "sha256": "0d0a577fecb68cff99c126a61665da0297f6878958c4e068b74a0120665b7138"
     },
     {
       "path": "tw_quant/execution_service/config.py",
-      "sha256": "2156ad943ccafcaf1a5815c3b2864e623249634ac5ab1a8d2c14fbf9b091edf9"
+      "sha256": "16646d57319109f3cf8e472c3b081dd1b0b81d4f7c65d1d58586bdc81576db56"
     },
     {
       "path": "tw_quant/execution_service/health.py",
-      "sha256": "3c018670bbf9866830b1e5feb7e1e4363595fcfa1ee7ac96ff3cea5b292f3abf"
+      "sha256": "06623e5950fe9f409a758a46cd0634e600a8226f9ea25fc483937108ed89b4fb"
     },
     {
       "path": "tw_quant/execution_service/redaction.py",
@@ -1246,7 +1246,7 @@
     },
     {
       "path": "tw_quant/execution_service/runtime.py",
-      "sha256": "b11c65cb525577d81da222fe9dd0745cd929e932e06c515e4dd9b3c35119b995"
+      "sha256": "d22b5c26efd76668f1de2c1e19d8a36219346e87e485ab8c1c3d562f0df6a5d5"
     },
     {
       "path": "tw_quant/execution_service/secrets.py",

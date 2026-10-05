@@ -33,6 +33,8 @@ from tw_quant.execution_service.config import ExecutionServiceSettings
 from tw_quant.execution_service.health import (
     BrokerConnectionHealth,
     ExecutionServiceHealth,
+    read_generation_marker,
+    write_generation_marker,
 )
 from tw_quant.execution_service.redaction import SecretRedactionFilter
 from tw_quant.market_data.settings import MarketDataSettings
@@ -129,6 +131,10 @@ class ExecutionSecurityBoundaryTests(unittest.IsolatedAsyncioTestCase):
         runtime = build_execution_service(env=self.environment())
         try:
             await runtime.start()
+            document = json.loads(
+                (self.root / "health.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(document["generation"], runtime.generation)
             health = runtime.public_health()
             self.assertTrue(health["enabled"])
             self.assertTrue(health["locked"])
@@ -361,19 +367,85 @@ class ExecutionSecurityBoundaryTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_container_health_accepts_read_only_ready_only_with_zero_writes(self):
         path = self.root / "container-health.json"
+        generation_path = self.root / "execution-generation"
+        generation = write_generation_marker(str(generation_path))
         path.write_text(json.dumps({
+            "generation": generation,
             "heartbeat_at": datetime.now(timezone.utc).isoformat(),
             "locked": True,
             "execution_state": "ready_read_only",
             "external_order_calls": 0,
             "external_cancel_calls": 0,
         }), encoding="utf-8")
-        settings = ExecutionServiceSettings(health_path=str(path))
+        settings = ExecutionServiceSettings(
+            health_path=str(path), generation_path=str(generation_path)
+        )
         self.assertEqual(_healthcheck(settings), 0)
         document = json.loads(path.read_text(encoding="utf-8"))
         document["external_cancel_calls"] = 1
         path.write_text(json.dumps(document), encoding="utf-8")
         self.assertEqual(_healthcheck(settings), 1)
+
+    async def test_container_health_rejects_stale_persisted_generation(self):
+        path = self.root / "stale-generation-health.json"
+        generation_path = self.root / "stale-generation-marker"
+        old_generation = "1" * 32
+        write_generation_marker(str(generation_path), old_generation)
+        path.write_text(json.dumps({
+            "generation": old_generation,
+            "heartbeat_at": datetime.now(timezone.utc).isoformat(),
+            "locked": True,
+            "execution_state": "disabled",
+            "external_order_calls": 0,
+            "external_cancel_calls": 0,
+        }), encoding="utf-8")
+        write_generation_marker(str(generation_path), "2" * 32)
+        settings = ExecutionServiceSettings(
+            health_path=str(path), generation_path=str(generation_path)
+        )
+        self.assertEqual(_healthcheck(settings), 1)
+
+    async def test_container_health_rejects_current_generation_stale_heartbeat(self):
+        path = self.root / "stale-heartbeat-health.json"
+        generation_path = self.root / "stale-heartbeat-generation"
+        generation = write_generation_marker(str(generation_path))
+        path.write_text(json.dumps({
+            "generation": generation,
+            "heartbeat_at": datetime.fromtimestamp(0, timezone.utc).isoformat(),
+            "locked": True,
+            "execution_state": "disabled",
+            "external_order_calls": 0,
+            "external_cancel_calls": 0,
+        }), encoding="utf-8")
+        settings = ExecutionServiceSettings(
+            health_path=str(path), generation_path=str(generation_path)
+        )
+        self.assertEqual(_healthcheck(settings), 1)
+
+    async def test_container_health_rejects_missing_or_malformed_generation_marker(self):
+        path = self.root / "missing-generation-health.json"
+        generation_path = self.root / "missing-generation-marker"
+        path.write_text(json.dumps({
+            "generation": "3" * 32,
+            "heartbeat_at": datetime.now(timezone.utc).isoformat(),
+            "locked": True,
+            "execution_state": "disabled",
+            "external_order_calls": 0,
+            "external_cancel_calls": 0,
+        }), encoding="utf-8")
+        settings = ExecutionServiceSettings(
+            health_path=str(path), generation_path=str(generation_path)
+        )
+        self.assertEqual(_healthcheck(settings), 1)
+        generation_path.write_text("not-a-generation\n", encoding="utf-8")
+        self.assertEqual(_healthcheck(settings), 1)
+
+    async def test_restart_replaces_execution_generation(self):
+        generation_path = self.root / "restart-generation"
+        first = write_generation_marker(str(generation_path))
+        second = write_generation_marker(str(generation_path))
+        self.assertNotEqual(first, second)
+        self.assertEqual(read_generation_marker(str(generation_path)), second)
 
     async def test_fake_broker_secret_lookup_is_isolated_by_full_identity(self):
         first = BrokerAccountRef("broker-a", "account-1")

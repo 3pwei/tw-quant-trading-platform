@@ -48,7 +48,7 @@ from ..broker import (
 )
 from ..broker.recovery import RecoveryOrderGate
 from .config import ExecutionServiceSettings
-from .health import BrokerConnectionHealth
+from .health import BrokerConnectionHealth, new_generation, valid_generation
 from .redaction import SecretRedactionFilter, mask_account
 from .secrets import SecretConfigurationError
 from ..live.shadow_store import SQLiteShadowExecutionRepository
@@ -96,6 +96,7 @@ class ExecutionServiceRuntime:
     connection: BrokerConnectionSettings | None
     worker: ServiceWorker
     issues: tuple[str, ...]
+    generation: str
     manager: LiveOrderManager | None = None
     order_repository: SQLiteLiveOrderRepository | None = field(default=None, repr=False)
     recovery_repository: SQLiteRecoveryLockRepository | None = field(
@@ -212,6 +213,7 @@ class ExecutionServiceRuntime:
         worker_health = self.worker.snapshot()
         return {
             **self.public_health(),
+            "generation": self.generation,
             "heartbeat_at": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
             "issue_codes": list(dict.fromkeys(self.issues)),
             "external_order_calls": int(worker_health.get("external_order_calls", 0) or 0),
@@ -280,6 +282,7 @@ def build_execution_service(
     settings: ExecutionServiceSettings | None = None,
     *,
     env: Mapping[str, str] | None = None,
+    generation: str | None = None,
     secret_provider: BrokerSecretProvider | None = None,
     production_client_factory: Callable[..., ShioajiProductionExecutionClient] = (
         ShioajiProductionExecutionClient
@@ -288,6 +291,9 @@ def build_execution_service(
     """Compose a locked service; an optional production client remains read-only."""
 
     config = settings or ExecutionServiceSettings.from_env(env)
+    service_generation = generation if generation is not None else new_generation()
+    if not valid_generation(service_generation):
+        raise ValueError("invalid execution generation")
     issues = list(config.validation_issues())
     material: BrokerSecretMaterial | None = None
     execution_targets = None
@@ -589,6 +595,7 @@ def build_execution_service(
         connection=connection,
         worker=worker,
         issues=tuple(dict.fromkeys(issues)),
+        generation=service_generation,
         manager=manager,
         order_repository=orders,
         recovery_repository=recovery,
