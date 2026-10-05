@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 import argparse
-import asyncio
 from datetime import datetime, timezone
 import json
 from pathlib import Path
 
 from .config import ExecutionServiceSettings
 from .health import read_generation_marker, valid_generation, write_generation_marker
-from .runtime import build_execution_service
 
 
 def _healthcheck(settings: ExecutionServiceSettings) -> int:
@@ -60,6 +58,10 @@ def main() -> int:
     settings = ExecutionServiceSettings.from_env()
     if args.command == "healthcheck":
         return _healthcheck(settings)
+    import asyncio
+
+    from .runtime import build_execution_service
+
     generation = (
         write_generation_marker(settings.generation_path)
         if args.command == "run"
