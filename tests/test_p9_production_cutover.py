@@ -174,6 +174,10 @@ class HostGateTests(unittest.TestCase):
                  patch.object(cutover, 'inspect', side_effect=inspect), patch.object(cutover, 'worker_locked'):
                 result = cutover.legacy_state(PINS, backup)
                 self.assertEqual({s: v['id'] for s, v in result.items()}, {s: v['id'] for s, v in containers.items()})
+                def wrong_body(argv, *args, **kwargs):
+                    return b'wrong' if argv[0] == 'curl' else run(argv, *args, **kwargs)
+                with patch.object(cutover, 'run', side_effect=wrong_body), self.assertRaisesRegex(ValueError, 'legacy-gateway-health'):
+                    cutover.legacy_state(PINS, backup)
                 bad = copy.deepcopy(backup); bad['containers']['market-api']['image_id'] = 'sha256:' + 'f' * 64
                 with self.assertRaisesRegex(ValueError, 'production-image-or-state-mismatch'):
                     cutover.legacy_state(PINS, bad)
@@ -343,6 +347,7 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('cancel-in-progress: false', text)
         self.assertIn("'--attempts', '1'", (ROOT / 'deploy/production/transport.py').read_text())
         self.assertIn('transport.py recover', text)
+        self.assertIn("steps.publish_evidence.outcome == 'failure'", text)
         self.assertIn('P9_READY_FOR_EXTERNAL_GATE', (ROOT / 'deploy/production/cutover.py').read_text())
         self.assertIn('P9_EXTERNAL_GATE_PASS', (ROOT / 'deploy/production/transport.py').read_text())
 

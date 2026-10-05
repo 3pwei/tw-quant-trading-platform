@@ -22,7 +22,7 @@
     },
     {
       "path": ".github/workflows/deploy-production.yml",
-      "sha256": "6a6899bf397c6c1a2be9fdbfac13afffcc5af336bdb1f2ee1bc49152c84b3be3"
+      "sha256": "4620acc231ee3cd5c897393d51764b8df08f9900af3670755045fa1d66cf7141"
     },
     {
       "path": ".github/workflows/deploy-staging.yml",
@@ -502,7 +502,7 @@
     },
     {
       "path": "deploy/production/cutover.py",
-      "sha256": "a0395ae333c361ebfe17933b01658b4ae614c55a375e2ce678c2c57409c499d0"
+      "sha256": "87e415bc83a71ecfc35d8620f72824786f367d6cd9dee90e049bb5a5d18af970"
     },
     {
       "path": "deploy/production/docker-compose.yml",
@@ -662,7 +662,7 @@
     },
     {
       "path": "docs/p9-production-cutover.md",
-      "sha256": "16a1a1c228751e9a454e039aff50d110c1b591c42c1af3463def0505e07678e8"
+      "sha256": "54f9deaca2a239dc6b868bc99aab441112847cdad0e580664b49decc3c8fa164"
     },
     {
       "path": "docs/provenance.md",
@@ -934,7 +934,7 @@
     },
     {
       "path": "tests/test_p9_production_cutover.py",
-      "sha256": "9cabe6e85d6473eb6e9316e40976c9b76f8d0c823fb5cb63ae0512850ad41826"
+      "sha256": "4a0f2890875eb59e2669e6ad7ddbe3a7ff6e3fbba2ebd6b7848abcdc826114ca"
     },
     {
       "path": "tests/test_paper_auto.py",

@@ -148,7 +148,8 @@ public Demo exceptions, security headers and request limits. This is an explicit
 Production configuration overlay, not an image rebuild or direct Staging ingress
 reuse. The healthcheck retains its five-second timeout and requires healthy.
 
-On the first forward failure, do not advance or rerun. Stop only P9 containers and
+On the first forward failure, do not advance or rerun. Evidence capture, validation
+and publication failures also invoke recovery; publication is not retried. Stop only P9 containers and
 start the exact retained Legacy container IDs. Verify their original image IDs,
 revision, record/config bytes, HTTPS health, worker lock/zero calls and durable
 state. No git reset, Legacy rebuild, tag re-resolution or restore into Legacy data

@@ -129,8 +129,9 @@ def legacy_state(pins, rollback, *, stopped=False, recovering=False):
         current[service] = {'id': d['Id'], 'image_id': d['Image'], 'started': d['State']['StartedAt']}
     if not stopped and not recovering:
         worker_locked(current['execution-worker']['id'], legacy=True)
-        run(['curl', '--fail', '--silent', '--show-error', '--max-time', '10', '--resolve',
-             rollback['domain'] + ':443:127.0.0.1', 'https://' + rollback['domain'] + '/healthz'])
+        require(run(['curl', '--fail', '--silent', '--show-error', '--max-time', '10', '--resolve',
+                     rollback['domain'] + ':443:127.0.0.1', 'https://' + rollback['domain'] + '/healthz']) == b'ok',
+                'legacy-gateway-health')
     return current
 
 

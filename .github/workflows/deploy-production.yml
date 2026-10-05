@@ -119,6 +119,7 @@ jobs:
             python deploy/production/transport.py capture --evidence p9-evidence
           fi
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        id: publish_evidence
         if: always()
         with:
           name: p9-production-evidence
@@ -127,3 +128,12 @@ jobs:
             p9-evidence/host/*.json
           if-no-files-found: error
           retention-days: 90
+      - name: Recover retained Legacy if acceptance evidence publication fails
+        if: ${{ always() && steps.publish_evidence.outcome == 'failure' }}
+        run: |
+          if test -f p9-evidence/cutover-attempted; then
+            python deploy/production/transport.py recover --evidence p9-evidence
+            python deploy/lightsail/verify-public-origin.py --base-url "$PUBLIC_DASHBOARD_URL" \
+              --attempts 1 --timeout 10 --retry-delay 0
+            python deploy/production/transport.py capture --evidence p9-evidence
+          fi
