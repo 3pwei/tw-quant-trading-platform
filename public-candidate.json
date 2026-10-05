@@ -494,7 +494,7 @@
     },
     {
       "path": "deploy/production/Caddyfile",
-      "sha256": "8006dc0b61e12610338b6d64f47407a77ea4ad9ca8ffef136ff6f1f6b2d35049"
+      "sha256": "528fcd2ac72d0765e74d145dfa691d2c57198cfb77a9be5bfdf5858370d5858b"
     },
     {
       "path": "deploy/production/approved-p8.json",

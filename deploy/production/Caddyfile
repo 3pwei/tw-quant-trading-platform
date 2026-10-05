@@ -89,5 +89,6 @@
 
 # Dedicated container health endpoint; no host publish.
 http://127.0.0.1:8080 {
+	bind 127.0.0.1
 	respond /healthz "ok" 200
 }
