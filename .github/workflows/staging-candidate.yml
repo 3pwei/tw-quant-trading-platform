@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       confirmation:
-        description: "Type BUILD staging 7d490254130d6fd3da5f8f88d9903cb1a35a2f88"
+        description: "Type BUILD staging followed by a space and this exact master SHA"
         required: true
         type: string
 
@@ -30,7 +30,7 @@ jobs:
         run: |
           test "$REQUEST_EVENT" = workflow_dispatch
           test "$WORKFLOW_REF" = refs/heads/master
-          test "$CONFIRMATION" = "BUILD staging 7d490254130d6fd3da5f8f88d9903cb1a35a2f88"
+          test "$CONFIRMATION" = "BUILD staging ${GITHUB_SHA}"
 
       - name: Checkout P8 pipeline revision
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -46,7 +46,7 @@ jobs:
         run: |
           test "$(git rev-parse HEAD)" = "$GATE_SHA"
           git merge-base --is-ancestor 7d490254130d6fd3da5f8f88d9903cb1a35a2f88 HEAD
-          grep -qx 'PLATFORM_SOURCE_SHA=7d490254130d6fd3da5f8f88d9903cb1a35a2f88' deploy/staging/identities.conf
+          grep -qx 'P7_PLATFORM_SOURCE_SHA=7d490254130d6fd3da5f8f88d9903cb1a35a2f88' deploy/staging/identities.conf
           grep -qx 'CORE_WHEEL_SHA256=63645e42755068c308d66d74ded5133395dfef816360dc8106e0bbc247ee49bd' deploy/staging/identities.conf
           grep -qx 'PRIVATE_PROVIDER_WHEEL_SHA256=a5cbd8147bfd517e0297f6e70fdbbf33b63c22ab58e570a35bfdbdfc26993ee5' deploy/staging/identities.conf
           grep -qx 'P7_ACCEPTANCE_SHA=97ba63f514c6adeb531666e9b10d8b05578cde76' deploy/staging/identities.conf
@@ -58,8 +58,9 @@ jobs:
       - name: Materialize exact approved Platform source
         run: |
           install -d -m 700 "${RUNNER_TEMP}/candidate-source"
-          git archive 7d490254130d6fd3da5f8f88d9903cb1a35a2f88 | tar -x -C "${RUNNER_TEMP}/candidate-source"
+          git archive "$GITHUB_SHA" | tar -x -C "${RUNNER_TEMP}/candidate-source"
           (cd "${RUNNER_TEMP}/candidate-source" && python tools/verify_public_candidate.py)
+          python deploy/staging/runtime_source.py create --root "${RUNNER_TEMP}/candidate-source" --revision "$GITHUB_SHA"
           install -d -m 755 "${RUNNER_TEMP}/candidate-source/deploy/staging"
           install -m 644 deploy/staging/composition.py "${RUNNER_TEMP}/candidate-source/deploy/staging/composition.py"
           install -m 644 deploy/staging/Caddyfile "${RUNNER_TEMP}/candidate-source/deploy/staging/Caddyfile"
@@ -86,6 +87,7 @@ jobs:
           IMAGE_ROOT: ghcr.io/${{ github.repository_owner }}/tw-quant-trading-platform-staging
         run: |
           source deploy/staging/identities.conf
+          PLATFORM_SOURCE_SHA="$GITHUB_SHA"
           runtime_a="${IMAGE_ROOT}:runtime-a-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           runtime_b="${IMAGE_ROOT}:runtime-b-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           gateway="${IMAGE_ROOT}:gateway-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
@@ -130,6 +132,13 @@ jobs:
           sudo chown 10001:10001 "${RUNNER_TEMP}/provider-factory"
           sudo chmod 0400 "${RUNNER_TEMP}/provider-factory"
           for image in "$RUNTIME_A_TAG" "$RUNTIME_B_TAG"; do
+            docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+              --mount "type=bind,source=${GITHUB_WORKSPACE}/deploy/staging/runtime_source.py,target=/app/p8_runtime_source.py,readonly" \
+              "$image" python /app/p8_runtime_source.py verify --root /app --revision "$GITHUB_SHA"
+            docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+              --tmpfs /tmp:rw,noexec,nosuid,nodev,size=128m,uid=10001,gid=10001 \
+              --mount "type=bind,source=${GITHUB_WORKSPACE}/tests/test_execution_security_boundary.py,target=/app/tests/test_execution_security_boundary.py,readonly" \
+              "$image" python -m unittest discover -s /app/tests -p 'test_execution_security_boundary.py' -v
             docker run --rm --network none --read-only --cap-drop ALL \
               --security-opt no-new-privileges \
               --tmpfs /tmp:rw,noexec,nosuid,nodev,size=128m,uid=10001,gid=10001 \
@@ -252,7 +261,8 @@ jobs:
         run: |
           {
             echo '### P8 immutable staging candidate'
-            echo '- Platform source: `7d490254130d6fd3da5f8f88d9903cb1a35a2f88`'
+            echo "- Runtime source: ${GITHUB_SHA}"
+            echo '- P7 baseline: `7d490254130d6fd3da5f8f88d9903cb1a35a2f88`'
             echo '- Core wheel: `63645e42755068c308d66d74ded5133395dfef816360dc8106e0bbc247ee49bd`'
             echo '- Private provider wheel: `a5cbd8147bfd517e0297f6e70fdbbf33b63c22ab58e570a35bfdbdfc26993ee5`'
             echo '- Private leakage in Public tree: `0`'

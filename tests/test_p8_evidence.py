@@ -208,7 +208,7 @@ class ContinuityTests(unittest.TestCase):
         process.stdout.close.assert_called_once()
 
     def test_diagnostics_does_not_export_secrets_or_raw_tool_errors(self):
-        def command(argv):
+        def command(argv, input_text=None):
             if argv[:3] == ['docker', 'ps', '-aq']: return 0, 'a' * 64
             if argv[:2] == ['docker', 'inspect']:
                 return 0, json.dumps({'running': True, 'exit': 0, 'oom': False, 'health': 'healthy',
