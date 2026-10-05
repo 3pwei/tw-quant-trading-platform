@@ -133,7 +133,10 @@ or data-loss exception is permitted.
 6. Validate Production config and Caddy overlay, deploy with `--no-build --pull
    never`, require actual health, locked/disabled worker and zero order/cancel calls.
 7. Restart and require same container/image identities, new process generation,
-   fresh heartbeat and unchanged durable targets/orders/outboxes/fills/positions.
+   fresh heartbeat and unchanged durable targets/orders/outboxes/fills/positions/locks.
+   Complete database inventories are retained in evidence; ordinary market-table
+   updates during runtime/restart are permitted. Full-table equality remains
+   mandatory for the backup/preflight/quiescence data-loss gates.
    Live reconciliation is explicitly not applicable while disabled; durable
    reconciliation and generation checks remain required.
 8. Verify HTTPS/auth boundaries locally and the formal public origin from the

@@ -323,7 +323,7 @@ def verify(pins, durable_code):
 
 
 def continuity(before, after):
-    require(before['durable'] == after['durable'], 'restart-durable-drift')
+    require(before['durable']['durable'] == after['durable']['durable'], 'restart-durable-drift')
     for service in SERVICES:
         a, b = before['containers'][service], after['containers'][service]
         require(a['id'] == b['id'] and a['image_id'] == b['image_id'] and a['restarts'] == b['restarts'] and
@@ -482,7 +482,8 @@ class Host:
         verify_backup(self.pins, self.rollback_digest)
         legacy_state(self.pins, self.backup, stopped=True)
         final = self.verify()
-        require(final['durable'] == after['durable'] and final['containers'] == after['containers'], 'finalize-runtime-drift')
+        require(final['durable']['durable'] == after['durable']['durable'] and
+                final['containers'] == after['containers'], 'finalize-runtime-drift')
         result['external_runner_public_gate'] = 'PASS'
         write_json(ROOT / 'acceptance.json', result)
 

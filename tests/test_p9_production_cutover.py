@@ -249,7 +249,7 @@ class TransactionTests(unittest.TestCase):
             root = Path(tmp)
             host = cutover.Host(PINS, '0' * 64, {}, b'fixture', {})
             host.backup = {'domain': 'production.example.invalid'}
-            observed = {'durable': {'locked': True}, 'containers': {'same': 'ids'}}
+            observed = {'durable': {'durable': {'target': 'locked'}, 'tables': {'market': 'one'}}, 'containers': {'same': 'ids'}}
             host.verify = lambda: observed
             with patch.object(cutover, 'ROOT', root), patch.object(cutover, 'config_check'), \
                  patch.object(cutover, 'verify_backup') as backup, patch.object(cutover, 'legacy_state') as legacy, \
@@ -307,16 +307,17 @@ class TransactionTests(unittest.TestCase):
         continuity.assert_called_once()
 
     def test_restart_generation_or_durable_mismatch_rejected(self):
-        a = {'durable': {'target': 'one'}, 'execution': {'generation': 'one'},
+        a = {'durable': {'durable': {'target': 'one'}, 'tables': {'market': 'one'}}, 'execution': {'generation': 'one'},
              'containers': {s: {'id': s, 'image_id': 'image', 'started': '2026-10-05T00:00:00Z', 'restarts': 0} for s in cutover.SERVICES}}
         b = copy.deepcopy(a)
         for s in cutover.SERVICES: b['containers'][s]['started'] = '2026-10-05T00:00:01Z'
         b['execution']['generation'] = 'two'
+        b['durable']['tables']['market'] = 'normal-new-tick'
         cutover.continuity(a, b)
         for field in ('generation', 'durable', 'image'):
             bad = copy.deepcopy(b)
             if field == 'generation': bad['execution']['generation'] = 'one'
-            elif field == 'durable': bad['durable']['target'] = 'other'
+            elif field == 'durable': bad['durable']['durable']['target'] = 'other'
             else: bad['containers']['gateway']['image_id'] = 'other'
             with self.subTest(field=field), self.assertRaises(ValueError): cutover.continuity(a, bad)
 
