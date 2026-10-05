@@ -474,7 +474,7 @@ class Host:
                   'legacy_retained': True, 'accepted_at': datetime.now(timezone.utc).isoformat()}
         write_json(ROOT / 'pending.json', result)
         # Keep the host flock held while the authenticated runner verifies public origin.
-        print('P9_READY_FOR_EXTERNAL_GATE', flush=True)
+        print('P9_READY_FOR_EXTERNAL_GATE ' + self.backup['domain'], flush=True)
         acknowledgement = sys.stdin.readline().strip()
         require(acknowledgement == 'P9_EXTERNAL_GATE_PASS ' + self.pins['manifest_sha256'], 'external-runner-gate-failed')
         config_check(self.pins, self.hashes)

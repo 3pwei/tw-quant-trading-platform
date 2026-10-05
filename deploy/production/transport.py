@@ -10,6 +10,7 @@ import shlex
 import socket
 import selectors
 import time
+import urllib.parse
 import subprocess
 import sys
 import tarfile
@@ -145,10 +146,16 @@ def main():
                 continue
             line = process.stdout.readline(4097)
             require(len(line) <= 4096, 'unexpected-host-output')
-            if line.strip() == b'P9_READY_FOR_EXTERNAL_GATE':
+            if line.startswith(b'P9_READY_FOR_EXTERNAL_GATE '):
                 require(not ready, 'duplicate-external-gate-request')
                 ready = True
                 try:
+                    domain = line.decode('ascii').strip().split(' ', 1)[1]
+                    origin = urllib.parse.urlparse(os.environ['PUBLIC_DASHBOARD_URL'])
+                    require(re.fullmatch('[a-z0-9.-]{1,253}', domain) and origin.scheme == 'https' and
+                            origin.hostname == domain and origin.port in (None, 443) and
+                            origin.path in ('', '/') and not origin.query and not origin.fragment and
+                            origin.username is None and origin.password is None, 'external-origin-identity')
                     run([sys.executable, str(ROOT / 'deploy/lightsail/verify-public-origin.py'),
                          '--base-url', os.environ['PUBLIC_DASHBOARD_URL'], '--attempts', '1',
                          '--timeout', '10', '--retry-delay', '0'], timeout=30)

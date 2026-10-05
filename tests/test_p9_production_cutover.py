@@ -240,11 +240,29 @@ class Backend:
 
 
 class TransactionTests(unittest.TestCase):
+    def test_external_runner_ack_rechecks_rollback_before_acceptance(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            host = cutover.Host(PINS, '0' * 64, {}, b'fixture', {})
+            host.backup = {'domain': 'production.example.invalid'}
+            observed = {'durable': {'locked': True}, 'containers': {'same': 'ids'}}
+            host.verify = lambda: observed
+            with patch.object(cutover, 'ROOT', root), patch.object(cutover, 'config_check'), \
+                 patch.object(cutover, 'verify_backup') as backup, patch.object(cutover, 'legacy_state') as legacy, \
+                 patch.object(cutover.sys, 'stdin', io.StringIO('P9_EXTERNAL_GATE_PASS ' + PINS['manifest_sha256'] + '\n')), \
+                 patch.object(cutover.sys, 'stdout', io.StringIO()):
+                host.commit(observed, observed)
+            backup.assert_called_once_with(PINS, '0' * 64)
+            legacy.assert_called_once_with(PINS, host.backup, stopped=True)
+            report = json.loads((root / 'acceptance.json').read_text())
+            self.assertEqual(report['external_runner_public_gate'], 'PASS')
+            self.assertEqual(report['real_order'], 'disabled')
+
     def test_external_runner_nack_cannot_commit_acceptance(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             host = cutover.Host(PINS, '0' * 64, {}, b'fixture', {})
-            host.backup = {}
+            host.backup = {'domain': 'production.example.invalid'}
             with patch.object(cutover, 'ROOT', root), patch.object(cutover.sys, 'stdin', io.StringIO('P9_EXTERNAL_GATE_FAIL\n')), \
                  patch.object(cutover.sys, 'stdout', io.StringIO()), self.assertRaisesRegex(ValueError, 'external-runner-gate-failed'):
                 host.commit({}, {})

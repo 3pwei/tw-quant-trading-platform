@@ -502,7 +502,7 @@
     },
     {
       "path": "deploy/production/cutover.py",
-      "sha256": "2a288bd9e616a764f7305b8bbdcff11f438820e685c25411adf4c5c32777916e"
+      "sha256": "a0395ae333c361ebfe17933b01658b4ae614c55a375e2ce678c2c57409c499d0"
     },
     {
       "path": "deploy/production/docker-compose.yml",
@@ -518,7 +518,7 @@
     },
     {
       "path": "deploy/production/transport.py",
-      "sha256": "c6250d71e5b8c532f35bf0dfc5c1367ad4980672ccd1dbfa08827631b06a1eb5"
+      "sha256": "b1bce308d2d6d247bb1bd3ab1286f4005c507b3eeb4f1cc88967da62e63679ee"
     },
     {
       "path": "deploy/security/codeql_eligibility.py",
@@ -934,7 +934,7 @@
     },
     {
       "path": "tests/test_p9_production_cutover.py",
-      "sha256": "3940913b816a66e240a3dec85212508d6aea6a4e1fd23876c0f69fb562e5ab2d"
+      "sha256": "9cabe6e85d6473eb6e9316e40976c9b76f8d0c823fb5cb63ae0512850ad41826"
     },
     {
       "path": "tests/test_paper_auto.py",
