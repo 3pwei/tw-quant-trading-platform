@@ -33,8 +33,9 @@ def candidate():
         digest = "sha256:" + digest * 64
         return {"ref": manifest.IMAGE_REPOSITORY + ":" + role + "-123-1@" + digest,
                 "digest": digest, "config_digest": digest}
-    return {"schema_version": 1, "pipeline_revision": "1" * 40,
-        "platform_source_sha": identities["PLATFORM_SOURCE_SHA"],
+    return {"schema_version": 2, "pipeline_revision": "1" * 40,
+        "platform_source_sha": "1" * 40,
+        "p7_platform_source_sha": identities["P7_PLATFORM_SOURCE_SHA"],
         "core": {"version": identities["CORE_VERSION"], "wheel_sha256": identities["CORE_WHEEL_SHA256"]},
         "private_provider": {"version": identities["PRIVATE_PROVIDER_VERSION"],
             "wheel_sha256": identities["PRIVATE_PROVIDER_WHEEL_SHA256"], "p7_acceptance_sha": identities["P7_ACCEPTANCE_SHA"]},

@@ -51,6 +51,7 @@ COPY pyproject.toml uv.lock README.md THIRD_PARTY_NOTICES.md ./
 COPY docs/dependency-notices.json ./dependency-notices.json
 COPY docs/third-party-license-texts.txt ./third-party-license-texts.txt
 COPY tw_quant ./tw_quant
+COPY runtime-source.json ./runtime-source.json
 COPY deploy/staging/composition.py ./staging_composition.py
 RUN uv sync --locked --no-dev --extra server --no-editable
 RUN --mount=type=secret,id=private_provider_wheel,target=/run/secrets/provider.whl,required=true \

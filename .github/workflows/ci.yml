@@ -142,6 +142,19 @@ jobs:
         run: |
           docker build --target market-api --tag platform-market-api:ci .
           docker build --target execution-worker --tag platform-execution-worker:ci .
+      - name: Verify exact runtime source and execution generation in public images
+        run: |
+          python deploy/staging/runtime_source.py create --root "$PWD" --revision "$GITHUB_SHA" --output "${RUNNER_TEMP}/runtime-source.json"
+          for image in platform-market-api:ci platform-execution-worker:ci; do
+            docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+              --mount "type=bind,source=$PWD/deploy/staging/runtime_source.py,target=/app/p8_runtime_source.py,readonly" \
+              --mount "type=bind,source=${RUNNER_TEMP}/runtime-source.json,target=/app/runtime-source.json,readonly" \
+              "$image" python /app/p8_runtime_source.py verify --root /app --revision "$GITHUB_SHA"
+            docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+              --tmpfs /tmp:rw,noexec,nosuid,nodev,size=128m,uid=10001,gid=10001 \
+              --mount "type=bind,source=$PWD/tests/test_execution_security_boundary.py,target=/app/tests/test_execution_security_boundary.py,readonly" \
+              "$image" python -m unittest discover -s /app/tests -p 'test_execution_security_boundary.py' -v
+          done
       - name: Verify full deployment shell orchestration in a disposable container
         run: |
           docker run --rm --network none --read-only --user 0:0 --cap-drop ALL --security-opt no-new-privileges \

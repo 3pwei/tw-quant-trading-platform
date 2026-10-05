@@ -14,7 +14,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "e4d5330bd6013e72bef8653a0f9cf5d267921d4a4514fdd91771de32e22357a3"
+      "sha256": "ff2ce2cc585392ade3be3fad5522ee4f79871588521d52d410bb82ac87806d50"
     },
     {
       "path": ".github/workflows/deploy-lightsail.yml",
@@ -22,7 +22,7 @@
     },
     {
       "path": ".github/workflows/deploy-staging.yml",
-      "sha256": "c4d6ea1dfb2e603e86a69e17bb933bf2b5af6f9832a169ba4302e1de92d8a040"
+      "sha256": "a1755ec19bf5f9946c605b8b9e49361710de5850269982645454f3192bddd5ea"
     },
     {
       "path": ".github/workflows/security-exception-expiry.yml",
@@ -34,7 +34,7 @@
     },
     {
       "path": ".github/workflows/staging-candidate.yml",
-      "sha256": "0fbbc92c705f3d6b69c096e40e027dfc250e196f705364fa37bff6e13d71bd03"
+      "sha256": "37b5094f251e354f69aafbf856ec12edc9ec62985c400203b3d08107f89cfdc6"
     },
     {
       "path": ".gitignore",
@@ -522,7 +522,7 @@
     },
     {
       "path": "deploy/staging/Dockerfile.runtime",
-      "sha256": "5c36a9073927169e6939ee33f4c38e99a734aad75cf280600cca314fbc17bf8f"
+      "sha256": "1f7b459c9aa88fb25fd66e585f12413113115985e53731374e8b74256ce23547"
     },
     {
       "path": "deploy/staging/acceptance_evidence.py",
@@ -530,7 +530,7 @@
     },
     {
       "path": "deploy/staging/candidate_manifest.py",
-      "sha256": "5869497802c2c71a16b7d139775a4103a9ae680dca0f227862bc0f9dbc0cf5da"
+      "sha256": "bc633c976f18c814d2e8b956d1f91f2e00369f96786f85958ce23a2ea342359d"
     },
     {
       "path": "deploy/staging/composition.py",
@@ -538,11 +538,11 @@
     },
     {
       "path": "deploy/staging/deploy.sh",
-      "sha256": "030112da416dfe5c11a8f1938f018850502e85b119966e67c07139afa31050d2"
+      "sha256": "a497ba5a90e56f07df829603c6a1b68b05e6a46a6984a8350fb41b16050bf529"
     },
     {
       "path": "deploy/staging/diagnostics.py",
-      "sha256": "5aef4e945a8e2e02f922ef86c28be7a6844d3044456ff5e501829ca7ef2d78f9"
+      "sha256": "243db58d04b2e23f3ce46b547b287839dc0a92606142ac3ca395cb714b170ca9"
     },
     {
       "path": "deploy/staging/docker-compose.yml",
@@ -554,7 +554,7 @@
     },
     {
       "path": "deploy/staging/identities.conf",
-      "sha256": "d94b2dde1da7523b9390f4aef283e0f8c7af8f324021ca026ddb064773b13b11"
+      "sha256": "f92a4e6ab4c8c0c891f57eb023daaa6bffc0dd90fc4dc948a52e7de8df5b7998"
     },
     {
       "path": "deploy/staging/image_config_digest.py",
@@ -587,6 +587,10 @@
     {
       "path": "deploy/staging/runtime_acceptance.py",
       "sha256": "027b05c18fe058b48e0d53c2b936f7aeffd0c70c040359a7a990a99741d51137"
+    },
+    {
+      "path": "deploy/staging/runtime_source.py",
+      "sha256": "d362670178b54983bb639156f5c42e3616719eafd304dd5645afc162f276ad0c"
     },
     {
       "path": "deploy/staging/smoke-gateway.sh",
@@ -622,7 +626,7 @@
     },
     {
       "path": "docs/p8-staging.md",
-      "sha256": "4a562cd0fa17c00cce60cc4a9c143abb7065974f1f961f4d874eb9e3bbfad425"
+      "sha256": "77563ca6763dccd768c482f582ae30a2013cb96061fea2ed1e2fdfba24a0b4cb"
     },
     {
       "path": "docs/provenance.md",
@@ -862,7 +866,11 @@
     },
     {
       "path": "tests/test_p8_evidence.py",
-      "sha256": "7a0eea228f577af9023683e1b37925928cb9051ac4c15e73f2926960b04172ce"
+      "sha256": "9116c161ba9f3241ef9cd6217b7993e9adc807dff8bd6cab91c5e2ee278236b1"
+    },
+    {
+      "path": "tests/test_p8_failure_snapshot.py",
+      "sha256": "914eaf146f8f4cc87d2a00755cd8c7951f21b67a1a2b35a991bbbde5f34ac3c9"
     },
     {
       "path": "tests/test_p8_gateway.py",
@@ -878,11 +886,15 @@
     },
     {
       "path": "tests/test_p8_recovery_provenance.py",
-      "sha256": "bdc04afb30486f5223ef23337e1146ff2ff26fbdbc76bf2a06a90ddf3988961f"
+      "sha256": "5975c1fe23d13bc9bb65724098c37aa5e215cbf0c49c52bfffd6f07c7ed38619"
+    },
+    {
+      "path": "tests/test_p8_runtime_source.py",
+      "sha256": "3d4be41751b03ad4fcd064725bfe6f697497b273609e846334f6c16788ccef5d"
     },
     {
       "path": "tests/test_p8_staging.py",
-      "sha256": "e06754f382cd5abb58867f49e9f7cc93ed1c7d0f1442c96a3fb665e26c839741"
+      "sha256": "7baa310f8fb3eb5f6ab76a35c652bc44cc70f086e5e6bf0c7c69f11e1dbb25b0"
     },
     {
       "path": "tests/test_paper_auto.py",

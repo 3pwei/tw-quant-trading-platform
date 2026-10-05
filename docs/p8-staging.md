@@ -1,6 +1,6 @@
 # P8 immutable staging and rollback
 
-P8 is a staging-only delivery boundary. The approved application source remains
+P8 is a staging-only delivery boundary. The P7 integration baseline remains
 Platform `7d490254130d6fd3da5f8f88d9903cb1a35a2f88`, Core v1.2.0 wheel SHA-256
 `63645e42755068c308d66d74ded5133395dfef816360dc8106e0bbc247ee49bd`,
 private provider v0.2.0 wheel SHA-256
@@ -8,7 +8,7 @@ private provider v0.2.0 wheel SHA-256
 and P7 acceptance `97ba63f514c6adeb531666e9b10d8b05578cde76`.
 
 `P8 Staging Candidate` is a manual master workflow. It verifies exact CI and
-Security gates, materializes the approved Platform source with `git archive`,
+Security gates, archives the exact workflow commit with `git archive "$GITHUB_SHA"`,
 downloads the private wheel only inside the controlled runner, verifies its
 bytes, and injects it with a BuildKit secret mount. The read token is neither a
 build argument nor an image file. The Public runtime image remains provider-free.
@@ -16,6 +16,28 @@ Two distinct runtime images (known-good A and candidate B) and one gateway image
 are each built once, exercised, scanned, assigned CycloneDX SBOMs, and only then
 pushed. The manifest binds registry digest, image configuration digest, source,
 pipeline, Core, provider, P7 and configuration identities.
+
+Candidate #18 exposed a source-binding defect: its pipeline was `0858518f...`,
+but the runtime archive was still the P7 baseline `7d490254...`. Thus PR #32's
+execution generation contract was absent from the image. Manifest schema 2
+keeps `p7_platform_source_sha` as the historical baseline and requires
+`platform_source_sha == pipeline_revision`. Candidate confirmation is
+`BUILD staging <exact master SHA>`. Before publishing either runtime image,
+`runtime_source.py` checks the archived package hashes against the image's
+package bytes and import path, and the execution security/generation regressions
+run inside each actual image. Old schema 1 candidates must not be reused.
+
+Staging #13 failed while capturing evidence before restart; its ledger contains
+only `deploy-known_good/verified`. It did not execute Compose restart. The
+underlying loss of worker health remains unproven. On the first deployment
+failure, the EXIT trap now records a bounded, diagnostic-only
+`pre-compensation.json` before restoring containers. It includes start time,
+heartbeat age, generation-match booleans, fixed-path file metadata, PID 1 state
+and healthcheck timestamps/exit codes. It omits healthcheck output, raw health
+JSON, environment, account identity and logs. Diagnostic failure never changes
+the original exit status, prevents restore or grants acceptance. Post-restore
+`status.json` remains separate. Healthy-only policy, freshness, restart, soak,
+lock and zero external-call requirements are unchanged.
 
 Staging #7 stopped at A's first image verification: the expected config digest
 was compared with Docker's local image ID, which was the registry manifest

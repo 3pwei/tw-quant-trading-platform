@@ -64,6 +64,12 @@ restore_prior() {
   trap - EXIT
   # Preserve the original deployment failure, even when compensation also fails.
   set +e
+  if [[ ${status} -ne 0 ]]; then
+    # Capture the failed generation before any compensation changes containers.
+    # Diagnostic failure cannot replace the original failure or prevent restore.
+    timeout --signal=TERM --kill-after=2s 30s python3 "${BUNDLE}/diagnostics.py" \
+      --pre-compensation --phase "${P8_PHASE}" >/dev/null 2>&1 || true
+  fi
   if [[ ${status} -ne 0 && -n "${prior}" && -f "${prior}" ]]; then
     if (
       cp "${prior}" "${ACTIVE}.restore" &&

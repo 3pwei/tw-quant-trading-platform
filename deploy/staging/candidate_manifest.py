@@ -44,8 +44,9 @@ def image(ref: str, digest: str, config_digest: str) -> dict[str, str]:
 
 def validate(document: dict) -> None:
     require(isinstance(document, dict), "manifest must be an object")
-    require(type(document.get("schema_version")) is int and document["schema_version"] == 1, "unknown manifest schema")
-    require(document.get("platform_source_sha") == IDENTITIES["PLATFORM_SOURCE_SHA"], "Platform source mismatch")
+    require(type(document.get("schema_version")) is int and document["schema_version"] == 2, "unknown manifest schema")
+    require(document.get("p7_platform_source_sha") == IDENTITIES["P7_PLATFORM_SOURCE_SHA"], "P7 Platform baseline mismatch")
+    require(document.get("platform_source_sha") == document.get("pipeline_revision"), "runtime source is not this exact pipeline")
     require(re.fullmatch(r"[0-9a-f]{40}", str(document.get("pipeline_revision", ""))) is not None, "invalid pipeline revision")
     require(document.get("core") == {
         "version": IDENTITIES["CORE_VERSION"],
@@ -112,8 +113,9 @@ def main() -> int:
     if args.command == "create":
         run_suffix = f"{args.run_id}-{args.run_attempt}"
         document = {
-            "schema_version": 1,
-            "platform_source_sha": IDENTITIES["PLATFORM_SOURCE_SHA"],
+            "schema_version": 2,
+            "platform_source_sha": args.pipeline_revision,
+            "p7_platform_source_sha": IDENTITIES["P7_PLATFORM_SOURCE_SHA"],
             "pipeline_revision": args.pipeline_revision,
             "core": {"version": IDENTITIES["CORE_VERSION"], "wheel_sha256": IDENTITIES["CORE_WHEEL_SHA256"]},
             "private_provider": {

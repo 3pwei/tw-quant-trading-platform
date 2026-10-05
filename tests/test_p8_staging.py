@@ -21,7 +21,7 @@ P7_SHA = "97ba63f514c6adeb531666e9b10d8b05578cde76"
 class P8IdentityTests(unittest.TestCase):
     def test_approved_identities_are_single_source_and_pinned(self):
         identities = (STAGING / "identities.conf").read_text()
-        self.assertIn(f"PLATFORM_SOURCE_SHA={SOURCE_SHA}", identities)
+        self.assertIn(f"P7_PLATFORM_SOURCE_SHA={SOURCE_SHA}", identities)
         self.assertIn(f"CORE_WHEEL_SHA256={CORE_SHA}", identities)
         self.assertIn(f"PRIVATE_PROVIDER_WHEEL_SHA256={PRIVATE_SHA}", identities)
         self.assertIn(f"P7_ACCEPTANCE_SHA={P7_SHA}", identities)
@@ -100,7 +100,9 @@ class P8BuildBoundaryTests(unittest.TestCase):
 
     def test_candidate_uses_exact_source_archive_and_pushes_without_rebuild(self):
         workflow = (ROOT / ".github/workflows/staging-candidate.yml").read_text()
-        self.assertIn(f"git archive {SOURCE_SHA}", workflow)
+        self.assertIn('git archive "$GITHUB_SHA"', workflow)
+        self.assertNotIn(f"git archive {SOURCE_SHA}", workflow)
+        self.assertIn('PLATFORM_SOURCE_SHA="$GITHUB_SHA"', workflow)
         self.assertEqual(workflow.count('docker build "${common[@]}"'), 2)
         self.assertIn("for image in \"$RUNTIME_A_TAG\" \"$RUNTIME_B_TAG\" \"$GATEWAY_TAG\"; do docker push", workflow)
         push = workflow.index("docker push")
