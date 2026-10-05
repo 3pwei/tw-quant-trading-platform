@@ -14,11 +14,15 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "ff2ce2cc585392ade3be3fad5522ee4f79871588521d52d410bb82ac87806d50"
+      "sha256": "55e8753e27240800492e3704a7df347311138c52ffedef62110df158296e4e65"
     },
     {
       "path": ".github/workflows/deploy-lightsail.yml",
       "sha256": "0717eaff5e4536cf7312f5f86dbcf8167a64e190cebc3c84694d0eb45704c40b"
+    },
+    {
+      "path": ".github/workflows/deploy-production.yml",
+      "sha256": "0271e09fa68849c0c8693b11cacb48f5df1fff5e9ba59f8a42218e615397db7a"
     },
     {
       "path": ".github/workflows/deploy-staging.yml",
@@ -489,6 +493,34 @@
       "sha256": "5cdfe25bbbd53fb24ca564204ef48735555573b38980acb8cab13786588cf1f3"
     },
     {
+      "path": "deploy/production/Caddyfile",
+      "sha256": "8006dc0b61e12610338b6d64f47407a77ea4ad9ca8ffef136ff6f1f6b2d35049"
+    },
+    {
+      "path": "deploy/production/approved-p8.json",
+      "sha256": "b8bac641f4ba73117b0a6bbd9f934c73e95a0662020df3bec66ed7ca600775e0"
+    },
+    {
+      "path": "deploy/production/cutover.py",
+      "sha256": "4fc2c91dcc3e0a79bd822bede45158988a377843e214dcce10d26ee144cd772d"
+    },
+    {
+      "path": "deploy/production/docker-compose.yml",
+      "sha256": "2776d78bf9f6caffedf0bc069b5aca35af587d1e16e3b174fb6b7c99e1c293d5"
+    },
+    {
+      "path": "deploy/production/durable_state.py",
+      "sha256": "8abb194d2d8ca8a618a230b5b93c799a0ac1b6333ca5b3cd71a26e91ab59b360"
+    },
+    {
+      "path": "deploy/production/evidence.py",
+      "sha256": "86daf0f16c3d888cee3f0c28ce5c102a24d0f507c73965d7e922e8cadefd556d"
+    },
+    {
+      "path": "deploy/production/transport.py",
+      "sha256": "129a9af70a82592772a2cb4f7e0fc51efb9f269613bc0f65ab07f17ad4d7d17e"
+    },
+    {
       "path": "deploy/security/codeql_eligibility.py",
       "sha256": "a55c55a3011ffb7069f6b581eb981c9d2edf9b14f404503f30f86134331e51b0"
     },
@@ -627,6 +659,10 @@
     {
       "path": "docs/p8-staging.md",
       "sha256": "77563ca6763dccd768c482f582ae30a2013cb96061fea2ed1e2fdfba24a0b4cb"
+    },
+    {
+      "path": "docs/p9-production-cutover.md",
+      "sha256": "105ff9196b8e4d40462ebb921401c3e272020f002b79a1a0093c4b5ece6f3947"
     },
     {
       "path": "docs/provenance.md",
@@ -895,6 +931,10 @@
     {
       "path": "tests/test_p8_staging.py",
       "sha256": "7baa310f8fb3eb5f6ab76a35c652bc44cc70f086e5e6bf0c7c69f11e1dbb25b0"
+    },
+    {
+      "path": "tests/test_p9_production_cutover.py",
+      "sha256": "f0777673ab30eff39a3e90c5624a476133af8d2dc4311db68b0e86259b13f04d"
     },
     {
       "path": "tests/test_paper_auto.py",
