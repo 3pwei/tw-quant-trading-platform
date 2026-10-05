@@ -1,0 +1,139 @@
+name: P9 Production Cutover
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform_sha:
+        description: "Exact P8-accepted Platform source SHA"
+        required: true
+        type: string
+      candidate_run_id:
+        description: "Exact P8-accepted Candidate run ID"
+        required: true
+        type: string
+      manifest_sha256:
+        description: "Exact P8-accepted manifest SHA256"
+        required: true
+        type: string
+      confirmation:
+        description: "DEPLOY production <platform_sha> candidate <candidate_run_id> manifest <manifest_sha256>"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+  packages: read
+
+concurrency:
+  group: lightsail-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact tree, manual identity and P8 checksums before Production access
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          P9_SOURCE: ${{ inputs.platform_sha }}
+          P9_CANDIDATE: ${{ inputs.candidate_run_id }}
+          P9_MANIFEST: ${{ inputs.manifest_sha256 }}
+          P9_CONFIRMATION: ${{ inputs.confirmation }}
+        run: |
+          python tools/verify_public_candidate.py
+          git merge-base --is-ancestor "$P9_SOURCE" "$GITHUB_SHA"
+          python deploy/production/evidence.py --source "$P9_SOURCE" --candidate "$P9_CANDIDATE" \
+            --manifest "$P9_MANIFEST" --control-sha "$GITHUB_SHA" --output p9-evidence
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: p9-prehost-evidence
+          path: p9-evidence
+          if-no-files-found: error
+          retention-days: 90
+
+  cutover:
+    needs: verify
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' && needs.verify.result == 'success' }}
+    runs-on: ubuntu-latest
+    environment: lightsail-production
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      P9_HOST: ${{ vars.P9_PRODUCTION_HOST }}
+      P9_USER: ${{ vars.P9_PRODUCTION_USER }}
+      P9_STAGING_HOST: ${{ vars.P9_STAGING_HOST_IDENTITY }}
+      P9_SSH_PRIVATE_KEY: ${{ secrets.P9_PRODUCTION_SSH_PRIVATE_KEY }}
+      P9_SSH_HOST_KEY: ${{ secrets.P9_PRODUCTION_SSH_HOST_KEY }}
+      P9_CONFIG_HASHES: ${{ vars.P9_PRODUCTION_CONFIG_SHA256_JSON }}
+      P9_ROLLBACK_SHA256: ${{ vars.P9_PRODUCTION_ROLLBACK_SHA256 }}
+      PUBLIC_DASHBOARD_URL: ${{ vars.PUBLIC_DASHBOARD_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reverify evidence and exact master gates before host preflight
+        env:
+          P9_CONFIRMATION: ${{ inputs.confirmation }}
+          P9_SOURCE: ${{ inputs.platform_sha }}
+          P9_CANDIDATE: ${{ inputs.candidate_run_id }}
+          P9_MANIFEST: ${{ inputs.manifest_sha256 }}
+        run: |
+          python tools/verify_public_candidate.py
+          python deploy/production/evidence.py --source "$P9_SOURCE" --candidate "$P9_CANDIDATE" \
+            --manifest "$P9_MANIFEST" --control-sha "$GITHUB_SHA" --output p9-evidence
+      - name: Cutover exact immutable P8 images with retained Legacy rollback
+        id: cutover
+        run: python deploy/production/transport.py cutover --evidence p9-evidence
+      - name: Capture sanitized Production evidence
+        id: capture
+        if: ${{ always() && steps.cutover.outcome != 'skipped' }}
+        run: python deploy/production/transport.py capture --evidence p9-evidence
+      - name: Require final evidence on success
+        id: acceptance
+        if: success()
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          d=json.loads(Path('p9-evidence/host/acceptance.json').read_text())
+          assert d['acceptance'] == d['external_runner_public_gate'] == 'PASS'
+          assert d['real_order'] == 'disabled' and d['legacy_retained'] is True
+          PY
+      - name: Recover exact retained Legacy after any first forward failure
+        if: ${{ always() && (steps.cutover.outcome == 'failure' || steps.capture.outcome == 'failure' || steps.acceptance.outcome == 'failure' || cancelled()) }}
+        env:
+          PUBLIC_DASHBOARD_URL: ${{ vars.PUBLIC_DASHBOARD_URL }}
+        run: |
+          if test -f p9-evidence/cutover-attempted; then
+            python deploy/production/transport.py recover --evidence p9-evidence
+            python deploy/lightsail/verify-public-origin.py --base-url "$PUBLIC_DASHBOARD_URL" \
+              --attempts 1 --timeout 10 --retry-delay 0
+            python deploy/production/transport.py capture --evidence p9-evidence
+          fi
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        id: publish_evidence
+        if: always()
+        with:
+          name: p9-production-evidence
+          path: |
+            p9-evidence/*.json
+            p9-evidence/host/*.json
+          if-no-files-found: error
+          retention-days: 90
+      - name: Recover retained Legacy if acceptance evidence publication fails
+        if: ${{ always() && steps.publish_evidence.outcome == 'failure' }}
+        run: |
+          if test -f p9-evidence/cutover-attempted; then
+            python deploy/production/transport.py recover --evidence p9-evidence
+            python deploy/lightsail/verify-public-origin.py --base-url "$PUBLIC_DASHBOARD_URL" \
+              --attempts 1 --timeout 10 --retry-delay 0
+            python deploy/production/transport.py capture --evidence p9-evidence
+          fi
