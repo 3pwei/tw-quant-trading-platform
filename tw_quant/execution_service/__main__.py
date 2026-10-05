@@ -7,15 +7,24 @@ import json
 from pathlib import Path
 
 from .config import ExecutionServiceSettings
+from .health import read_generation_marker, valid_generation, write_generation_marker
 from .runtime import build_execution_service
 
 
 def _healthcheck(settings: ExecutionServiceSettings) -> int:
     path = Path(settings.health_path)
     try:
+        generation = read_generation_marker(settings.generation_path)
         document = json.loads(path.read_text(encoding="utf-8"))
         heartbeat = datetime.fromisoformat(str(document["heartbeat_at"]))
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+        return 1
+    if (
+        generation is None
+        or not valid_generation(document.get("generation"))
+        or document["generation"] != generation
+        or heartbeat.tzinfo is None
+    ):
         return 1
     age = (datetime.now(timezone.utc) - heartbeat).total_seconds()
     valid_state = document.get("execution_state") in {
@@ -51,7 +60,12 @@ def main() -> int:
     settings = ExecutionServiceSettings.from_env()
     if args.command == "healthcheck":
         return _healthcheck(settings)
-    runtime = build_execution_service(settings)
+    generation = (
+        write_generation_marker(settings.generation_path)
+        if args.command == "run"
+        else None
+    )
+    runtime = build_execution_service(settings, generation=generation)
     if args.command == "validate":
         print(json.dumps(runtime.public_health(), sort_keys=True))
         asyncio.run(runtime.close())
