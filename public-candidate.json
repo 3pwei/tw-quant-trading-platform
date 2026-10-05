@@ -774,7 +774,7 @@
     },
     {
       "path": "tests/test_execution_security_boundary.py",
-      "sha256": "17bb2112f9ea9e5374489796c2e023bc661e45caf543e73768751dbd4bfafa14"
+      "sha256": "9084b95c0f467a2fd53fa14584c0a2fe81986790ab2bc80cc40356f8e415ff1c"
     },
     {
       "path": "tests/test_execution_targets.py",
@@ -1238,11 +1238,11 @@
     },
     {
       "path": "tw_quant/execution_service/__init__.py",
-      "sha256": "f7253838e24ca0f24f27202940405d7464b405d8fe7399f185324a4db076d81f"
+      "sha256": "ddc0c0dbea01bfbdb8db48d6934087e6c6b7cccedf317b9de8f80f607b019b08"
     },
     {
       "path": "tw_quant/execution_service/__main__.py",
-      "sha256": "0d0a577fecb68cff99c126a61665da0297f6878958c4e068b74a0120665b7138"
+      "sha256": "d1c7d1e4e57ddc75e642741b285f5340f0ded65db1fdb7f3600dc632a4f99aee"
     },
     {
       "path": "tw_quant/execution_service/config.py",

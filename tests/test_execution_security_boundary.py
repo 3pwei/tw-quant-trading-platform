@@ -4,8 +4,11 @@ import asyncio
 from datetime import datetime, timezone
 import json
 import logging
+import os
 from pathlib import Path
 import sqlite3
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest import mock
@@ -43,6 +46,103 @@ from tw_quant.paper import SQLitePaperRepository
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIRMATION = "I_UNDERSTAND_LIVE_ORDERS"
+
+
+class ExecutionCommandImportTests(unittest.TestCase):
+    def command_environment(self, root: Path) -> dict[str, str]:
+        env = {key: value for key, value in os.environ.items()
+               if not key.startswith(("LIVE_", "BROKER_"))}
+        env.update({
+            "BROKER_PROVIDER": "disabled",
+            "LIVE_TRADING_ENABLED": "false",
+            "LIVE_EXECUTION_DB_PATH": str(root / "market.sqlite3"),
+            "LIVE_EXECUTION_HEALTH_PATH": str(root / "health.json"),
+            "LIVE_EXECUTION_GENERATION_PATH": str(root / "generation"),
+        })
+        return env
+
+    def test_healthcheck_command_never_imports_runtime_and_remains_fail_closed(self):
+        # A fresh interpreter catches eager package imports as well as CLI imports.
+        script = '''
+import importlib.abc
+import runpy
+import sys
+class RejectRuntime(importlib.abc.MetaPathFinder):
+    def find_spec(self, fullname, path=None, target=None):
+        if fullname == "tw_quant.execution_service.runtime":
+            raise AssertionError("healthcheck imported execution runtime")
+sys.meta_path.insert(0, RejectRuntime())
+sys.argv = ["tw_quant.execution_service", "healthcheck"]
+try:
+    runpy.run_module("tw_quant.execution_service", run_name="__main__")
+except SystemExit as result:
+    assert "tw_quant.execution_service.runtime" not in sys.modules
+    raise
+'''
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            generation = "a" * 32
+            (root / "generation").write_text(generation + "\n")
+            valid = {
+                "generation": generation,
+                "heartbeat_at": datetime.now(timezone.utc).isoformat(),
+                "execution_state": "locked",
+                "locked": True,
+                "external_order_calls": 0,
+                "external_cancel_calls": 0,
+            }
+            for changes, expected in (
+                ({}, 0),
+                ({"generation": "b" * 32}, 1),
+                ({"heartbeat_at": "2000-01-01T00:00:00+00:00"}, 1),
+                ({"locked": False}, 1),
+            ):
+                with self.subTest(changes=changes):
+                    (root / "health.json").write_text(json.dumps(valid | changes))
+                    result = subprocess.run(
+                        [sys.executable, "-c", script], cwd=ROOT,
+                        env=self.command_environment(root), capture_output=True,
+                        text=True, timeout=30,
+                    )
+                    self.assertEqual(result.returncode, expected, result.stderr)
+
+    def test_run_and_validate_commands_load_real_runtime(self):
+        script = '''
+import builtins
+import sys
+from unittest import mock
+from tw_quant.execution_service.__main__ import main
+assert "tw_quant.execution_service.runtime" not in sys.modules
+original_import = builtins.__import__
+runtime_imports = []
+async def serve_once(self):
+    assert self.settings.live_trading_enabled is False
+    await self.close()
+def observe_import(name, globals=None, locals=None, fromlist=(), level=0):
+    module = original_import(name, globals, locals, fromlist, level)
+    if name == "runtime" and level == 1 and "build_execution_service" in fromlist:
+        runtime_imports.append(module)
+        module.ExecutionServiceRuntime.serve = serve_once
+    return module
+sys.argv = ["tw_quant.execution_service", sys.argv[1]]
+with mock.patch("builtins.__import__", side_effect=observe_import):
+    assert main() == 0
+assert len(runtime_imports) == 1
+assert "tw_quant.execution_service.runtime" in sys.modules
+from tw_quant.execution_service import ExecutionServiceRuntime, build_execution_service
+assert ExecutionServiceRuntime is runtime_imports[0].ExecutionServiceRuntime
+assert build_execution_service is runtime_imports[0].build_execution_service
+'''
+        for command in ("run", "validate"):
+            with self.subTest(command=command), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                result = subprocess.run(
+                    [sys.executable, "-c", script, command], cwd=ROOT,
+                    env=self.command_environment(root), capture_output=True,
+                    text=True, timeout=30,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual((root / "generation").exists(), command == "run")
 
 
 class CountingGate:
