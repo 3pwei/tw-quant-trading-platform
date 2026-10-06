@@ -43,7 +43,9 @@ LABEL org.opencontainers.image.revision="${PLATFORM_SOURCE_SHA}" \
       io.tw-quant.core.sha256="${CORE_WHEEL_SHA256}" \
       io.tw-quant.private-provider.version="${PRIVATE_PROVIDER_VERSION}" \
       io.tw-quant.private-provider.sha256="${PRIVATE_PROVIDER_WHEEL_SHA256}" \
-      io.tw-quant.p7.acceptance="${P7_ACCEPTANCE_SHA}"
+      io.tw-quant.p7.acceptance="${P7_ACCEPTANCE_SHA}" \
+      io.tw-quant.capability.market.shioaji="true" \
+      io.tw-quant.shioaji.version="1.7.4"
 
 WORKDIR /app
 RUN python -m pip install --no-cache-dir "uv==0.11.33"
@@ -53,7 +55,7 @@ COPY docs/third-party-license-texts.txt ./third-party-license-texts.txt
 COPY tw_quant ./tw_quant
 COPY runtime-source.json ./runtime-source.json
 COPY deploy/staging/composition.py ./staging_composition.py
-RUN uv sync --locked --no-dev --extra server --no-editable
+RUN uv sync --locked --no-dev --extra server --extra shioaji --no-editable
 RUN --mount=type=secret,id=private_provider_wheel,target=/run/secrets/provider.whl,required=true \
     echo "${PRIVATE_PROVIDER_WHEEL_SHA256}  /run/secrets/provider.whl" | sha256sum -c - \
     && provider_filename="$(python -c 'import sys, zipfile; z=zipfile.ZipFile(sys.argv[1]); roots={n.split("/", 1)[0][:-10] for n in z.namelist() if n.count("/") == 1 and n.endswith(".dist-info/WHEEL")}; assert len(roots) == 1; wheel=z.read(next(n for n in z.namelist() if n.count("/") == 1 and n.endswith(".dist-info/WHEEL"))).decode(); assert "Tag: py3-none-any" in wheel; print(roots.pop() + "-py3-none-any.whl")' /run/secrets/provider.whl)" \

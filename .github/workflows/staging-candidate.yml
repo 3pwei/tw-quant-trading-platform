@@ -121,6 +121,12 @@ jobs:
       - name: Smoke gateway under exact staging security boundary
         run: bash deploy/staging/smoke-gateway.sh "$GATEWAY_TAG"
 
+      - name: Verify offline Shioaji capability on exact Runtime A and B
+        run: |
+          for image in "$RUNTIME_A_TAG" "$RUNTIME_B_TAG"; do
+            python deploy/staging/shioaji_capability.py image --image "$image"
+          done
+
       - name: Verify installed private composition and zero credential persistence
         env:
           PRIVATE_PROVIDER_FACTORY: ${{ secrets.PRIVATE_PROVIDER_FACTORY }}

@@ -14,7 +14,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "55e8753e27240800492e3704a7df347311138c52ffedef62110df158296e4e65"
+      "sha256": "a35ca2cb468067c75c16f16824b762bba490f7646ee47a90470b6b34921f9f5e"
     },
     {
       "path": ".github/workflows/deploy-lightsail.yml",
@@ -42,7 +42,7 @@
     },
     {
       "path": ".github/workflows/staging-candidate.yml",
-      "sha256": "37b5094f251e354f69aafbf856ec12edc9ec62985c400203b3d08107f89cfdc6"
+      "sha256": "86ee3dfc67960f538626558a83859c3c42ee76238846922c0b999b515eca1753"
     },
     {
       "path": ".gitignore",
@@ -570,7 +570,7 @@
     },
     {
       "path": "deploy/staging/Dockerfile.runtime",
-      "sha256": "1f7b459c9aa88fb25fd66e585f12413113115985e53731374e8b74256ce23547"
+      "sha256": "5a1eae16e2df65e3c74d9ac9803892f366e5a617fd43f54f705febed3cf7b2dd"
     },
     {
       "path": "deploy/staging/acceptance_evidence.py",
@@ -639,6 +639,10 @@
     {
       "path": "deploy/staging/runtime_source.py",
       "sha256": "d362670178b54983bb639156f5c42e3616719eafd304dd5645afc162f276ad0c"
+    },
+    {
+      "path": "deploy/staging/shioaji_capability.py",
+      "sha256": "1fc6497a7e10dadd8f7774a14c72ad98f09dff16da2356f405bacf4806eb8872"
     },
     {
       "path": "deploy/staging/smoke-gateway.sh",
@@ -947,6 +951,10 @@
     {
       "path": "tests/test_p8_runtime_source.py",
       "sha256": "3d4be41751b03ad4fcd064725bfe6f697497b273609e846334f6c16788ccef5d"
+    },
+    {
+      "path": "tests/test_p8_shioaji_capability.py",
+      "sha256": "a9fc3ce4d6e545a2431b7916e55daf857ef753e54fb949900e4f3c668fc3b1a2"
     },
     {
       "path": "tests/test_p8_staging.py",
