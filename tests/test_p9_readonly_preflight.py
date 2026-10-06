@@ -159,6 +159,21 @@ class HostTests(unittest.TestCase):
                 configs.assert_not_called(); backup.assert_not_called(); sqlite.assert_not_called()
                 self.assertNotIn(provider, json.dumps(result)) if provider != 'shioaji' else None
 
+    def test_approved_shioaji_advances_only_to_existing_config_approval_gate(self):
+        self.containers['market-api'] = container('market-api', 1, 'shioaji')
+        def commands(argv):
+            if argv[0] == 'git': return host.REVISION.encode()
+            self.assertEqual(argv[:3], ['docker', 'image', 'inspect'])
+            return json.dumps([{'Config': {'Labels': {'org.opencontainers.image.revision': host.REVISION}}}]).encode()
+        result = {}
+        with patch.object(host, 'read_command', side_effect=commands), \
+             patch.object(host, 'running_containers', return_value=self.containers), \
+             patch.object(validation, 'config_check') as config, patch.object(database, 'snapshot') as sqlite:
+            with self.assertRaisesRegex(ValueError, '^config-approval-missing$'):
+                host.inspect_host(PINS, {}, '', result)
+            self.assertEqual(result['market_provider'], 'shioaji')
+            config.assert_not_called(); sqlite.assert_not_called()
+
     def test_command_guard_rejects_every_mutation_and_docker_exec(self):
         forbidden = [['docker', op, 'x'] for op in ('pull', 'build', 'stop', 'start', 'restart', 'exec', 'rm')]
         forbidden += [['docker', 'compose', 'up'], ['git', 'reset', '--hard'], ['touch', '/tmp/file']]
@@ -316,6 +331,12 @@ class HostTests(unittest.TestCase):
                     wrong = copy.deepcopy(self.containers); wrong[service]['Image'] = 'sha256:' + '0' * 64
                     with patch.object(host, 'running_containers', return_value=wrong):
                         self.assertEqual(host.collect(PINS, hashes, rollback_hash)['reason'], 'production-container-mismatch')
+                wrong = copy.deepcopy(self.containers)
+                wrong_env = host.env_of(wrong['market-api'])
+                wrong_env['MARKET_DATA_PROVIDER'] = 'replay' if provider == 'shioaji' else 'shioaji'
+                wrong['market-api']['Config']['Env'] = [k + '=' + v for k, v in wrong_env.items()]
+                with patch.object(host, 'running_containers', return_value=wrong):
+                    self.assertEqual(host.collect(PINS, hashes, rollback_hash)['reason'], 'production-market-provider-mismatch')
                 state = database.snapshot(data / 'market.sqlite3')
                 with patch.object(database, 'snapshot', side_effect=[state, {**state, 'tables': {'changed': 'x'}}]):
                     self.assertEqual(host.collect(PINS, hashes, rollback_hash)['reason'], 'backup-stale-or-different')

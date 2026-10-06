@@ -184,6 +184,15 @@ class ConfigTests(unittest.TestCase):
             root = Path(temporary); hashes = self.config(root, market_changes={'BROKER_PROVIDER': 'shioaji'})
             with self.assertRaisesRegex(ValueError, 'execution-not-disabled'): self.check(root, hashes)
 
+    def test_every_required_execution_flag_must_be_explicitly_false(self):
+        for flag in cutover.DISABLED[:5]:
+            with self.subTest(flag=flag), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary); hashes = self.config(root)
+                path = root / 'config/execution.env'
+                path.write_text(path.read_text().replace(flag + '=false\n', ''))
+                hashes['execution.env'] = cutover.file_sha(path)
+                with self.assertRaisesRegex(ValueError, 'execution-not-disabled'): self.check(root, hashes)
+
     def test_replay_mock_sources_remain_valid_and_require_active_csv(self):
         for provider in ('mock', 'replay'):
             with tempfile.TemporaryDirectory() as temporary:

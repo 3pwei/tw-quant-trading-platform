@@ -966,11 +966,11 @@
     },
     {
       "path": "tests/test_p9_readonly_preflight.py",
-      "sha256": "a10820af0b08a591501ccefd854b22e1efab284ae320de70b09a4c56bd4d46af"
+      "sha256": "6a17c413f7a7e52ff0ea8973d0c2deb462529bca5cb102f44d5a56a9891aca0f"
     },
     {
       "path": "tests/test_p9_shioaji_capability.py",
-      "sha256": "0419a63d6b6135376679c3bb0cb182e20d39a806de2b1ba9b0b66b1fbb131bd9"
+      "sha256": "24dcab3ea7e5604f30f83aea0416fb577b7fd9e536f5589edc9bf3e8a29dd311"
     },
     {
       "path": "tests/test_paper_auto.py",
