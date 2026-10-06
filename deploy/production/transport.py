@@ -36,10 +36,10 @@ def b64(value):
 
 
 def command(mode, gate=None):
-    hashes = json.loads(os.environ['P9_CONFIG_HASHES'])
+    hashes = json.loads(os.environ['PRODUCTION_APPROVED_CONFIG_SHA256_JSON'])
     require(set(hashes) == {'market.env', 'execution.env', 'gateway.env', 'factory', 'replay.csv'} and
             all(re.fullmatch('[0-9a-f]{64}', str(v)) for v in hashes.values()), 'config-approval-missing')
-    rollback = os.environ['P9_ROLLBACK_SHA256']
+    rollback = os.environ['LEGACY_ROLLBACK_INVENTORY_SHA256']
     require(re.fullmatch('[0-9a-f]{64}', rollback), 'rollback-approval-missing')
     args = [mode, '--pins', b64((HERE / 'approved-p8.json').read_bytes()), '--rollback-sha256', rollback,
             '--config-hashes', b64(json.dumps(hashes).encode()), '--durable-code', b64((HERE / 'durable_state.py').read_bytes())]
@@ -49,13 +49,13 @@ def command(mode, gate=None):
 
 
 def configure():
-    host, user = os.environ['P9_HOST'], os.environ['P9_USER']
+    host, user = os.environ['PRODUCTION_HOST'], os.environ['PRODUCTION_USER']
     require(re.fullmatch('[a-zA-Z0-9.-]+', host) and re.fullmatch('[a-z_][a-z0-9_-]*', user), 'ssh-target-invalid')
-    require(host != os.environ.get('P9_STAGING_HOST') and os.environ.get('P9_STAGING_HOST'), 'production-host-not-isolated')
+    require(host != os.environ.get('STAGING_HOST_IDENTITY') and os.environ.get('STAGING_HOST_IDENTITY'), 'production-host-not-isolated')
     production_addresses = {x[4][0] for x in socket.getaddrinfo(host, None)}
-    staging_addresses = {x[4][0] for x in socket.getaddrinfo(os.environ['P9_STAGING_HOST'], None)}
+    staging_addresses = {x[4][0] for x in socket.getaddrinfo(os.environ['STAGING_HOST_IDENTITY'], None)}
     require(production_addresses and staging_addresses and not production_addresses & staging_addresses, 'production-staging-host-overlap')
-    key, known = os.environ['P9_SSH_PRIVATE_KEY'], os.environ['P9_SSH_HOST_KEY']
+    key, known = os.environ['PRODUCTION_SSH_PRIVATE_KEY'], os.environ['PRODUCTION_SSH_HOST_KEY']
     require(key and known and '\n' not in host and '\n' not in user, 'ssh-key-missing')
     directory = Path(os.environ['RUNNER_TEMP']) / 'p9-ssh'
     directory.mkdir(mode=0o700, exist_ok=True)

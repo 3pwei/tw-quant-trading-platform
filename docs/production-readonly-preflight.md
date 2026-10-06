@@ -7,7 +7,7 @@ images. P8 stays complete; P10 and real-order execution remain disabled.
 
 A future separately authorized dispatch must use master, successful latest
 exact-master CI and Security, and environment `lightsail-production`. The job
-uses the existing P9 Production SSH vars/secrets, config approval JSON and sealed
+uses the shared semantic Production SSH vars/secrets, config approval JSON and sealed
 rollback SHA256 documented in `p9-production-cutover.md`. Hostnames, addresses,
 SSH user and credentials are never evidence fields. SSH uses the reviewed strict
 host-key and Production/Staging DNS-address isolation validation. SSH files are

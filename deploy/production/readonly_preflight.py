@@ -133,12 +133,12 @@ def inspect_once():
     master_gates(os.environ['GITHUB_SHA'])
     pins = json.loads((HERE / 'approved-p8.json').read_text())
     try:
-        hashes = json.loads(os.environ.get('P9_CONFIG_HASHES', '{}') or '{}')
+        hashes = json.loads(os.environ.get('PRODUCTION_APPROVED_CONFIG_SHA256_JSON', '{}') or '{}')
         if not isinstance(hashes, dict):
             hashes = {}
     except ValueError:
         hashes = {}
-    rollback = os.environ.get('P9_ROLLBACK_SHA256', '')
+    rollback = os.environ.get('LEGACY_ROLLBACK_INVENTORY_SHA256', '')
     # SSH key/known_hosts files are runner-only and removed on every outcome.
     with tempfile.TemporaryDirectory(prefix='p9-readonly-', dir=os.environ['RUNNER_TEMP']) as temporary:
         previous = os.environ['RUNNER_TEMP']
