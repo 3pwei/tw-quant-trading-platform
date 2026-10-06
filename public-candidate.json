@@ -342,7 +342,7 @@
     },
     {
       "path": "dashboard/package-lock.json",
-      "sha256": "94da098454eb779e28b1b20e67b761ce33943715d3be0e527b3df645cd970c03"
+      "sha256": "5fc54fa18d702cdb60309fc7d2f4586c846815c8e810a7b73bb9827f80136f60"
     },
     {
       "path": "dashboard/package.json",
@@ -670,7 +670,7 @@
     },
     {
       "path": "docs/dependency-notices.json",
-      "sha256": "3ff6c2fa26907f6800cecd52906133766608463af229be51e2b290bd2d5859cd"
+      "sha256": "bb0a230aaf42d3f4b4b489d3ac0a3cec3481c364b2730921698765783bb46800"
     },
     {
       "path": "docs/deployment.md",
