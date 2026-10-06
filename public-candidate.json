@@ -29,6 +29,10 @@
       "sha256": "a1755ec19bf5f9946c605b8b9e49361710de5850269982645454f3192bddd5ea"
     },
     {
+      "path": ".github/workflows/production-readonly-preflight.yml",
+      "sha256": "9cfe8ccec3f8088313bdeea2a824bd722ed11fdb4ee055426b4e49696d765a88"
+    },
+    {
       "path": ".github/workflows/security-exception-expiry.yml",
       "sha256": "4a7f0ede25b910d75506be455579ef4c85f82f8d9249eb9674edf7970d20e0e6"
     },
@@ -517,6 +521,18 @@
       "sha256": "86daf0f16c3d888cee3f0c28ce5c102a24d0f507c73965d7e922e8cadefd556d"
     },
     {
+      "path": "deploy/production/readonly_host.py",
+      "sha256": "eb390495e5c20608fe7fcddd499657011512b25c5f188ff6b5a4604c5f773487"
+    },
+    {
+      "path": "deploy/production/readonly_preflight.py",
+      "sha256": "c99c98cdb04832f569de5716c4ffdca80c91b139ebf4c714098edaea5a3c9a2e"
+    },
+    {
+      "path": "deploy/production/readonly_sqlite.py",
+      "sha256": "47a20ec9d63421964d1d764a4f7455136ccc151b130a82612cec2f36c22a368d"
+    },
+    {
       "path": "deploy/production/transport.py",
       "sha256": "b1bce308d2d6d247bb1bd3ab1286f4005c507b3eeb4f1cc88967da62e63679ee"
     },
@@ -663,6 +679,10 @@
     {
       "path": "docs/p9-production-cutover.md",
       "sha256": "78f2949b40b7c5e1b52b50b929973b0cfd158fb0678dd7324e93df00c2d9eb8c"
+    },
+    {
+      "path": "docs/production-readonly-preflight.md",
+      "sha256": "cbb7a02384a0c619e8879a72d4cadad45bebeff514ffcef5c0f090dcb55d2a9d"
     },
     {
       "path": "docs/provenance.md",
@@ -935,6 +955,10 @@
     {
       "path": "tests/test_p9_production_cutover.py",
       "sha256": "e90c09b8542b951b12a7d6d04f68a8954f8e95fc03acef6eaf32cf26501416bb"
+    },
+    {
+      "path": "tests/test_p9_readonly_preflight.py",
+      "sha256": "f51e9b8baa99bca3801e712e214b160b20b83c24aac54572bb6e05bc5b4eebb1"
     },
     {
       "path": "tests/test_paper_auto.py",
