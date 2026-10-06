@@ -5,6 +5,53 @@ on:
 permissions:
   contents: read
 jobs:
+  p8-shioaji:
+    name: P8 offline Shioaji exact-image capability
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Verify reviewed tree and prepare public-only capability fixture
+        run: |
+          python tools/verify_public_candidate.py
+          python -m unittest discover -s tests -p 'test_p8_shioaji_capability.py' -v
+          install -d -m 700 "${RUNNER_TEMP}/shioaji-source"
+          git archive HEAD | tar -x -C "${RUNNER_TEMP}/shioaji-source"
+          python deploy/staging/runtime_source.py create --root "${RUNNER_TEMP}/shioaji-source" --revision "$GITHUB_SHA"
+          # Empty public fixture only exercises the wheel-install boundary; no strategy or broker credentials.
+          python - <<'PY'
+          import os, zipfile
+          from pathlib import Path
+          path = Path(os.environ['RUNNER_TEMP']) / 'capability-fixture.whl'
+          prefix = 'p8_capability_fixture-0.0.0.dist-info/'
+          with zipfile.ZipFile(path, 'w') as wheel:
+              wheel.writestr('p8_capability_fixture/__init__.py', '')
+              wheel.writestr(prefix + 'METADATA', 'Metadata-Version: 2.1\nName: p8-capability-fixture\nVersion: 0.0.0\n')
+              wheel.writestr(prefix + 'WHEEL', 'Wheel-Version: 1.0\nGenerator: p8-public-ci\nRoot-Is-Purelib: true\nTag: py3-none-any\n')
+              wheel.writestr(prefix + 'RECORD', '')
+          PY
+      - name: Build public-fixture Runtime A and B once and verify exact bytes offline
+        run: |
+          fixture_sha="$(sha256sum "${RUNNER_TEMP}/capability-fixture.whl" | cut -d ' ' -f 1)"
+          for role in a b; do
+            image="p8-shioaji-runtime-${role}:ci"
+            DOCKER_BUILDKIT=1 docker build \
+              --file deploy/staging/Dockerfile.runtime \
+              --secret "id=private_provider_wheel,src=${RUNNER_TEMP}/capability-fixture.whl" \
+              --build-arg "PLATFORM_SOURCE_SHA=$GITHUB_SHA" \
+              --build-arg "PIPELINE_REVISION=$GITHUB_SHA" \
+              --build-arg "CONFIGURATION_IDENTITY=p8-ci-${role}" \
+              --build-arg CORE_WHEEL_SHA256=63645e42755068c308d66d74ded5133395dfef816360dc8106e0bbc247ee49bd \
+              --build-arg PRIVATE_PROVIDER_VERSION=0.0.0 \
+              --build-arg "PRIVATE_PROVIDER_WHEEL_SHA256=$fixture_sha" \
+              --tag "$image" "${RUNNER_TEMP}/shioaji-source"
+            python deploy/staging/shioaji_capability.py image --image "$image"
+            docker run --rm --network none --read-only --cap-drop ALL --security-opt no-new-privileges \
+              --mount "type=bind,source=$PWD/deploy/staging/runtime_source.py,target=/app/p8_runtime_source.py,readonly" \
+              "$image" python /app/p8_runtime_source.py verify --root /app --revision "$GITHUB_SHA"
+          done
+
   p9-cutover:
     name: P9 fail-closed cutover regressions
     runs-on: ubuntu-latest
