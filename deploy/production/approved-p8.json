@@ -1,21 +1,21 @@
 {
   "acceptance_artifact": {
-    "digest": "sha256:da6a9f3840e518864ca026074c72e81431b745a8cfee5416b81335b469d68402",
-    "id": 11347237861,
+    "digest": "sha256:e28ab8c6c4608f9eee309d40b95b64e71d705a66a5de11a015609e7536c716c6",
+    "id": 11417625183,
     "name": "p8-staging-acceptance"
   },
   "acceptance_files": {
-    "acceptance.json": "d93623375f39406b089975bb4aaba0a39bfcaf2d4ef1937ac04995f9113295f4",
-    "candidate-manifest.json": "157298f60fd8e3067fadb73e1e5b0fab08537f1dafe8ae74d6f38276610fe3ad",
-    "ledger.jsonl": "2a3e4bba05edee28429c560b0d978f8ee9a726efaa788663f41f716dfc60d333",
-    "session.json": "65718a419b923294b71f36caf6e890be357709888ff290520411c5d28edc8299"
+    "acceptance.json": "94861937d391385889a62f6304cad752549797af1ff31ff2519b3974bbfcf1dc",
+    "candidate-manifest.json": "b28e818cbc42be8c6b5159c88420fd9b42b1b1967e3fbe1543066ef5e49d3a60",
+    "ledger.jsonl": "46d426306ed6014d236ab0649252164cda0e907aa6f11c9666fb25ffb391cfbd",
+    "session.json": "f4501f417938ffffdaa351121c54531c7992e0d3c118c579969e2ff74893140a"
   },
   "candidate_artifact": {
-    "digest": "sha256:85f1c9deaec2366c7443f0ec5c61d98af984990b2a42ea388a1c646e2fc84e24",
-    "id": 11343992599,
+    "digest": "sha256:0481499d37dc6e208e71e63edc12f4182a4e6f6f31ee4e4b6988cd8f55d4cb15",
+    "id": 11410933865,
     "name": "p8-staging-candidate-manifest"
   },
-  "candidate_run_id": "37306446381",
+  "candidate_run_id": "37459015384",
   "legacy_revision": "683bb4ebc4c4980480a4786136701ff458338a14",
   "manifest": {
     "core": {
@@ -24,32 +24,32 @@
     },
     "images": {
       "gateway": {
-        "config_digest": "sha256:a177b1052c76f43a0b407a135dbde9ea1b0093562a83bdaac8017022d71966d7",
-        "digest": "sha256:927c7394348c8a8ec931a8da90238857168e0b1dc25cb5646495d964ec080e3c",
-        "ref": "ghcr.io/3pwei/tw-quant-trading-platform-staging:gateway-37306446381-1@sha256:927c7394348c8a8ec931a8da90238857168e0b1dc25cb5646495d964ec080e3c"
+        "config_digest": "sha256:6e2b298c9f5432ec0ca78b457c175b7032a128c1bc09bc91641921c014c9e01d",
+        "digest": "sha256:3fc1d027aa619de49f1c9f36a910ed137e510720d07fc3d8e44fbd1de15c826d",
+        "ref": "ghcr.io/3pwei/tw-quant-trading-platform-staging:gateway-37459015384-1@sha256:3fc1d027aa619de49f1c9f36a910ed137e510720d07fc3d8e44fbd1de15c826d"
       },
       "releases": {
         "candidate": {
-          "configuration_identity": "p8-b-37306446381-1",
+          "configuration_identity": "p8-b-37459015384-1",
           "runtime": {
-            "config_digest": "sha256:b1a2c4b5243f362d5829c0359736319adb939d47d11f236f2e16f0cdc76d1561",
-            "digest": "sha256:2f553e68809d45d1e58105397937a87997499d4821a96d7380424863a372b291",
-            "ref": "ghcr.io/3pwei/tw-quant-trading-platform-staging:runtime-b-37306446381-1@sha256:2f553e68809d45d1e58105397937a87997499d4821a96d7380424863a372b291"
+            "config_digest": "sha256:481ab0ee0d3ba541d5d6deb67d53c0ffa8cc865aa9ee520ca0393d5e6d93fab0",
+            "digest": "sha256:6abae3ab6546d07fced1bcfea0a03318d73176dfd6a62de8f5770b9925699517",
+            "ref": "ghcr.io/3pwei/tw-quant-trading-platform-staging:runtime-b-37459015384-1@sha256:6abae3ab6546d07fced1bcfea0a03318d73176dfd6a62de8f5770b9925699517"
           }
         },
         "known_good": {
-          "configuration_identity": "p8-a-37306446381-1",
+          "configuration_identity": "p8-a-37459015384-1",
           "runtime": {
-            "config_digest": "sha256:f20a55803292c6a10957f39dad8f2c99e2c66ee390159d93ad6467b80da7c926",
-            "digest": "sha256:f1894fe450fe5875de6d9cbde69443654bc9b20e66baee7d22b5cfde2a5bd3eb",
-            "ref": "ghcr.io/3pwei/tw-quant-trading-platform-staging:runtime-a-37306446381-1@sha256:f1894fe450fe5875de6d9cbde69443654bc9b20e66baee7d22b5cfde2a5bd3eb"
+            "config_digest": "sha256:3e4eb60ff41ae9ccd57eb265eb9ea9dc7b083b1c0b098d7f969a2f649a978a07",
+            "digest": "sha256:4f6cf2722c802429e7b735a4260aa6db4d6b46c18dcdbe24806785a77da28079",
+            "ref": "ghcr.io/3pwei/tw-quant-trading-platform-staging:runtime-a-37459015384-1@sha256:4f6cf2722c802429e7b735a4260aa6db4d6b46c18dcdbe24806785a77da28079"
           }
         }
       }
     },
     "p7_platform_source_sha": "7d490254130d6fd3da5f8f88d9903cb1a35a2f88",
-    "pipeline_revision": "f70c1ba2fbfd6f5deff3178361d18f576af94b24",
-    "platform_source_sha": "f70c1ba2fbfd6f5deff3178361d18f576af94b24",
+    "pipeline_revision": "fac88646fe2f40680c60f8d61c7da385ae7f91b0",
+    "platform_source_sha": "fac88646fe2f40680c60f8d61c7da385ae7f91b0",
     "private_provider": {
       "p7_acceptance_sha": "97ba63f514c6adeb531666e9b10d8b05578cde76",
       "version": "0.2.0",
@@ -59,14 +59,50 @@
       "build_once": true,
       "builder": "github-actions/hosted-linux-x64",
       "run_attempt": "1",
-      "run_id": "37306446381"
+      "run_id": "37459015384"
     },
     "schema_version": 2
   },
-  "manifest_sha256": "157298f60fd8e3067fadb73e1e5b0fab08537f1dafe8ae74d6f38276610fe3ad",
-  "platform_sha": "f70c1ba2fbfd6f5deff3178361d18f576af94b24",
+  "manifest_sha256": "b28e818cbc42be8c6b5159c88420fd9b42b1b1967e3fbe1543066ef5e49d3a60",
+  "market_capabilities": {
+    "shioaji": {
+      "binding": {
+        "acceptance_artifact": {
+          "digest": "sha256:e28ab8c6c4608f9eee309d40b95b64e71d705a66a5de11a015609e7536c716c6",
+          "id": 11417625183,
+          "name": "p8-staging-acceptance"
+        },
+        "acceptance_files": {
+          "acceptance.json": "94861937d391385889a62f6304cad752549797af1ff31ff2519b3974bbfcf1dc",
+          "candidate-manifest.json": "b28e818cbc42be8c6b5159c88420fd9b42b1b1967e3fbe1543066ef5e49d3a60",
+          "ledger.jsonl": "46d426306ed6014d236ab0649252164cda0e907aa6f11c9666fb25ffb391cfbd",
+          "session.json": "f4501f417938ffffdaa351121c54531c7992e0d3c118c579969e2ff74893140a"
+        },
+        "candidate_artifact": {
+          "digest": "sha256:0481499d37dc6e208e71e63edc12f4182a4e6f6f31ee4e4b6988cd8f55d4cb15",
+          "id": 11410933865,
+          "name": "p8-staging-candidate-manifest"
+        },
+        "manifest_sha256": "b28e818cbc42be8c6b5159c88420fd9b42b1b1967e3fbe1543066ef5e49d3a60",
+        "platform_sha": "fac88646fe2f40680c60f8d61c7da385ae7f91b0",
+        "runtime": {
+          "configuration_identity": "p8-a-37459015384-1",
+          "runtime": {
+            "config_digest": "sha256:3e4eb60ff41ae9ccd57eb265eb9ea9dc7b083b1c0b098d7f969a2f649a978a07",
+            "digest": "sha256:4f6cf2722c802429e7b735a4260aa6db4d6b46c18dcdbe24806785a77da28079",
+            "ref": "ghcr.io/3pwei/tw-quant-trading-platform-staging:runtime-a-37459015384-1@sha256:4f6cf2722c802429e7b735a4260aa6db4d6b46c18dcdbe24806785a77da28079"
+          }
+        }
+      },
+      "enabled": true,
+      "verified_candidate_run_id": "37459015384",
+      "verified_staging_run_id": "37462725158",
+      "version": "1.7.4"
+    }
+  },
+  "platform_sha": "fac88646fe2f40680c60f8d61c7da385ae7f91b0",
   "release": "known_good",
   "repository": "3pwei/tw-quant-trading-platform",
   "schema_version": 1,
-  "staging_run_id": "37307300334"
+  "staging_run_id": "37462725158"
 }

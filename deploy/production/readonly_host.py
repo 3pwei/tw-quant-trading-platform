@@ -27,6 +27,7 @@ execution-not-disabled real-order-enabled live-confirmation-present execution-no
 stale-heartbeat production-root production-directory-isolation prior-p9-transaction
 config-hashes-missing config-isolation config-digest invalid-env duplicate-or-unsafe-env
 unsafe-env-interpolation factory-invalid production-auth-missing provider-config-provenance
+market-credentials-missing market-credential-isolation production-market-provider-mismatch
 production-data-path staging-config-reuse rollback-identity invalid-domain backup-incomplete
 backup-config-members backup-config-invalid legacy-config-drift rollback-image-identity
 rollback-config-digest legacy-config-digest production-domain-mismatch production-market-source-mismatch
@@ -164,14 +165,14 @@ def initial_state(pins, result):
     provider = market_env.get('MARKET_DATA_PROVIDER', market_env.get('MARKET_MODE', 'mock')).lower().strip()
     result['market_provider'] = provider if provider in ('mock', 'replay', 'shioaji') else 'unsupported'
     result['market_provider_source'] = 'running-container-environment'
-    validation.market_compatibility(market_env)
+    validation.market_compatibility(market_env, pins)
     return containers, market_env
 
 
 def inspect_host(pins, hashes, rollback_hash, result):
     containers, market_env = initial_state(pins, result)
     market = containers['market-api']
-    # STOP above for all SDK/unknown providers, even if approvals/config are missing.
+    # SDK capability must be proven by approved P8 before config/rollback reads.
     for service, d in containers.items():
         image = json.loads(read_command(['docker', 'image', 'inspect', d['Image']]))[0]
         if service != 'gateway':
@@ -183,12 +184,18 @@ def inspect_host(pins, hashes, rollback_hash, result):
     require(bool(re.fullmatch('[0-9a-f]{64}', rollback_hash)), 'rollback-approval-missing')
     directory_check()
     envs = validation.config_check(pins, hashes)
+    provider = validation.market_compatibility(market_env, pins)
+    require(provider == validation.market_compatibility(envs['market.env'], pins) or
+            {provider, envs['market.env']['MARKET_DATA_PROVIDER']} <= {'mock', 'replay'},
+            'production-market-provider-mismatch')
     result['config_sha256'] = {name: validation.file_sha(ROOT / ('provider/factory' if name == 'factory'
                              else 'config/' + name)) for name in hashes}
     result['execution'] = execution_safety(containers)
     current_path = database(containers)
-    replay_path = mapped_path(market, market_env['MARKET_REPLAY_CSV'])
-    require(validation.file_sha(replay_path) == hashes['replay.csv'], 'production-market-source-mismatch')
+    replay_path = None
+    if provider in ('mock', 'replay'):
+        replay_path = mapped_path(market, market_env['MARKET_REPLAY_CSV'])
+        require(validation.file_sha(replay_path) == hashes['replay.csv'], 'production-market-source-mismatch')
     current = readonly_sqlite.snapshot(current_path)
     result['sqlite'] = {'integrity_check': 'ok', 'all_targets_locked': True, 'active_targets': 0,
                         'target_count': current['targets'], 'db_boundary_consistent': True}
@@ -212,7 +219,8 @@ def inspect_host(pins, hashes, rollback_hash, result):
         require(image_digest(d['Image']) == approved['config_digest'], 'legacy-config-digest')
         identities[service] = {k: approved[k] for k in ('id', 'image_id', 'config_digest')}
     # Approvals and sealed rollback must never point at current mutable data.
-    require(not sealed_path.samefile(current_path) and not replay_path.samefile(ROOT / 'config/replay.csv'),
+    require(not sealed_path.samefile(current_path) and
+            (replay_path is None or not replay_path.samefile(ROOT / 'config/replay.csv')),
             'production-path-not-isolated')
     require(all(not (ROOT / 'config' / name).samefile(LEGACY / 'config' / name)
                 for name in ('market.env', 'execution.env', 'gateway.env')), 'production-path-not-isolated')

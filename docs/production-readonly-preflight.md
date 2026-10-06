@@ -16,23 +16,29 @@ created only in runner temporary storage and cleaned up on every outcome.
 The first host check observes Legacy HEAD exactly
 `683bb4ebc4c4980480a4786136701ff458338a14`, then identifies the provider from the
 **running** Legacy market container environment, following its reviewed
-`MARKET_DATA_PROVIDER` / `MARKET_MODE` compatibility default. A Shioaji, broker SDK
-or unsupported provider stops immediately with `P9_PREREQUISITE=BLOCKED` and
-`reason=accepted-runtime-market-capability`, before reading P9 files or requiring
-config/rollback approvals. Do not switch Production to replay to pass: a new
-broker-capable Candidate and P8 acceptance cycle is required.
+`MARKET_DATA_PROVIDER` / `MARKET_MODE` compatibility default. Shioaji may
+continue only when the approved P8 capability record proves 1.7.4 bound to
+Candidate #21 (`37459015384`), Staging #16 (`37462725158`), the exact Platform SHA,
+artifact ZIP/file checksums and known-good Runtime A identity. Missing, old,
+wrong-version or mismatched approval, broker SDK and unsupported providers stop
+with `reason=accepted-runtime-market-capability` before config/rollback reads.
+Do not switch Production to replay to pass this gate.
 
-For replay/mock, repeat the first checks under the already-existing Legacy deploy
-lock, opened read-only with a nonblocking shared flock. Missing/busy lock blocks;
+For accepted Shioaji and replay/mock, repeat the first checks under the existing
+Legacy deploy lock, opened read-only with a nonblocking shared flock. Missing/busy lock blocks;
 the workflow never creates one. Then inspect independent Production config
-files/hashes, execution flags and fresh locked zero-call heartbeat, the physical
-market/worker DB boundary, and the complete sealed rollback inventory. Reuse only
+files/hashes, provider-aware market credentials/auth, execution flags and fresh
+locked zero-call heartbeat, the physical market/worker DB boundary, and the complete sealed rollback inventory. Reuse only
 an explicit selection of reviewed P9 validation functions; transaction, restart,
 healthcheck execution and upload functions are excluded from the host program.
 Verify archived image config digests against an in-memory stream of each current
 local image. No new archive, backup, image pull/build, container exec or lifecycle
 operation is performed. Recheck identities, config/record hashes and SQLite
-continuity before PASS.
+continuity before PASS. Shioaji does not read an active replay source from the
+running container; the independent sealed replay.csv remains checked as fallback
+inventory. A current/provider-config mismatch blocks. This read-only workflow
+never pulls or probes the approved image: the exact-image offline installed-SDK
+check runs separately before forward deployment during a future authorized cutover.
 
 Production SQLite files are never opened by SQLite itself. Read stable main/WAL
 bytes into RAM, validate WAL checksums/salts, apply only committed frames, and
