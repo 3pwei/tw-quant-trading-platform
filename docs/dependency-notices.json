@@ -62,7 +62,7 @@
   ],
   "inputs": {
     "Dockerfile": "727d80a2314691deba494ebadfaae1c904056bdf7992187bd1059a635ab99de6",
-    "dashboard/package-lock.json": "94da098454eb779e28b1b20e67b761ce33943715d3be0e527b3df645cd970c03",
+    "dashboard/package-lock.json": "5fc54fa18d702cdb60309fc7d2f4586c846815c8e810a7b73bb9827f80136f60",
     "deploy/lightsail/Dockerfile.gateway": "4265c6e16833f35b4652d8fc39dd616341c3faefabc1a226131f216f1b9d56c5",
     "uv.lock": "30f1af09c504171254155c28c7ee5faeff9e0028ffccba9eb2f7718d18b442a4"
   },
@@ -491,8 +491,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-darwin-arm64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-arm64/-/sharp-darwin-arm64-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-arm64/-/sharp-darwin-arm64-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0",
@@ -503,8 +503,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-darwin-x64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-x64/-/sharp-darwin-x64-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-darwin-x64/-/sharp-darwin-x64-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0",
@@ -515,78 +515,78 @@
         }
       ],
       "path": "node_modules/@img/sharp-freebsd-wasm32",
-      "resolved": "https://registry.npmjs.org/@img/sharp-freebsd-wasm32/-/sharp-freebsd-wasm32-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-freebsd-wasm32/-/sharp-freebsd-wasm32-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "LGPL-3.0-or-later",
       "license_files": [],
       "path": "node_modules/@img/sharp-libvips-darwin-arm64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-darwin-arm64/-/sharp-libvips-darwin-arm64-1.3.3.tgz",
-      "version": "1.3.3"
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-darwin-arm64/-/sharp-libvips-darwin-arm64-1.3.4.tgz",
+      "version": "1.3.4"
     },
     {
       "license": "LGPL-3.0-or-later",
       "license_files": [],
       "path": "node_modules/@img/sharp-libvips-darwin-x64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-darwin-x64/-/sharp-libvips-darwin-x64-1.3.3.tgz",
-      "version": "1.3.3"
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-darwin-x64/-/sharp-libvips-darwin-x64-1.3.4.tgz",
+      "version": "1.3.4"
     },
     {
       "license": "LGPL-3.0-or-later",
       "license_files": [],
       "path": "node_modules/@img/sharp-libvips-linux-arm",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm/-/sharp-libvips-linux-arm-1.3.3.tgz",
-      "version": "1.3.3"
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm/-/sharp-libvips-linux-arm-1.3.4.tgz",
+      "version": "1.3.4"
     },
     {
       "license": "LGPL-3.0-or-later",
       "license_files": [],
       "path": "node_modules/@img/sharp-libvips-linux-arm64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm64/-/sharp-libvips-linux-arm64-1.3.3.tgz",
-      "version": "1.3.3"
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-arm64/-/sharp-libvips-linux-arm64-1.3.4.tgz",
+      "version": "1.3.4"
     },
     {
       "license": "LGPL-3.0-or-later",
       "license_files": [],
       "path": "node_modules/@img/sharp-libvips-linux-ppc64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-ppc64/-/sharp-libvips-linux-ppc64-1.3.3.tgz",
-      "version": "1.3.3"
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-ppc64/-/sharp-libvips-linux-ppc64-1.3.4.tgz",
+      "version": "1.3.4"
     },
     {
       "license": "LGPL-3.0-or-later",
       "license_files": [],
       "path": "node_modules/@img/sharp-libvips-linux-riscv64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-riscv64/-/sharp-libvips-linux-riscv64-1.3.3.tgz",
-      "version": "1.3.3"
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-riscv64/-/sharp-libvips-linux-riscv64-1.3.4.tgz",
+      "version": "1.3.4"
     },
     {
       "license": "LGPL-3.0-or-later",
       "license_files": [],
       "path": "node_modules/@img/sharp-libvips-linux-s390x",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-s390x/-/sharp-libvips-linux-s390x-1.3.3.tgz",
-      "version": "1.3.3"
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-s390x/-/sharp-libvips-linux-s390x-1.3.4.tgz",
+      "version": "1.3.4"
     },
     {
       "license": "LGPL-3.0-or-later",
       "license_files": [],
       "path": "node_modules/@img/sharp-libvips-linux-x64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-x64/-/sharp-libvips-linux-x64-1.3.3.tgz",
-      "version": "1.3.3"
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linux-x64/-/sharp-libvips-linux-x64-1.3.4.tgz",
+      "version": "1.3.4"
     },
     {
       "license": "LGPL-3.0-or-later",
       "license_files": [],
       "path": "node_modules/@img/sharp-libvips-linuxmusl-arm64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-arm64/-/sharp-libvips-linuxmusl-arm64-1.3.3.tgz",
-      "version": "1.3.3"
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-arm64/-/sharp-libvips-linuxmusl-arm64-1.3.4.tgz",
+      "version": "1.3.4"
     },
     {
       "license": "LGPL-3.0-or-later",
       "license_files": [],
       "path": "node_modules/@img/sharp-libvips-linuxmusl-x64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-x64/-/sharp-libvips-linuxmusl-x64-1.3.3.tgz",
-      "version": "1.3.3"
+      "resolved": "https://registry.npmjs.org/@img/sharp-libvips-linuxmusl-x64/-/sharp-libvips-linuxmusl-x64-1.3.4.tgz",
+      "version": "1.3.4"
     },
     {
       "license": "Apache-2.0",
@@ -597,8 +597,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-linux-arm",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm/-/sharp-linux-arm-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm/-/sharp-linux-arm-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0",
@@ -609,8 +609,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-linux-arm64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm64/-/sharp-linux-arm64-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-arm64/-/sharp-linux-arm64-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0",
@@ -621,8 +621,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-linux-ppc64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-ppc64/-/sharp-linux-ppc64-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-ppc64/-/sharp-linux-ppc64-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0",
@@ -633,8 +633,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-linux-riscv64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-riscv64/-/sharp-linux-riscv64-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-riscv64/-/sharp-linux-riscv64-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0",
@@ -645,8 +645,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-linux-s390x",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-s390x/-/sharp-linux-s390x-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-s390x/-/sharp-linux-s390x-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0",
@@ -657,8 +657,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-linux-x64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linux-x64/-/sharp-linux-x64-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-linux-x64/-/sharp-linux-x64-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0",
@@ -669,8 +669,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-linuxmusl-arm64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-arm64/-/sharp-linuxmusl-arm64-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-arm64/-/sharp-linuxmusl-arm64-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0",
@@ -681,8 +681,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-linuxmusl-x64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-x64/-/sharp-linuxmusl-x64-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-linuxmusl-x64/-/sharp-linuxmusl-x64-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0 AND LGPL-3.0-or-later AND MIT",
@@ -693,8 +693,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-wasm32",
-      "resolved": "https://registry.npmjs.org/@img/sharp-wasm32/-/sharp-wasm32-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-wasm32/-/sharp-wasm32-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0",
@@ -705,8 +705,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-webcontainers-wasm32",
-      "resolved": "https://registry.npmjs.org/@img/sharp-webcontainers-wasm32/-/sharp-webcontainers-wasm32-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-webcontainers-wasm32/-/sharp-webcontainers-wasm32-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0 AND LGPL-3.0-or-later",
@@ -717,8 +717,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-win32-arm64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-win32-arm64/-/sharp-win32-arm64-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-win32-arm64/-/sharp-win32-arm64-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0 AND LGPL-3.0-or-later",
@@ -729,8 +729,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-win32-ia32",
-      "resolved": "https://registry.npmjs.org/@img/sharp-win32-ia32/-/sharp-win32-ia32-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-win32-ia32/-/sharp-win32-ia32-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "Apache-2.0 AND LGPL-3.0-or-later",
@@ -741,8 +741,8 @@
         }
       ],
       "path": "node_modules/@img/sharp-win32-x64",
-      "resolved": "https://registry.npmjs.org/@img/sharp-win32-x64/-/sharp-win32-x64-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/@img/sharp-win32-x64/-/sharp-win32-x64-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "MIT",
@@ -4606,8 +4606,8 @@
         }
       ],
       "path": "node_modules/sharp",
-      "resolved": "https://registry.npmjs.org/sharp/-/sharp-0.35.4.tgz",
-      "version": "0.35.4"
+      "resolved": "https://registry.npmjs.org/sharp/-/sharp-0.35.5.tgz",
+      "version": "0.35.5"
     },
     {
       "license": "ISC",
