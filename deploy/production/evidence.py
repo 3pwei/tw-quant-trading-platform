@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import urllib.parse
 import urllib.request
 import zipfile
 
@@ -34,6 +35,9 @@ def verify_manifest(payload, pins):
     document = json.loads(payload)
     validate(document)
     require(document == pins['manifest'], 'image-or-provenance-mismatch')
+    require(document['platform_source_sha'] == pins['platform_sha'] and
+            document['provenance']['run_id'] == pins['candidate_run_id'] and
+            document['provenance']['run_attempt'] == '1', 'p8-source-mismatch')
     return document
 
 
@@ -103,7 +107,6 @@ def archive(pins, kind, run_id, path, name):
         def redirect_request(self, req, fp, code, msg, headers, newurl):
             return None
     from urllib.error import HTTPError
-    import urllib.parse
     req = urllib.request.Request(url, headers={'Authorization': 'Bearer ' + os.environ['GITHUB_TOKEN']})
     try:
         urllib.request.build_opener(NoRedirect).open(req, timeout=15)

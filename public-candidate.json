@@ -502,11 +502,11 @@
     },
     {
       "path": "deploy/production/approved-p8.json",
-      "sha256": "b8bac641f4ba73117b0a6bbd9f934c73e95a0662020df3bec66ed7ca600775e0"
+      "sha256": "5bf6cde8931bd20e9536ca675049ef4bceb957a6be76d929cb325d794c929b6b"
     },
     {
       "path": "deploy/production/cutover.py",
-      "sha256": "4cc8d9c38d9283fb779f03f491d0823091a93f2aa5b28271dbf4dad34eef832a"
+      "sha256": "b202fdb13bd16bfbf5f63d6d6bac6966d358ab95358ad9d9ec64ad71558b24bf"
     },
     {
       "path": "deploy/production/docker-compose.yml",
@@ -518,15 +518,15 @@
     },
     {
       "path": "deploy/production/evidence.py",
-      "sha256": "86daf0f16c3d888cee3f0c28ce5c102a24d0f507c73965d7e922e8cadefd556d"
+      "sha256": "bbfa4bec4bd10691de5de4fb8b412556b7956b8f7bf6c06b0dfc4af5d7bce289"
     },
     {
       "path": "deploy/production/readonly_host.py",
-      "sha256": "eb390495e5c20608fe7fcddd499657011512b25c5f188ff6b5a4604c5f773487"
+      "sha256": "35c69606df8cc8d6161b5687d18a5cb88cdd89a9a7b497db5e1a98d85e2f8fec"
     },
     {
       "path": "deploy/production/readonly_preflight.py",
-      "sha256": "745bf18bbd983fe924c96f1142c92abd9ef62516240d9a6ebf8028bb4477f67d"
+      "sha256": "dbe0d512222e636e6efb642ab2d314d279e61fc832a478fe35f07becce841175"
     },
     {
       "path": "deploy/production/readonly_sqlite.py",
@@ -534,7 +534,7 @@
     },
     {
       "path": "deploy/production/transport.py",
-      "sha256": "9b80f764308a7d447d5da8f71ad1db685294b0cd8c3176a1d287dbee4b82aa6b"
+      "sha256": "7f2102781f81ec2a9cce3f09ac0632747b657b21c8a07d622d8e077ec189689b"
     },
     {
       "path": "deploy/security/codeql_eligibility.py",
@@ -682,11 +682,11 @@
     },
     {
       "path": "docs/p9-production-cutover.md",
-      "sha256": "9833ab07b11b383028e870147100a6ed0297af332357a27f6efc1898b8cb7fc3"
+      "sha256": "66a909cf7e1fea480abe12c848ea9bbd48254d3f7f8e470c7f9a850dd793efcd"
     },
     {
       "path": "docs/production-readonly-preflight.md",
-      "sha256": "66241a753a488ef02b9ada62626c2c7f5942843e276582effd64bab53d0edccb"
+      "sha256": "1a58874e183986232af172c43b40cd31248dac7e48764deba7d2bcf528b35e07"
     },
     {
       "path": "docs/provenance.md",
@@ -962,11 +962,15 @@
     },
     {
       "path": "tests/test_p9_production_cutover.py",
-      "sha256": "27c4e9524670d0ffe7c7ef60daa60f2581da90a8c9fcb9c73656714b81eeb773"
+      "sha256": "5d4e8b6aacf48b1ac1716541f945655c5943f544b6d41032185d3dd4b4c58055"
     },
     {
       "path": "tests/test_p9_readonly_preflight.py",
-      "sha256": "6f4e39ab58c4c3b40fdf0e1c65fff451fd810228e891ba6fa731f47e29836447"
+      "sha256": "a10820af0b08a591501ccefd854b22e1efab284ae320de70b09a4c56bd4d46af"
+    },
+    {
+      "path": "tests/test_p9_shioaji_capability.py",
+      "sha256": "0419a63d6b6135376679c3bb0cb182e20d39a806de2b1ba9b0b66b1fbb131bd9"
     },
     {
       "path": "tests/test_paper_auto.py",

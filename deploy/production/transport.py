@@ -115,6 +115,7 @@ def main():
             for name in ('Caddyfile', 'docker-compose.yml', 'approved-p8.json', 'cutover.py', 'durable_state.py'):
                 z.add(HERE / name, arcname=name, recursive=False)
             z.add(ROOT / 'deploy/staging/image_config_digest.py', arcname='image_config_digest.py', recursive=False)
+            z.add(ROOT / 'deploy/staging/shioaji_capability.py', arcname='shioaji_capability.py', recursive=False)
         f.seek(0); bundle = f.read()
     install = ('sudo install -d -m 700 /srv/trading-platform-p9/bundle && '
                'sudo tar -xzf - -C /srv/trading-platform-p9/bundle --no-same-owner && '

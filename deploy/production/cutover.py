@@ -62,6 +62,7 @@ def parse_env(text):
 def disabled(env, *, execution=False):
     require(all(env.get(k, 'false') == 'false' for k in DISABLED), 'real-order-enabled')
     require(not env.get('LIVE_TRADING_CONFIRMATION', ''), 'live-confirmation-present')
+    require(env.get('BROKER_PROVIDER', 'disabled') == 'disabled', 'execution-not-disabled')
     if execution:
         require(env.get('BROKER_PROVIDER') == 'disabled' and env.get('LIVE_TRADING_ENABLED') == 'false',
                 'execution-not-disabled')
@@ -170,13 +171,23 @@ def config_check(pins, hashes):
         protected(path, hashes[name])
         envs[name] = parse_env(path.read_text())
         disabled(envs[name], execution=name == 'execution.env')
+    require(all(envs['execution.env'].get(k) == 'false' for k in DISABLED[:5]), 'execution-not-disabled')
     factory = ROOT / 'provider/factory'
     protected(factory, hashes['factory'], uid=10001)
     require(re.fullmatch('[A-Za-z_][A-Za-z0-9_.]*:[A-Za-z_][A-Za-z0-9_]*\n?', factory.read_text()), 'factory-invalid')
     protected(ROOT / 'config/replay.csv', hashes['replay.csv'], uid=10001)
     market = envs['market.env']
-    require(market.get('MARKET_DATA_PROVIDER') == 'replay' and
-            market.get('MARKET_REPLAY_CSV') == '/run/production-market/replay.csv', 'accepted-runtime-market-capability')
+    require(market.get('MARKET_DATA_PROVIDER') in ('replay', 'mock', 'shioaji'), 'accepted-runtime-market-capability')
+    provider = market_compatibility(market, pins)
+    if provider == 'shioaji':
+        require(market.get('MARKET_SJ_API_KEY', '').strip() and
+                market.get('MARKET_SJ_SECRET_KEY', '').strip() and
+                market.get('MARKET_SJ_PRODUCTION') == 'true', 'market-credentials-missing')
+    else:
+        require(market.get('MARKET_REPLAY_CSV') == '/run/production-market/replay.csv', 'accepted-runtime-market-capability')
+    # The retained replay file above is sealed fallback inventory for Shioaji.
+    require(all(not any(k.startswith('MARKET_SJ_') or k.startswith('SJ_') for k in envs[name])
+                for name in ('execution.env', 'gateway.env')), 'market-credential-isolation')
     require(market.get('PLATFORM_ENVIRONMENT') == 'production' and
             market.get('PLATFORM_AUTHORIZATION_MODE') == 'enforced' and
             market.get('MARKET_ACCESS_MODE') == 'cloudflare', 'production-auth-missing')
@@ -194,9 +205,46 @@ def snapshot(container, code):
     return json.loads(run(['docker', 'exec', '-i', container, 'python', '-'], code))
 
 
-def market_compatibility(env):
+def shioaji_capability(pins, image=None, labels=None):
+    """Approval lives outside the immutable manifest and binds every P8 identity."""
+    code = 'accepted-runtime-market-capability'
+    require(isinstance(pins, dict), code)
+    capabilities = pins.get('market_capabilities', {})
+    require(isinstance(capabilities, dict), code)
+    capability = capabilities.get('shioaji', {})
+    require(isinstance(capability, dict) and capability.get('enabled') is True and
+            capability.get('version') == '1.7.4', code)
+    m = pins.get('manifest', {})
+    require(isinstance(m, dict) and isinstance(m.get('provenance'), dict) and
+            isinstance(m.get('images'), dict) and isinstance(m['images'].get('releases'), dict), code)
+    require(pins.get('release') == 'known_good' and
+            m.get('platform_source_sha') == pins.get('platform_sha') and
+            m.get('pipeline_revision') == pins.get('platform_sha') and
+            m.get('provenance', {}).get('run_id') == pins.get('candidate_run_id') and
+            m.get('provenance', {}).get('run_attempt') == '1', code)
+    runtime = m.get('images', {}).get('releases', {}).get('known_good', {})
+    require(isinstance(runtime, dict) and isinstance(runtime.get('runtime'), dict) and
+            hashlib.sha256((json.dumps(m, indent=2, sort_keys=True) + '\n').encode()).hexdigest()
+            == pins.get('manifest_sha256'), code)
+    binding = {k: pins.get(k) for k in ('platform_sha', 'manifest_sha256', 'candidate_artifact',
+                                      'acceptance_artifact', 'acceptance_files')}
+    binding['runtime'] = runtime
+    require(capability.get('verified_candidate_run_id') == pins.get('candidate_run_id') and
+            capability.get('verified_staging_run_id') == pins.get('staging_run_id') and
+            capability.get('binding') == binding, code)
+    require(image is None or image == runtime['runtime'], code)
+    expected = {'io.tw-quant.capability.market.shioaji': 'true', 'io.tw-quant.shioaji.version': '1.7.4'}
+    require(labels is None or all(labels.get(k) == v for k, v in expected.items()), code)
+    return expected
+
+
+def market_compatibility(env, pins=None):
     provider = env.get('MARKET_DATA_PROVIDER', env.get('MARKET_MODE', 'mock')).lower().strip()
-    require(provider in ('mock', 'replay'), 'accepted-runtime-market-capability')
+    if provider == 'shioaji':
+        shioaji_capability(pins)
+    else:
+        require(provider in ('mock', 'replay'), 'accepted-runtime-market-capability')
+    return provider
 
 
 def preflight(pins, expected_rollback, hashes, durable_code):
@@ -205,19 +253,23 @@ def preflight(pins, expected_rollback, hashes, durable_code):
         require(directory.is_dir() and not directory.is_symlink() and directory.stat().st_uid == 0 and
                 directory.stat().st_mode & 0o777 == 0o700, 'production-directory-isolation')
     require(not (ROOT / 'acceptance.json').exists() and not (ROOT / 'transaction.json').exists(), 'prior-p9-transaction')
-    config_check(pins, hashes)
+    envs = config_check(pins, hashes)
     backup = verify_backup(pins, expected_rollback)
     state = legacy_state(pins, backup)
     market = inspect(state['market-api']['id'])
     market_env = dict(v.split('=', 1) for v in market['Config']['Env'])
-    market_compatibility(market_env)
+    provider = market_compatibility(market_env, pins)
+    require(provider == market_compatibility(envs['market.env'], pins) or
+            {provider, envs['market.env']['MARKET_DATA_PROVIDER']} <= {'mock', 'replay'},
+            'production-market-provider-mismatch')
     worker_env = dict(v.split('=', 1) for v in inspect(state['execution-worker']['id'])['Config']['Env'])
     require(market_env.get('MARKET_DB_PATH') == worker_env.get('LIVE_EXECUTION_DB_PATH') and
             market_env.get('MARKET_DB_PATH'), 'legacy-database-boundary-mismatch')
     # Preserve the approved existing Production replay bytes; never substitute Staging fixtures.
-    probe = b"import hashlib,os; from pathlib import Path; print(hashlib.sha256(Path(os.environ['MARKET_REPLAY_CSV']).read_bytes()).hexdigest())"
-    replay_hash = run(['docker', 'exec', '-i', state['market-api']['id'], 'python', '-'], probe).decode().strip()
-    require(replay_hash == hashes['replay.csv'], 'production-market-source-mismatch')
+    if provider in ('mock', 'replay'):
+        probe = b"import hashlib,os; from pathlib import Path; print(hashlib.sha256(Path(os.environ['MARKET_REPLAY_CSV']).read_bytes()).hexdigest())"
+        replay_hash = run(['docker', 'exec', '-i', state['market-api']['id'], 'python', '-'], probe).decode().strip()
+        require(replay_hash == hashes['replay.csv'], 'production-market-source-mismatch')
     durable = snapshot(state['execution-worker']['id'], durable_code)
     # Compare every table to a fresh sealed backup; fail on lost user/order/strategy state.
     backup_state = json.loads(run(['python3', '-c', durable_code.decode(), str(ROOT / 'rollback/data.sqlite3')]))
@@ -262,7 +314,7 @@ def local_image(image, pins, *, gateway=False):
         process.stdout.close()
         if process.poll() is None:
             process.kill(); process.wait()
-    labels = d['Config']['Labels']
+    labels = d['Config'].get('Labels') or {}
     expected = {'org.opencontainers.image.revision': pins['platform_sha'], 'io.tw-quant.pipeline.revision': pins['platform_sha']}
     if not gateway:
         m = pins['manifest']
@@ -271,7 +323,25 @@ def local_image(image, pins, *, gateway=False):
                          'io.tw-quant.private-provider.sha256': m['private_provider']['wheel_sha256'],
                          'io.tw-quant.p7.acceptance': m['private_provider']['p7_acceptance_sha']})
     require(all(labels.get(k) == v for k, v in expected.items()), 'image-provenance-mismatch')
+    if not gateway and 'shioaji' in pins.get('market_capabilities', {}):
+        shioaji_capability(pins, image, labels)
     return d['Id']
+
+
+def offline_market_capability(image_id):
+    # No env-file, credentials, login, mounts or broker calls. Execute by content ID.
+    require(re.fullmatch('sha256:[0-9a-f]{64}', image_id), 'accepted-runtime-market-capability')
+    try:
+        probe = (Path(__file__).parent / 'shioaji_capability.py').read_bytes()
+        result = json.loads(run(['docker', 'run', '--rm', '--network', 'none', '--read-only',
+            '--user', '10001:10001', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges',
+            '--tmpfs', '/tmp:rw,noexec,nosuid,nodev,size=128m,uid=10001,gid=10001',
+            '--entrypoint', 'python', '-i', image_id, '-', 'probe'], probe, timeout=60))
+        require(result == {'P8_SHIOAJI_CAPABILITY': 'PASS', 'shioaji_version': '1.7.4',
+                          'execution_locked': True, 'external_order_calls': 0, 'external_cancel_calls': 0},
+                'accepted-runtime-market-capability')
+    except Exception:
+        raise ValueError('accepted-runtime-market-capability') from None
 
 
 def healthy(cid):
@@ -415,6 +485,14 @@ class Host:
         require(current == self.durable, 'quiesced-backup-drift')
 
     def deploy(self):
+        # Exact-image checks and offline capability must pass before forward deployment.
+        m = self.pins['manifest']['images']
+        runtime = m['releases'][self.pins['release']]['runtime']
+        for image, gateway in [(runtime, False), (m['gateway'], True)]:
+            run(['docker', 'pull', image['ref']], timeout=600)
+            image_id = local_image(image, self.pins, gateway=gateway)
+            if not gateway and 'shioaji' in self.pins.get('market_capabilities', {}):
+                offline_market_capability(image_id)
         # Every candidate path must be newly created; no retained or Staging state.
         import shutil
         for name, uid in [('data', 10001), ('health', 10001), ('gateway-data', 10000), ('gateway-config', 10000)]:
@@ -433,11 +511,6 @@ class Host:
                 os.chown(path, 10000, 10000)
         shutil.copyfile(ROOT / 'rollback/data.sqlite3', ROOT / 'data/platform.sqlite3')
         os.chown(ROOT / 'data/platform.sqlite3', 10001, 10001); os.chmod(ROOT / 'data/platform.sqlite3', 0o600)
-        m = self.pins['manifest']['images']
-        runtime = m['releases'][self.pins['release']]['runtime']
-        for image, gateway in [(runtime, False), (m['gateway'], True)]:
-            run(['docker', 'pull', image['ref']], timeout=600)
-            local_image(image, self.pins, gateway=gateway)
         values = {'PRODUCTION_RUNTIME_IMAGE': runtime['ref'], 'PRODUCTION_GATEWAY_IMAGE': m['gateway']['ref'],
                   **{'PRODUCTION_' + n.upper() + '_ENV_FILE': str(ROOT / 'config' / (n + '.env')) for n in ('market', 'execution', 'gateway')}}
         (ROOT / 'release.env').write_text(''.join(k + '=' + v + '\n' for k, v in values.items())); os.chmod(ROOT / 'release.env', 0o600)

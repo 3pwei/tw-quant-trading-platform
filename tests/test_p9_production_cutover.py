@@ -58,7 +58,7 @@ class IdentityTests(unittest.TestCase):
         for field in ('digest', 'config_digest', 'ref'):
             bad = copy.deepcopy(PINS['manifest'])
             image = bad['images']['releases']['known_good']['runtime']
-            image[field] = 'sha256:' + '0' * 64 if field != 'ref' else image['ref'].replace('f1894', '00000')
+            image[field] = 'sha256:' + '0' * 64 if field != 'ref' else image['ref'].replace(image['digest'], 'sha256:' + '0' * 64)
             payload = json.dumps(bad).encode()
             pins = copy.deepcopy(PINS); pins['manifest_sha256'] = evidence.sha(payload)
             with self.subTest(field=field), self.assertRaises(ValueError):

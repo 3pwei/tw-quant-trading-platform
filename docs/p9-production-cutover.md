@@ -7,8 +7,8 @@ this change. P8 remains complete.
 ## Fixed artifact and control-plane identities
 
 `deploy/production/approved-p8.json` binds the exact P8 source
-`f70c1ba2fbfd6f5deff3178361d18f576af94b24`, Candidate #20 run `37306446381`,
-Staging #15 run `37307300334`, manifest checksum and GitHub artifact ZIP digests.
+`fac88646fe2f40680c60f8d61c7da385ae7f91b0`, Candidate #21 run `37459015384`,
+Staging #16 run `37462725158`, manifest checksum and GitHub artifact ZIP digests.
 The acceptance archive contains four individually pinned files. The ledger and
 manifest hashes must agree with the acceptance report. Expired/missing artifacts
 fail; replacing them, rerunning Candidate or rebuilding is not a fallback.
@@ -26,7 +26,7 @@ be its ancestor. No runtime, Dashboard, Core or Private Strategies bytes change.
 Confirmation must be exactly:
 
 ```text
-DEPLOY production f70c1ba2fbfd6f5deff3178361d18f576af94b24 candidate 37306446381 manifest 157298f60fd8e3067fadb73e1e5b0fab08537f1dafe8ae74d6f38276610fe3ad
+DEPLOY production fac88646fe2f40680c60f8d61c7da385ae7f91b0 candidate 37459015384 manifest b28e818cbc42be8c6b5159c88420fd9b42b1b1967e3fbe1543066ef5e49d3a60
 ```
 
 ## Separate Production prerequisites
@@ -114,6 +114,32 @@ intervening application write fails before deploying the candidate and resumes
 Legacy. A fresh, quiescent backup window is therefore required; no stale-backup
 or data-loss exception is permitted.
 
+## Market-only Shioaji approval
+
+`market_capabilities.shioaji` is P9 metadata outside the immutable schema-2
+Candidate manifest. It approves only Shioaji 1.7.4, with exact Platform SHA,
+Candidate/Staging run IDs, both artifact IDs/ZIP digests, manifest/acceptance file
+checksums and known-good Runtime A identities. Missing, old or mismatched bindings
+fail `accepted-runtime-market-capability`; provider support is not an allowlist.
+Runtime labels must be `io.tw-quant.capability.market.shioaji=true` and
+`io.tw-quant.shioaji.version=1.7.4`. No new P8 cycle is needed for this metadata.
+
+Production market configuration must preserve the current provider. Shioaji requires
+`MARKET_DATA_PROVIDER=shioaji`, `PLATFORM_ENVIRONMENT=production`,
+`PLATFORM_AUTHORIZATION_MODE=enforced`, `MARKET_ACCESS_MODE=cloudflare`, nonempty
+`MARKET_SJ_API_KEY`/`MARKET_SJ_SECRET_KEY`, and `MARKET_SJ_PRODUCTION=true`.
+These credentials belong only to market.env; values never reach evidence/logs.
+The separately sealed replay.csv remains checksum-verified, read-only fallback
+inventory and is not required as Shioaji's active source. Replay/mock still requires
+its active source path/hash and independent Production bytes.
+
+Execution must have `BROKER_PROVIDER=disabled` and explicit false values for
+`LIVE_TRADING_ENABLED`, `LIVE_CANARY_ENABLED`, `LIVE_AUTO_ENABLED`,
+`LIVE_POSITION_GUARDIAN_ENABLED`, `LIVE_BROKER_READ_ONLY_ENABLED`, with no live
+confirmation. Worker health must remain locked, disabled and zero order/cancel.
+Shioaji execution is rejected, including broker mode in any config. Existing
+owner, auth, host/path, config, rollback and SQLite isolation checks stay enforced.
+
 ## Transaction and recovery
 
 1. Verify exact tree, manual identity, master gates, P8 workflow/artifact identities,
@@ -124,12 +150,17 @@ or data-loss exception is permitted.
 3. Recheck master gates before control bundle upload. Under the same host lock as
    the Legacy deploy workflow, repeat host preflight, write an fsynced recovery
    journal, and stop the original containers without deleting them or volumes.
-4. Recheck database continuity. Copy only the verified Production backup into a
-   newly created P9 data directory; create independent health/gateway directories and copy TLS state from the stopped
-   Legacy gateway volumes without changing those original volumes.
-5. Pull pinned image references; verify canonical registry digests, offline config
-   digests, source and Core/Private Strategies/P7 labels. There is no build step,
-   build context or mutable-tag fallback. Registry auth is temporary and removed.
+4. Recheck database continuity after stopping Legacy. Pull pinned image references;
+   verify canonical registry/config digests, source and Core/Private Strategies/P7
+   labels. Before any forward directories/data/Compose deployment, check the bound
+   Shioaji capability labels and run the reviewed P8 capability probe against the
+   inspected image content ID with `--network none`, no credentials, login or broker
+   calls. Installed Shioaji must be exactly 1.7.4; mismatches fail
+   `accepted-runtime-market-capability`. Registry auth is temporary and removed.
+5. Copy only the verified Production backup into a newly created P9 data directory;
+   create independent health/gateway directories and copy TLS state from the
+   stopped Legacy gateway volumes without changing the original volumes. There is
+   no build step, build context or mutable-tag fallback.
 6. Validate Production config and Caddy overlay, deploy with `--no-build --pull
    never`, require actual health, locked/disabled worker and zero order/cancel calls.
 7. Restart and require same container/image identities, new process generation,

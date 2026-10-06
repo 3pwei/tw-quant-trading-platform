@@ -144,6 +144,7 @@ class HostTests(unittest.TestCase):
             containers.assert_not_called(); configs.assert_not_called()
 
     def test_sdk_stops_before_approvals_backup_sqlite_or_other_commands(self):
+        unapproved = copy.deepcopy(PINS); unapproved.pop('market_capabilities')
         for provider in ('shioaji', 'broker-sdk', 'other-sdk'):
             self.containers['market-api'] = container('market-api', 1, provider)
             result = {}
@@ -153,7 +154,7 @@ class HostTests(unittest.TestCase):
                     patch.object(validation, 'verify_backup') as backup, \
                     patch.object(database, 'snapshot') as sqlite:
                 with self.assertRaisesRegex(ValueError, '^accepted-runtime-market-capability$'):
-                    host.inspect_host(PINS, {}, '', result)
+                    host.inspect_host(unapproved, {}, '', result)
                 self.assertEqual(command.call_count, 1)
                 configs.assert_not_called(); backup.assert_not_called(); sqlite.assert_not_called()
                 self.assertNotIn(provider, json.dumps(result)) if provider != 'shioaji' else None
@@ -216,6 +217,10 @@ class HostTests(unittest.TestCase):
             self.assertEqual(opened.call_args.args, ('rb',))
 
     def test_complete_preflight_pass_has_no_file_writes_and_inventory_drift_blocks(self):
+        self.complete_preflight('replay')
+        self.complete_preflight('shioaji')
+
+    def complete_preflight(self, provider):
         with tempfile.TemporaryDirectory() as temporary:
             base = Path(temporary); root = base / 'p9'; legacy = base / 'legacy'; data = base / 'data'; data.mkdir()
             for directory in (root / 'config', root / 'provider', root / 'rollback', legacy / 'config', legacy / 'deployments'):
@@ -232,6 +237,16 @@ class HostTests(unittest.TestCase):
                 'execution.env': 'BROKER_PROVIDER=disabled\nLIVE_TRADING_ENABLED=false\nLIVE_EXECUTION_DB_PATH=/data/platform.sqlite3\n'
                     'LIVE_EXECUTION_HEALTH_PATH=/run/tw-quant-execution/health.json\n',
                 'gateway.env': 'MARKET_DOMAIN=production.example\n'}
+            config['execution.env'] += ''.join(k + '=false\n' for k in validation.DISABLED[1:5])
+            if provider == 'shioaji':
+                config['market.env'] = config['market.env'].replace('MARKET_DATA_PROVIDER=replay', 'MARKET_DATA_PROVIDER=shioaji')
+                config['market.env'] = config['market.env'].replace('MARKET_REPLAY_CSV=/run/production-market/replay.csv\n', '')
+                config['market.env'] += 'MARKET_SJ_API_KEY=synthetic-market-key\nMARKET_SJ_SECRET_KEY=synthetic-market-secret\nMARKET_SJ_PRODUCTION=true\n'
+                env = host.env_of(self.containers['market-api'])
+                env['MARKET_DATA_PROVIDER'] = 'shioaji'; env.pop('MARKET_REPLAY_CSV', None)
+                self.containers['market-api']['Config']['Env'] = [k + '=' + v for k, v in env.items()]
+                # Active Legacy has no replay source; only sealed P9 fallback remains.
+                (data / 'replay.csv').unlink()
             for name, content in config.items():
                 (root / 'config' / name).write_text(content)
             (root / 'provider/factory').write_text('fixture_provider:factory\n')
@@ -292,8 +307,10 @@ class HostTests(unittest.TestCase):
                          side_effect=lambda p: True if str(p) == '/var/lock/tw-quant-deploy.lock' else p.stat().st_mode & 0o170000 == 0o100000):
                 result = host.collect(PINS, hashes, rollback_hash)
                 self.assertEqual(result['P9_PREREQUISITE'], 'PASS', result)
+                self.assertEqual(result['market_provider'], provider)
                 runner.safe_evidence(result)
                 self.assertNotIn('identity fixture', json.dumps(result))
+                self.assertNotIn('synthetic-market', json.dumps(result))
                 self.assertEqual(before, {str(p): (p.read_bytes(), p.stat().st_mtime_ns) for p in base.rglob('*') if p.is_file()})
                 for service in host.SERVICES:
                     wrong = copy.deepcopy(self.containers); wrong[service]['Image'] = 'sha256:' + '0' * 64

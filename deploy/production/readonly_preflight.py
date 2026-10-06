@@ -14,7 +14,7 @@ import transport
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 VALIDATORS = ('require', 'file_sha', 'parse_env', 'disabled', 'protected',
-              'inspect', 'verify_backup', 'config_check', 'market_compatibility')
+              'inspect', 'verify_backup', 'config_check', 'shioaji_capability', 'market_compatibility')
 
 
 def module(name, source):
@@ -117,7 +117,9 @@ def safe_evidence(document):
     if document['P9_PREREQUISITE'] == 'PASS':
         need(set(document) == allowed and document['reason'] == 'all-prerequisites-satisfied')
         pins = json.loads((HERE / 'approved-p8.json').read_text())
-        need(document['legacy_revision'] == pins['legacy_revision'] and document['market_provider'] in ('replay', 'mock'))
+        need(document['legacy_revision'] == pins['legacy_revision'])
+        import cutover
+        cutover.market_compatibility({'MARKET_DATA_PROVIDER': document['market_provider']}, pins)
     else:
         need(document['reason'] != 'all-prerequisites-satisfied')
     return document
