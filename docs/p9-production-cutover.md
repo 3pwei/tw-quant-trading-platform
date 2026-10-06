@@ -53,17 +53,27 @@ regular UID 10001-owned mode 400/600 file at `provider/factory`. Symlinks and
 Staging paths/config markers are rejected. Market must enforce Production
 Cloudflare authentication/authorization and declare the pinned provider digest.
 The independently provisioned `config/replay.csv` must be UID 10001-owned mode
-400/600 and its checksum must match the existing Production replay file. Market
-must use `MARKET_DATA_PROVIDER=replay` and
-`MARKET_REPLAY_CSV=/run/production-market/replay.csv`.
+400/600 and its checksum must match its approved sealed inventory digest.
 
-**Capability review gate:** the approved P8 Dockerfile installs `server` extras,
-not the broker SDK extra present in the Legacy image. These exact immutable P8
-images therefore cannot preserve an SDK-backed Production market feed. Preflight
-hard-fails if the current Production provider is not replay/mock; do not switch
-the feed to replay to pass this gate. If Production currently uses a broker SDK,
-a separately authorized image/Candidate/P8 acceptance cycle is required before
-P9 can be dispatched. This PR never installs packages or rebuilds to bypass it.
+**Capability review gate:** the current approved broker-capable P8 is Platform
+`fac88646fe2f40680c60f8d61c7da385ae7f91b0`, Candidate #21 run `37459015384`,
+Staging #16 run `37462725158`, with Shioaji exactly `1.7.4`. These accepted
+immutable images include the verified Shioaji SDK capability. Production must
+preserve the provider observed in its current running market container:
+
+- Current Shioaji requires the exact approved Shioaji capability binding to that
+  Platform, Candidate/Staging artifacts and known-good Runtime A, including the
+  approved version and capability labels. Missing or mismatched approval fails
+  closed with `accepted-runtime-market-capability`.
+- Replay/mock requires active
+  `MARKET_REPLAY_CSV=/run/production-market/replay.csv`; its checksum must match
+  the existing Production replay source and the approved inventory.
+- Unsupported providers fail closed with `accepted-runtime-market-capability`.
+
+For Shioaji, `replay.csv` remains checksum-verified sealed fallback inventory
+only; it is **not the active market source**. Do not change the current provider
+to replay to bypass the capability gate. This PR never installs packages or
+rebuilds the approved images to bypass it.
 
 Both new services use `/data/platform.sqlite3`; worker uses the generation-health
 path `/run/tw-quant-execution/health.json`. Worker must set
@@ -71,7 +81,9 @@ path `/run/tw-quant-execution/health.json`. Worker must set
 canary, auto, guardian and broker-read-only flags must be false; live confirmation
 must be empty. No broker credential mount is added. The factory is the separately
 provisioned Production reference to the already-built provider, not a Staging
-secret transfer.
+secret transfer. Shioaji capability is market-data-only; no execution credentials
+or Shioaji execution/broker mode are enabled, and real-order execution remains
+disabled.
 
 `rollback/rollback.json` is root-owned mode 400/600, with this schema:
 
