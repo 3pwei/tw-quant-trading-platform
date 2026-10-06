@@ -36,13 +36,13 @@ dispatch. This PR does not provision them or assert they already exist.
 
 Use GitHub environment `lightsail-production`, with Production-only credentials:
 
-- Secrets `P9_PRODUCTION_SSH_PRIVATE_KEY`, `P9_PRODUCTION_SSH_HOST_KEY`.
-- Variables `P9_PRODUCTION_HOST`, `P9_PRODUCTION_USER`,
-  `P9_STAGING_HOST_IDENTITY` (the actual Staging host, which must differ),
+- Secrets `PRODUCTION_SSH_PRIVATE_KEY`, `PRODUCTION_SSH_HOST_KEY`.
+- Variables `PRODUCTION_HOST`, `PRODUCTION_USER`,
+  `STAGING_HOST_IDENTITY` (the actual Staging host, which must differ),
   `PUBLIC_DASHBOARD_URL` (the existing HTTPS Production origin).
-- `P9_PRODUCTION_CONFIG_SHA256_JSON`: approved SHA256 values keyed by
+- `PRODUCTION_APPROVED_CONFIG_SHA256_JSON`: approved SHA256 values keyed by
   `market.env`, `execution.env`, `gateway.env`, `factory`, `replay.csv`.
-- `P9_PRODUCTION_ROLLBACK_SHA256`: approved SHA256 of the sealed rollback inventory.
+- `LEGACY_ROLLBACK_INVENTORY_SHA256`: approved SHA256 of the sealed rollback inventory.
 
 Host files are independently provisioned under `/srv/trading-platform-p9`.
 The root and its `config`, `provider`, `rollback` directories must be root-owned

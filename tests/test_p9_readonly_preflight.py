@@ -314,8 +314,11 @@ class RunnerTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             env = {'RUNNER_TEMP': temporary, 'GITHUB_EVENT_NAME': 'workflow_dispatch',
                    'GITHUB_REF': 'refs/heads/master', 'GITHUB_SHA': 'a' * 40,
-                   'P9_HOST': 'production.example', 'P9_USER': 'fixture', 'P9_STAGING_HOST': 'staging.example',
-                   'P9_SSH_PRIVATE_KEY': 'private-key-fixture', 'P9_SSH_HOST_KEY': 'host-key-fixture'}
+                   'PRODUCTION_HOST': 'production.example', 'PRODUCTION_USER': 'fixture', 'STAGING_HOST_IDENTITY': 'staging.example',
+                   'PRODUCTION_SSH_PRIVATE_KEY': 'private-key-fixture', 'PRODUCTION_SSH_HOST_KEY': 'host-key-fixture',
+                   'PRODUCTION_APPROVED_CONFIG_SHA256_JSON': json.dumps({name: 'b' * 64 for name in
+                       ('market.env', 'execution.env', 'gateway.env', 'factory', 'replay.csv')}),
+                   'LEGACY_ROLLBACK_INVENTORY_SHA256': 'c' * 64}
             addresses = lambda name, port: [(None, None, None, None, ('10.0.0.1' if name == 'production.example' else '10.0.0.2', 0))]
             result = {'schema_version': 1, 'P9_PREREQUISITE': 'BLOCKED', 'reason': 'accepted-runtime-market-capability'}
             def ssh_only(argv, **kwargs):
@@ -328,8 +331,10 @@ class RunnerTests(unittest.TestCase):
                 return types.SimpleNamespace(returncode=0, stdout=json.dumps(result).encode())
             with patch.dict(os.environ, env), patch.object(evidence, 'api', return_value={'object': {'sha': 'a' * 40}}), \
                     patch.object(evidence, 'master_gates'), patch.object(runner.transport.socket, 'getaddrinfo', side_effect=addresses), \
-                    patch.object(runner.subprocess, 'run', side_effect=ssh_only):
+                    patch.object(runner.subprocess, 'run', side_effect=ssh_only), \
+                    patch.object(runner, 'in_memory', wraps=runner.in_memory) as payload:
                 self.assertEqual(runner.inspect_once(), result)
+                payload.assert_called_once_with(PINS, json.loads(env['PRODUCTION_APPROVED_CONFIG_SHA256_JSON']), 'c' * 64)
                 self.assertEqual(list(Path(temporary).iterdir()), [])
                 with patch.object(runner.subprocess, 'run', side_effect=RuntimeError('private-key-fixture')):
                     with self.assertRaises(RuntimeError):

@@ -28,13 +28,13 @@ jobs:
       - name: Inspect existing Production state without host writes
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          P9_HOST: ${{ vars.P9_PRODUCTION_HOST }}
-          P9_USER: ${{ vars.P9_PRODUCTION_USER }}
-          P9_STAGING_HOST: ${{ vars.P9_STAGING_HOST_IDENTITY }}
-          P9_SSH_PRIVATE_KEY: ${{ secrets.P9_PRODUCTION_SSH_PRIVATE_KEY }}
-          P9_SSH_HOST_KEY: ${{ secrets.P9_PRODUCTION_SSH_HOST_KEY }}
-          P9_CONFIG_HASHES: ${{ vars.P9_PRODUCTION_CONFIG_SHA256_JSON }}
-          P9_ROLLBACK_SHA256: ${{ vars.P9_PRODUCTION_ROLLBACK_SHA256 }}
+          PRODUCTION_HOST: ${{ vars.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ vars.PRODUCTION_USER }}
+          STAGING_HOST_IDENTITY: ${{ vars.STAGING_HOST_IDENTITY }}
+          PRODUCTION_SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+          PRODUCTION_SSH_HOST_KEY: ${{ secrets.PRODUCTION_SSH_HOST_KEY }}
+          PRODUCTION_APPROVED_CONFIG_SHA256_JSON: ${{ vars.PRODUCTION_APPROVED_CONFIG_SHA256_JSON }}
+          LEGACY_ROLLBACK_INVENTORY_SHA256: ${{ vars.LEGACY_ROLLBACK_INVENTORY_SHA256 }}
         run: python -B deploy/production/readonly_preflight.py
       - name: Publish only schema-validated sanitized evidence
         if: always()

@@ -22,7 +22,7 @@
     },
     {
       "path": ".github/workflows/deploy-production.yml",
-      "sha256": "4620acc231ee3cd5c897393d51764b8df08f9900af3670755045fa1d66cf7141"
+      "sha256": "d4917894b75634a9ea26f9bc5b9dd3d54a7907c52b02d4a7e91974afd072009e"
     },
     {
       "path": ".github/workflows/deploy-staging.yml",
@@ -30,7 +30,7 @@
     },
     {
       "path": ".github/workflows/production-readonly-preflight.yml",
-      "sha256": "9cfe8ccec3f8088313bdeea2a824bd722ed11fdb4ee055426b4e49696d765a88"
+      "sha256": "392d1202cc26e9e7c9e47189d33914a9318c7d8063d21b4b14daefec02ef650d"
     },
     {
       "path": ".github/workflows/security-exception-expiry.yml",
@@ -526,7 +526,7 @@
     },
     {
       "path": "deploy/production/readonly_preflight.py",
-      "sha256": "c99c98cdb04832f569de5716c4ffdca80c91b139ebf4c714098edaea5a3c9a2e"
+      "sha256": "745bf18bbd983fe924c96f1142c92abd9ef62516240d9a6ebf8028bb4477f67d"
     },
     {
       "path": "deploy/production/readonly_sqlite.py",
@@ -534,7 +534,7 @@
     },
     {
       "path": "deploy/production/transport.py",
-      "sha256": "b1bce308d2d6d247bb1bd3ab1286f4005c507b3eeb4f1cc88967da62e63679ee"
+      "sha256": "9b80f764308a7d447d5da8f71ad1db685294b0cd8c3176a1d287dbee4b82aa6b"
     },
     {
       "path": "deploy/security/codeql_eligibility.py",
@@ -678,11 +678,11 @@
     },
     {
       "path": "docs/p9-production-cutover.md",
-      "sha256": "78f2949b40b7c5e1b52b50b929973b0cfd158fb0678dd7324e93df00c2d9eb8c"
+      "sha256": "9833ab07b11b383028e870147100a6ed0297af332357a27f6efc1898b8cb7fc3"
     },
     {
       "path": "docs/production-readonly-preflight.md",
-      "sha256": "cbb7a02384a0c619e8879a72d4cadad45bebeff514ffcef5c0f090dcb55d2a9d"
+      "sha256": "66241a753a488ef02b9ada62626c2c7f5942843e276582effd64bab53d0edccb"
     },
     {
       "path": "docs/provenance.md",
@@ -954,11 +954,11 @@
     },
     {
       "path": "tests/test_p9_production_cutover.py",
-      "sha256": "e90c09b8542b951b12a7d6d04f68a8954f8e95fc03acef6eaf32cf26501416bb"
+      "sha256": "27c4e9524670d0ffe7c7ef60daa60f2581da90a8c9fcb9c73656714b81eeb773"
     },
     {
       "path": "tests/test_p9_readonly_preflight.py",
-      "sha256": "f51e9b8baa99bca3801e712e214b160b20b83c24aac54572bb6e05bc5b4eebb1"
+      "sha256": "6f4e39ab58c4c3b40fdf0e1c65fff451fd810228e891ba6fa731f47e29836447"
     },
     {
       "path": "tests/test_paper_auto.py",

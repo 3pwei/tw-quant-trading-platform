@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT / 'deploy/production'))
 import evidence
 import cutover
 import durable_state
+import transport
 
 PINS = json.loads((ROOT / 'deploy/production/approved-p8.json').read_text())
 
@@ -322,7 +323,55 @@ class TransactionTests(unittest.TestCase):
             with self.subTest(field=field), self.assertRaises(ValueError): cutover.continuity(a, bad)
 
 
+class TransportTests(unittest.TestCase):
+    def test_semantic_approvals_reach_remote_command_and_invalid_approvals_fail(self):
+        import base64
+        import shlex
+        hashes = {name: 'a' * 64 for name in ('market.env', 'execution.env', 'gateway.env', 'factory', 'replay.csv')}
+        env = {'PRODUCTION_APPROVED_CONFIG_SHA256_JSON': json.dumps(hashes),
+               'LEGACY_ROLLBACK_INVENTORY_SHA256': 'b' * 64}
+        with patch.dict(os.environ, env, clear=True):
+            args = shlex.split(transport.command('preflight'))
+            self.assertEqual(args[0], 'preflight')
+            self.assertEqual(args[args.index('--rollback-sha256') + 1], 'b' * 64)
+            self.assertEqual(json.loads(base64.b64decode(args[args.index('--config-hashes') + 1])), hashes)
+            for bad in ({'PRODUCTION_APPROVED_CONFIG_SHA256_JSON': '{}'},
+                        {'PRODUCTION_APPROVED_CONFIG_SHA256_JSON': json.dumps({**hashes, 'factory': 'invalid'})},
+                        {'LEGACY_ROLLBACK_INVENTORY_SHA256': 'invalid'}):
+                with self.subTest(bad=bad), patch.dict(os.environ, bad), self.assertRaises(ValueError):
+                    transport.command('preflight')
+            for name in env:
+                with self.subTest(missing=name), patch.dict(os.environ, {k: v for k, v in env.items() if k != name}, clear=True), \
+                        self.assertRaises(KeyError):
+                    transport.command('preflight')
+
+    def test_semantic_host_identity_still_rejects_shared_host_or_dns_addresses(self):
+        env = {'PRODUCTION_HOST': 'production.example', 'PRODUCTION_USER': 'fixture',
+               'STAGING_HOST_IDENTITY': 'staging.example'}
+        with patch.dict(os.environ, env, clear=True):
+            with patch.dict(os.environ, {'STAGING_HOST_IDENTITY': 'production.example'}), \
+                    patch.object(transport.socket, 'getaddrinfo') as dns, \
+                    self.assertRaisesRegex(ValueError, 'production-host-not-isolated'):
+                transport.configure()
+            dns.assert_not_called()
+            with patch.object(transport.socket, 'getaddrinfo', return_value=[(None, None, None, None, ('10.0.0.1', 0))]), \
+                    self.assertRaisesRegex(ValueError, 'production-staging-host-overlap'):
+                transport.configure()
+
+
 class WorkflowTests(unittest.TestCase):
+    def test_both_workflows_wire_shared_semantic_environment_names(self):
+        variables = ('PRODUCTION_HOST', 'PRODUCTION_USER', 'STAGING_HOST_IDENTITY',
+                     'PRODUCTION_APPROVED_CONFIG_SHA256_JSON', 'LEGACY_ROLLBACK_INVENTORY_SHA256')
+        secrets = ('PRODUCTION_SSH_PRIVATE_KEY', 'PRODUCTION_SSH_HOST_KEY')
+        for path in ('deploy-production.yml', 'production-readonly-preflight.yml'):
+            with self.subTest(workflow=path):
+                text = (ROOT / '.github/workflows' / path).read_text()
+                for source, names in (('vars', variables), ('secrets', secrets)):
+                    for name in names:
+                        self.assertIn(name + ': ${{ ' + source + '.' + name + ' }}', text)
+                self.assertNotRegex(text, r'(?:vars|secrets)\.P9_')
+
     @unittest.skipUnless(os.environ.get('CADDY_BIN'), 'Caddy artifact binary integration requires CI')
     def test_accepted_gateway_binary_adapts_production_auth_tls_overlay(self):
         env = {**os.environ, 'MARKET_DOMAIN': 'production.example.invalid', 'ACME_EMAIL': 'operator@example.invalid'}
