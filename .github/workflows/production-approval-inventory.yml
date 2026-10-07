@@ -1,0 +1,35 @@
+name: Production READ-ONLY Approval Inventory
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: lightsail-production
+  cancel-in-progress: false
+
+jobs:
+  inventory:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: lightsail-production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify reviewed public tree before SSH material is available
+        run: python tools/verify_public_candidate.py
+      - name: Capture only sanitized hashes via SSH stdin
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          PRODUCTION_HOST: ${{ vars.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ vars.PRODUCTION_USER }}
+          STAGING_HOST_IDENTITY: ${{ vars.STAGING_HOST_IDENTITY }}
+          PRODUCTION_SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+          PRODUCTION_SSH_HOST_KEY: ${{ secrets.PRODUCTION_SSH_HOST_KEY }}
+        run: python -B deploy/production/production_approval_inventory.py --runner
