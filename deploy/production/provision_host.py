@@ -147,19 +147,11 @@ def current_state(pins):
     except Exception:
         raise ProvisionBlocked('legacy-safety-gate') from None
     require(provider == 'shioaji', 'legacy-market-provider')
-    health_path = mapped_path(containers['execution-worker'],
-                              worker_env.get('LIVE_EXECUTION_HEALTH_PATH',
-                                             '/run/tw-quant-execution/health.json'))
     try:
-        health = json.loads(health_path.read_text())
+        health = p9_validation.worker_locked(
+            containers['execution-worker']['Id'], legacy=True)
     except Exception:
         raise ProvisionBlocked('legacy-safety-gate') from None
-    expected = {'locked': True, 'enabled': False, 'ordering_enabled': False,
-                'connected': False, 'execution_state': 'disabled',
-                'recovery_status': 'locked', 'external_order_calls': 0,
-                'external_cancel_calls': 0}
-    require(all(type(health.get(k)) is type(v) and health.get(k) == v
-                for k, v in expected.items()), 'legacy-safety-gate')
     return revision, containers, market_env, worker_env, health
 
 
