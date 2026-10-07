@@ -141,7 +141,7 @@ class CaptureTests(unittest.TestCase):
         path.rename(self.root / 'staging-provider')
         path.symlink_to(self.root / 'staging-provider', target_is_directory=True)
         with self.fixture(read_hook=Mock(side_effect=AssertionError('read before validation'))):
-            with self.assertRaises(OSError):
+            with self.assertRaisesRegex(inventory.CaptureBlocked, 'provider-path-access'):
                 self.capture()
 
     def test_incomplete_sealed_inventory_rejected(self):
@@ -300,22 +300,28 @@ class WorkflowTests(unittest.TestCase):
             with self.subTest(output=output[:32]), patch.dict(os.environ, ENV, clear=True), \
                  patch.object(gates, 'api', return_value={'object': {'sha': SHA}}), \
                  patch.object(gates, 'master_gates'), patch.object(transport, 'configure', return_value=['ssh']), \
-                 patch.object(subprocess, 'run', return_value=types.SimpleNamespace(returncode=0, stdout=output)), \
+                patch.object(subprocess, 'run', return_value=types.SimpleNamespace(returncode=0, stdout=output)), \
                  patch.object(sys, 'argv', ['inventory', '--runner']), contextlib.redirect_stdout(io.StringIO()) as log:
                 self.assertEqual(inventory.main(), 1)
-                self.assertEqual(json.loads(log.getvalue()), {k: 'FAIL' for k in inventory.CHECKS})
+                self.assertEqual(json.loads(log.getvalue()), inventory.failure(
+                    'unsafe-host-evidence', inventory.RUNNER_REASONS))
 
-    def test_ssh_failure_timeout_and_path_override_emit_only_fixed_checks(self):
+    def test_ssh_failure_timeout_and_path_override_emit_only_fixed_reasons(self):
         for error in (subprocess.TimeoutExpired('synthetic secret', 120), OSError('synthetic secret')):
-            with patch.object(inventory, 'inspect_once', side_effect=error), \
+            with patch.dict(os.environ, ENV, clear=True), \
+                 patch.object(gates, 'api', return_value={'object': {'sha': SHA}}), \
+                 patch.object(gates, 'master_gates'), patch.object(transport, 'configure', return_value=['ssh']), \
+                 patch.object(subprocess, 'run', side_effect=error), \
                  patch.object(sys, 'argv', ['inventory', '--runner']), contextlib.redirect_stdout(io.StringIO()) as log:
                 self.assertEqual(inventory.main(), 1)
-                self.assertEqual(json.loads(log.getvalue()), {k: 'FAIL' for k in inventory.CHECKS})
+                self.assertEqual(json.loads(log.getvalue()), inventory.failure(
+                    'ssh-inspection-failed', inventory.RUNNER_REASONS))
         with patch.object(sys, 'argv', ['inventory', '/srv/staging']), patch.object(inventory, 'capture') as capture, \
              contextlib.redirect_stdout(io.StringIO()) as log:
             self.assertEqual(inventory.main(), 1)
             capture.assert_not_called()
             self.assertNotIn('/srv/staging', log.getvalue())
+            self.assertEqual(json.loads(log.getvalue())['reason'], 'no-path-overrides-permitted')
 
     def test_nonzero_ssh_cannot_publish_even_valid_success_payload(self):
         with patch.dict(os.environ, ENV, clear=True), \
@@ -323,8 +329,72 @@ class WorkflowTests(unittest.TestCase):
              patch.object(gates, 'master_gates'), patch.object(transport, 'configure', return_value=['ssh']), \
              patch.object(subprocess, 'run', return_value=types.SimpleNamespace(
                  returncode=1, stdout=json.dumps(self.safe).encode())):
-            with self.assertRaisesRegex(inventory.CaptureBlocked, 'ssh-inspection-failed'):
+            with self.assertRaisesRegex(inventory.CaptureBlocked, 'unsafe-host-evidence'):
                 inventory.inspect_once()
+
+    def test_exit_one_accepts_only_complete_allowlisted_failure_without_hashes(self):
+        remote = inventory.failure('market.env-owner-mode', inventory.REMOTE_REASONS)
+        with patch.dict(os.environ, ENV, clear=True), \
+             patch.object(gates, 'api', return_value={'object': {'sha': SHA}}), \
+             patch.object(gates, 'master_gates'), patch.object(transport, 'configure', return_value=['ssh']), \
+             patch.object(subprocess, 'run', return_value=types.SimpleNamespace(
+                 returncode=1, stdout=json.dumps(remote).encode())):
+            self.assertEqual(inventory.inspect_once(), remote)
+        self.assertFalse(any('SHA256' in key for key in remote))
+
+    def test_every_failure_class_maps_to_reviewed_literal_and_no_partial_hash(self):
+        secret = 'PRIVATE_SYNTHETIC_CONTENT arbitrary exception /unapproved/path'
+        for runner, reasons in ((False, inventory.REMOTE_REASONS), (True, inventory.RUNNER_REASONS)):
+            for reason in reasons:
+                with self.subTest(runner=runner, reason=reason), \
+                     patch.object(sys, 'argv', ['inventory', '--runner'] if runner else ['-']), \
+                     patch.object(inventory, 'inspect_once' if runner else 'capture',
+                                  side_effect=inventory.CaptureBlocked(reason)), \
+                     contextlib.redirect_stdout(io.StringIO()) as log:
+                    self.assertEqual(inventory.main(), 1)
+                    document = json.loads(log.getvalue())
+                    self.assertEqual(document, inventory.failure(reason, reasons))
+                    self.assertFalse(any('SHA256' in key for key in document))
+                    self.assertNotIn(secret, log.getvalue())
+
+    def test_arbitrary_exception_text_and_unknown_reason_cannot_reach_output(self):
+        secret = 'PRIVATE_SYNTHETIC_CONTENT /srv/private-staging/account-token'
+        cases = ((False, RuntimeError(secret), 'capture-failed'),
+                 (False, inventory.CaptureBlocked(secret), 'capture-failed'),
+                 (True, RuntimeError(secret), 'unsafe-host-evidence'),
+                 (True, inventory.CaptureBlocked(secret), 'unsafe-host-evidence'))
+        for runner, error, expected in cases:
+            with self.subTest(runner=runner, error=type(error).__name__), \
+                 patch.object(sys, 'argv', ['inventory', '--runner'] if runner else ['-']), \
+                 patch.object(inventory, 'inspect_once' if runner else 'capture', side_effect=error), \
+                 contextlib.redirect_stdout(io.StringIO()) as log:
+                self.assertEqual(inventory.main(), 1)
+                self.assertEqual(json.loads(log.getvalue())['reason'], expected)
+                self.assertNotIn(secret, log.getvalue())
+
+    def test_runner_reason_classes_are_separate_and_fail_before_remote_execution(self):
+        cases = [
+            ('control-gate-failed', {**ENV, 'GITHUB_EVENT_NAME': 'push'}, None, None),
+            ('master-moved', ENV, [{'object': {'sha': 'c' * 40}}], None),
+            ('control-gate-failed', ENV, [RuntimeError('PRIVATE_SYNTHETIC_CONTENT')], None),
+            ('ssh-config-unavailable', ENV, [{'object': {'sha': SHA}}], RuntimeError('PRIVATE_SYNTHETIC_CONTENT')),
+        ]
+        for reason, env, api_effects, configure_error in cases:
+            with self.subTest(reason=reason), patch.dict(os.environ, env, clear=True), \
+                 patch.object(gates, 'api', side_effect=api_effects) if api_effects is not None else contextlib.nullcontext(), \
+                 patch.object(gates, 'master_gates'), \
+                 patch.object(transport, 'configure', side_effect=configure_error) as configure, \
+                 patch.object(subprocess, 'run') as run:
+                with self.assertRaisesRegex(inventory.CaptureBlocked, '^' + reason + '$'):
+                    inventory.inspect_once()
+                run.assert_not_called()
+
+    def test_pass_schema_is_byte_for_byte_unchanged(self):
+        hashes = {label: 'b' * 64 for label, *_ in inventory.FILES}
+        expected = {**{label + ' SHA256': 'b' * 64 for label, *_ in inventory.FILES},
+                    'path/ownership checks': 'PASS', 'rollback inventory structure': 'PASS'}
+        self.assertEqual(inventory.evidence(hashes), expected)
+        self.assertEqual(inventory.safe_evidence(expected, expected='pass'), expected)
 
     def test_remote_entrypoint_outputs_only_complete_sanitized_evidence(self):
         hashes = {label: 'b' * 64 for label, *_ in inventory.FILES}

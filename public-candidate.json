@@ -526,7 +526,7 @@
     },
     {
       "path": "deploy/production/production_approval_inventory.py",
-      "sha256": "f8c322172a92451b77eabefab6b13cf1c26174f49130672e6ac3b9734139d91e"
+      "sha256": "f22fc9c62980c773a2140563583d3afd85106477e5aabfe468a6a0a0b6c8e4a9"
     },
     {
       "path": "deploy/production/readonly_host.py",
@@ -970,7 +970,7 @@
     },
     {
       "path": "tests/test_p9_approval_inventory.py",
-      "sha256": "5b7b819df9145527fec953af333972a7d3e7559e9710b642222fc1061a9aac3e"
+      "sha256": "1b435e0d4b15f69a9bd065af98679ff54d55b4b74ee82f79596ab76687929fad"
     },
     {
       "path": "tests/test_p9_production_cutover.py",
