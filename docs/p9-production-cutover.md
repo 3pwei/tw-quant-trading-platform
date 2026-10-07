@@ -45,6 +45,17 @@ secrets, never repository examples or Staging bytes:
 stdin and are never logged. Missing, malformed, or ambiguous source material
 blocks provisioning instead of generating or guessing values.
 
+Host validation failures return only an allowlisted `status: BLOCKED`, `stage`,
+and `reason` JSON document and exit nonzero. The runner checks the exact schema,
+reason/stage pair and exit status before recording it. For example, an existing
+root reports `prepare / production-root-exists`, a busy deployment lock reports
+`lock / deployment-lock-unavailable`, and a failed snapshot reports
+`snapshot / sqlite-snapshot-failed`. Unknown host exceptions become
+`host / host-provision-failed`; transport/bootstrap failures remain
+`ssh-provision-failed`. No raw stderr, exception message, source config or
+traceback is exposed. A BLOCKED result is not evidence of zero host writes or
+permission to retry: inspect the failure stage and publication state first.
+
 Provisioning takes the existing Legacy deploy lock, refuses an existing final
 root, revalidates the exact Legacy revision, running container/image identities,
 current Shioaji provider, disabled/locked execution and zero order/cancel calls.

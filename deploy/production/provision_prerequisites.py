@@ -25,10 +25,33 @@ SOURCES = {
     'replay.csv': 'PRODUCTION_REPLAY_CSV_B64',
 }
 MAX_ENCODED = 256 * 1024
+HOST_REASONS = {
+    'payload-invalid': 'prepare',
+    'production-root-exists': 'prepare',
+    'deployment-lock-unavailable': 'lock',
+    'legacy-revision-mismatch': 'legacy',
+    'legacy-container-mismatch': 'legacy',
+    'legacy-env-invalid': 'legacy',
+    'legacy-safety-gate': 'legacy',
+    'legacy-market-provider': 'legacy',
+    'database-boundary': 'snapshot',
+    'sqlite-snapshot-failed': 'snapshot',
+    'config-validation-failed': 'config',
+    'legacy-config-invalid': 'rollback',
+    'rollback-capture-failed': 'rollback',
+    'owner-mode-invalid': 'publish',
+    'atomic-publish-unavailable': 'publish',
+    'atomic-publish-failed': 'publish',
+    'host-command-failed': 'host',
+    'write-failed': 'host',
+    'host-provision-failed': 'host',
+}
 
 
 class ProvisionBlocked(Exception):
-    pass
+    def __init__(self, reason, stage=None):
+        super().__init__(reason)
+        self.stage = stage
 
 
 def require(condition, reason):
@@ -80,10 +103,18 @@ def remote_program(payload):
         program += module(name, path.read_bytes()).encode()
     encoded = base64.b64encode(json.dumps(payload, sort_keys=True).encode()).decode()
     program += (
-        f"payload=json.loads(base64.b64decode({encoded!r}),object_pairs_hook="
+        f"allowed={HOST_REASONS!r}\n"
+        "host=sys.modules['provision_host']\n"
+        "try:\n"
+        f" payload=json.loads(base64.b64decode({encoded!r}),object_pairs_hook="
         "sys.modules['provision_host'].no_duplicate_keys)\n"
-        "result=sys.modules['provision_host'].provision(payload)\n"
+        " result=host.provision(payload)\n"
+        "except Exception as exc:\n"
+        " reason=str(exc) if isinstance(exc,host.ProvisionBlocked) else ''\n"
+        " if reason not in allowed: reason='host-provision-failed'\n"
+        " result={'status':'BLOCKED','stage':allowed[reason],'reason':reason}\n"
         "print(json.dumps(result,sort_keys=True))\n"
+        "raise SystemExit(0 if result.get('status')=='PASS' else 1)\n"
     ).encode()
     return program
 
@@ -110,6 +141,28 @@ def safe_evidence(document):
             re.fullmatch(r'[0-9a-f]{64}', document['rollback_sha256']),
             'unsafe-host-evidence')
     return document
+
+
+def host_response(result):
+    # SSH/bootstrap failures have no trusted protocol response. Never log stderr.
+    require(result.returncode in (0, 1) and len(result.stdout) <= 8192,
+            'ssh-provision-failed')
+    if not result.stdout:
+        raise ProvisionBlocked('ssh-provision-failed')
+    try:
+        document = json.loads(result.stdout, object_pairs_hook=no_duplicate_keys)
+    except Exception:
+        raise ProvisionBlocked('unsafe-host-evidence') from None
+    require(isinstance(document, dict), 'unsafe-host-evidence')
+    if document.get('status') == 'BLOCKED':
+        reason = document.get('reason')
+        require(result.returncode == 1 and
+                set(document) == {'status', 'stage', 'reason'} and
+                isinstance(reason, str) and reason in HOST_REASONS and
+                document['stage'] == HOST_REASONS[reason], 'unsafe-host-evidence')
+        raise ProvisionBlocked(reason, document['stage'])
+    require(result.returncode == 0, 'unsafe-host-evidence')
+    return safe_evidence(document)
 
 
 def inspect_once():
@@ -157,13 +210,7 @@ def inspect_once():
         )
     except (OSError, subprocess.TimeoutExpired):
         raise ProvisionBlocked('ssh-provision-failed') from None
-    require(result.returncode == 0 and len(result.stdout) <= 8192,
-            'ssh-provision-failed')
-    try:
-        document = json.loads(result.stdout, object_pairs_hook=no_duplicate_keys)
-    except Exception:
-        raise ProvisionBlocked('unsafe-host-evidence') from None
-    return safe_evidence(document)
+    return host_response(result)
 
 
 def main():
@@ -180,6 +227,8 @@ def main():
                    'ssh-provision-failed', 'unsafe-host-evidence'}
         document = {'status': 'BLOCKED',
                     'reason': reason if reason in allowed else 'unsafe-host-evidence'}
+        if reason in HOST_REASONS and exc.stage == HOST_REASONS[reason]:
+            document = {'status': 'BLOCKED', 'stage': exc.stage, 'reason': reason}
         code = 1
     except Exception:
         document = {'status': 'BLOCKED', 'reason': 'unsafe-host-evidence'}
