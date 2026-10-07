@@ -49,9 +49,11 @@ class ProductionPrerequisiteProvisionTests(unittest.TestCase):
             self.assertNotIn(token, source)
 
     def test_execution_lock_and_zero_call_requirements_are_explicit(self):
+        self.assertIn('p9_validation.worker_locked(', self.host)
+        self.assertIn('legacy=True', self.host)
         for fragment in (
-            "'locked': True", "'enabled': False", "'ordering_enabled': False",
-            "'external_order_calls': 0", "'external_cancel_calls': 0",
+            "'external_order_calls': health['external_order_calls']",
+            "'external_cancel_calls': health['external_cancel_calls']",
         ):
             self.assertIn(fragment, self.host)
 
