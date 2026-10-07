@@ -58,7 +58,7 @@ class CaptureTests(unittest.TestCase):
         return types.SimpleNamespace(**data)
 
     @contextlib.contextmanager
-    def fixture(self, open_hook=None, read_hook=None):
+    def fixture(self, open_hook=None, read_hook=None, stat_hook=None):
         def opened(path, flags, **kwargs):
             self.assertEqual(flags & os.O_ACCMODE, os.O_RDONLY)
             self.assertTrue(flags & os.O_NOFOLLOW)
@@ -70,8 +70,12 @@ class CaptureTests(unittest.TestCase):
             # File reads retain the actual O_NOATIME flag under the fixture owner.
             actual = flags & ~os.O_NOATIME if flags & os.O_DIRECTORY else flags
             return self.original_open(path, actual, **kwargs)
+        def stated(*args, **kwargs):
+            if stat_hook:
+                stat_hook(*args, **kwargs)
+            return self.virtual_owner(self.original_stat(*args, **kwargs))
         with patch.object(os, 'geteuid', return_value=0), \
-             patch.object(os, 'stat', side_effect=lambda *a, **k: self.virtual_owner(self.original_stat(*a, **k))), \
+             patch.object(os, 'stat', side_effect=stated), \
              patch.object(os, 'fstat', side_effect=lambda *a, **k: self.virtual_owner(self.original_fstat(*a, **k))), \
              patch.object(os, 'open', side_effect=opened), \
              patch.object(os, 'read', side_effect=read_hook or self.original_read):
@@ -103,12 +107,17 @@ class CaptureTests(unittest.TestCase):
         self.assertEqual(inventory.ROOT_ACCESS_REASONS, (
             'production-root-slash-access',
             'production-root-srv-access',
-            'production-root-platform-access',
+        ))
+        self.assertEqual(inventory.PLATFORM_PATH_REASONS, (
+            'production-root-platform-missing',
+            'production-root-platform-symlink',
+            'production-root-platform-not-directory',
+            'production-root-platform-permission',
+            'production-root-platform-open-failed',
         ))
         cases = (
             ('/', 'production-root-slash-access'),
             (self.root.parts[1], 'production-root-srv-access'),
-            (self.root.parts[-1], 'production-root-platform-access'),
         )
         for blocked_path, reason in cases:
             with self.subTest(path=blocked_path, reason=reason):
@@ -119,6 +128,95 @@ class CaptureTests(unittest.TestCase):
                                   read_hook=Mock(side_effect=AssertionError('read before validation'))):
                     with self.assertRaisesRegex(inventory.CaptureBlocked, '^' + reason + '$'):
                         self.capture()
+
+    def test_platform_path_missing_has_exact_sanitized_reason(self):
+        moved = self.root.with_name(self.root.name + '-fixture')
+        self.root.rename(moved)
+        try:
+            with self.fixture(read_hook=Mock(side_effect=AssertionError('read before validation'))):
+                with self.assertRaisesRegex(inventory.CaptureBlocked,
+                                            '^production-root-platform-missing$'):
+                    self.capture()
+        finally:
+            moved.rename(self.root)
+
+    def test_platform_path_symlink_has_exact_sanitized_reason(self):
+        target = self.root.with_name(self.root.name + '-fixture')
+        self.root.rename(target)
+        self.root.symlink_to(target, target_is_directory=True)
+        try:
+            with self.fixture(read_hook=Mock(side_effect=AssertionError('read before validation'))):
+                with self.assertRaisesRegex(inventory.CaptureBlocked,
+                                            '^production-root-platform-symlink$'):
+                    self.capture()
+        finally:
+            self.root.unlink()
+            target.rename(self.root)
+
+    def test_platform_path_regular_file_has_exact_sanitized_reason(self):
+        target = self.root.with_name(self.root.name + '-fixture')
+        self.root.rename(target)
+        self.root.write_bytes(b'PRIVATE_SYNTHETIC_CONTENT')
+        try:
+            with self.fixture(read_hook=Mock(side_effect=AssertionError('read before validation'))):
+                with self.assertRaisesRegex(inventory.CaptureBlocked,
+                                            '^production-root-platform-not-directory$'):
+                    self.capture()
+        finally:
+            self.root.unlink()
+            target.rename(self.root)
+
+    def test_platform_directory_permission_failure_has_exact_sanitized_reason(self):
+        def reject(path, _flags):
+            if path == self.root.parts[-1]:
+                raise PermissionError('PRIVATE_SYNTHETIC_CONTENT')
+        with self.fixture(open_hook=reject,
+                          read_hook=Mock(side_effect=AssertionError('read before validation'))):
+            with self.assertRaisesRegex(inventory.CaptureBlocked,
+                                        '^production-root-platform-permission$'):
+                self.capture()
+
+    def test_platform_directory_generic_open_failure_has_exact_sanitized_reason(self):
+        def reject(path, _flags):
+            if path == self.root.parts[-1]:
+                raise OSError('PRIVATE_SYNTHETIC_CONTENT')
+        with self.fixture(open_hook=reject,
+                          read_hook=Mock(side_effect=AssertionError('read before validation'))):
+            with self.assertRaisesRegex(inventory.CaptureBlocked,
+                                        '^production-root-platform-open-failed$'):
+                self.capture()
+
+    def test_valid_platform_directory_continues_existing_owner_mode_validation(self):
+        self.root.chmod(0o755)
+        try:
+            with self.fixture(read_hook=Mock(side_effect=AssertionError('read before validation'))):
+                with self.assertRaisesRegex(inventory.CaptureBlocked,
+                                            '^production-root-owner-mode$'):
+                    self.capture()
+        finally:
+            self.root.chmod(0o700)
+
+    def test_platform_diagnostic_open_is_exactly_read_only(self):
+        platform_flags = []
+        def record(path, flags):
+            if path == self.root.parts[-1]:
+                platform_flags.append(flags)
+        with self.fixture(open_hook=record):
+            self.capture()
+        self.assertEqual(platform_flags, [
+            os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC | os.O_NOATIME,
+        ])
+
+    def test_platform_metadata_is_relative_to_parent_and_never_follows_symlinks(self):
+        platform_stats = []
+        def record(path, **kwargs):
+            if path == self.root.parts[-1]:
+                platform_stats.append(kwargs)
+        with self.fixture(stat_hook=record):
+            self.capture()
+        self.assertGreaterEqual(len(platform_stats), 1)
+        self.assertIsInstance(platform_stats[0]['dir_fd'], int)
+        self.assertIs(platform_stats[0]['follow_symlinks'], False)
 
     def test_owner_and_mode_rejected_before_any_hash_read(self):
         path = self.root / 'config/market.env'
