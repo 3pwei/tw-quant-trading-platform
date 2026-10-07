@@ -103,7 +103,7 @@ class CaptureTests(unittest.TestCase):
         self.assertNotIn('PRIVATE_SYNTHETIC_CONTENT', json.dumps(inventory.evidence(hashes)))
 
     def test_root_path_components_have_exact_sanitized_reasons(self):
-        self.assertEqual(('/', *inventory.ROOT_PARTS), ('/', 'srv', 'trading-platform-p9'))
+        self.assertEqual(('/', *inventory.ROOT_PARTS), ('/', 'srv', 'trading-platform-production'))
         self.assertEqual(inventory.ROOT_ACCESS_REASONS, (
             'production-root-slash-access',
             'production-root-srv-access',
@@ -356,7 +356,7 @@ class WorkflowTests(unittest.TestCase):
             self.assertNotIn(name, self.workflow)
 
     def test_exact_paths_and_remote_command_exclude_writes_or_lifecycle(self):
-        self.assertEqual(inventory.ROOT_PARTS, ('srv', 'trading-platform-p9'))
+        self.assertEqual(inventory.ROOT_PARTS, ('srv', 'trading-platform-production'))
         self.assertEqual([(d, n, uid) for _, d, n, uid in inventory.FILES], [
             ('config', 'market.env', 0), ('config', 'execution.env', 0), ('config', 'gateway.env', 0),
             ('provider', 'factory', 10001), ('config', 'replay.csv', 10001), ('rollback', 'rollback.json', 0)])
