@@ -33,6 +33,10 @@
       "sha256": "9f7337e6c9da7787c1a83102eb5cb95b3b8624f24d597230b7086e7d3a751c30"
     },
     {
+      "path": ".github/workflows/production-prerequisite-provision.yml",
+      "sha256": "173ff540786365a113da3d0ca79c9d09f46f52e3ba295ebc45b56bb50138a1a2"
+    },
+    {
       "path": ".github/workflows/production-readonly-preflight.yml",
       "sha256": "392d1202cc26e9e7c9e47189d33914a9318c7d8063d21b4b14daefec02ef650d"
     },
@@ -529,6 +533,14 @@
       "sha256": "b8388ae2719863ae14a9a8e2f051b2a3705a931441b429235b917c85b247de2b"
     },
     {
+      "path": "deploy/production/provision_host.py",
+      "sha256": "95a0657195a1b9a60c57896ab87f575b828ecd36819564b359635f70e8346472"
+    },
+    {
+      "path": "deploy/production/provision_prerequisites.py",
+      "sha256": "ee0d02c33e9c2b4d34719bf27f0b410deefaa1eb71158050f5b29893a374bae7"
+    },
+    {
       "path": "deploy/production/readonly_host.py",
       "sha256": "35c69606df8cc8d6161b5687d18a5cb88cdd89a9a7b497db5e1a98d85e2f8fec"
     },
@@ -690,7 +702,7 @@
     },
     {
       "path": "docs/p9-production-cutover.md",
-      "sha256": "f285c8077c703f7c45740038307cfe1256818770bc5789207bceacf6e266a3ec"
+      "sha256": "5cf5db0fcf10fc51481e4cd367ebff16ab74b189c66f175aeac18b63e3a25d1f"
     },
     {
       "path": "docs/production-readonly-preflight.md",
@@ -971,6 +983,10 @@
     {
       "path": "tests/test_p9_approval_inventory.py",
       "sha256": "7f001bb58acc69867ced2dce71f216574beed880fd873afed848e7b483f74554"
+    },
+    {
+      "path": "tests/test_p9_prerequisite_provision.py",
+      "sha256": "634bb7e671cf157bd443b19cd3f40527ca99dd5c0529bf8a46391fc41fa422a1"
     },
     {
       "path": "tests/test_p9_production_cutover.py",

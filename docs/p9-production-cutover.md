@@ -29,6 +29,38 @@ Confirmation must be exactly:
 DEPLOY production fac88646fe2f40680c60f8d61c7da385ae7f91b0 candidate 37459015384 manifest b28e818cbc42be8c6b5159c88420fd9b42b1b1967e3fbe1543066ef5e49d3a60
 ```
 
+## First-time Production prerequisite provisioning
+
+The manual `Production Prerequisite Provision` workflow is the reviewed first-time
+writer for `/srv/trading-platform-production`. Merging its source is not
+authorization to dispatch it. It requires exact current master CI/Security, the
+`lightsail-production` environment, and confirmation
+`PROVISION production prerequisites <exact-master-sha>`.
+
+The new runtime config source of truth is explicit Production-only environment
+secrets, never repository examples or Staging bytes:
+`PRODUCTION_MARKET_ENV_B64`, `PRODUCTION_EXECUTION_ENV_B64`,
+`PRODUCTION_GATEWAY_ENV_B64`, `PRODUCTION_PROVIDER_FACTORY_B64`, and
+`PRODUCTION_REPLAY_CSV_B64`. Their decoded contents are sent only through SSH
+stdin and are never logged. Missing, malformed, or ambiguous source material
+blocks provisioning instead of generating or guessing values.
+
+Provisioning takes the existing Legacy deploy lock, refuses an existing final
+root, revalidates the exact Legacy revision, running container/image identities,
+current Shioaji provider, disabled/locked execution and zero order/cancel calls.
+It reconstructs a stable committed SQLite image entirely in RAM from the existing
+database/WAL, requires integrity PASS and all execution targets locked, seals the
+Legacy config archive and exact local image archives, validates the resulting
+rollback inventory with the same P9 validators, then publishes the completed tree
+with no-replace atomic rename. Legacy containers, images, configs, volumes, and
+database bytes are not stopped, restarted, replaced, or modified.
+
+The provisioning workflow does not set approval variables and does not dispatch
+inventory, preflight, cutover, or P10. After a separately authorized successful
+provisioning run, the independent read-only approval inventory must capture and
+review the five config hashes and rollback inventory hash before approval variables
+may be configured.
+
 ## Separate Production prerequisites
 
 These prerequisites must be prepared and separately reviewed before a future
