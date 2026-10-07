@@ -534,7 +534,7 @@
     },
     {
       "path": "deploy/production/provision_host.py",
-      "sha256": "ea551fd0e4eed9ea099277f1199e39720b746e2e5ef19a8436c210298ff0361f"
+      "sha256": "95a0657195a1b9a60c57896ab87f575b828ecd36819564b359635f70e8346472"
     },
     {
       "path": "deploy/production/provision_prerequisites.py",
@@ -986,7 +986,7 @@
     },
     {
       "path": "tests/test_p9_prerequisite_provision.py",
-      "sha256": "1ac20791d9e2109091ed12785b3d29b5ae3c9f446c6e6780af5e1f18c9d101b1"
+      "sha256": "634bb7e671cf157bd443b19cd3f40527ca99dd5c0529bf8a46391fc41fa422a1"
     },
     {
       "path": "tests/test_p9_production_cutover.py",
