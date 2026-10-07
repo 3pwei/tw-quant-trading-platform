@@ -14,6 +14,11 @@ import stat
 import sys
 
 ROOT_PARTS = ('srv', 'trading-platform-p9')
+ROOT_ACCESS_REASONS = (
+    'production-root-slash-access',
+    'production-root-srv-access',
+    'production-root-platform-access',
+)
 LEGACY_REVISION = '683bb4ebc4c4980480a4786136701ff458338a14'
 FILES = (
     ('market.env', 'config', 'market.env', 0),
@@ -29,7 +34,7 @@ SEALED_FILES = frozenset((
 ))
 REMOTE_REASONS = frozenset((
     'root-required', 'noatime-unavailable', 'invalid-root',
-    'production-root-path-access', 'root-not-directory', 'production-root-owner-mode',
+    *ROOT_ACCESS_REASONS, 'root-not-directory', 'production-root-owner-mode',
     'config-path-access', 'config-owner-mode',
     'provider-path-access', 'provider-owner-mode',
     'rollback-path-access', 'rollback-owner-mode',
@@ -92,7 +97,7 @@ def capture(_root_parts=ROOT_PARTS):
     directory_links = []
     opened = []
     with contextlib.ExitStack() as stack:
-        def opened_fd(path, flags, parent=None, reason='production-root-path-access'):
+        def opened_fd(path, flags, reason, parent=None):
             try:
                 fd = os.open(path, flags, dir_fd=parent)
             except OSError:
@@ -100,10 +105,11 @@ def capture(_root_parts=ROOT_PARTS):
             stack.callback(os.close, fd)
             return fd
 
-        current = opened_fd('/', dir_flags)
-        for component in _root_parts:
+        current = opened_fd('/', dir_flags, ROOT_ACCESS_REASONS[0])
+        for index, component in enumerate(_root_parts):
             parent = current
-            current = opened_fd(component, dir_flags, parent, 'production-root-path-access')
+            reason = ROOT_ACCESS_REASONS[2] if index == len(_root_parts) - 1 else ROOT_ACCESS_REASONS[1]
+            current = opened_fd(component, dir_flags, reason, parent)
             s = os.fstat(current)
             require(stat.S_ISDIR(s.st_mode), 'root-not-directory')
             directory_links.append((parent, component, current, identity(s)))
@@ -113,7 +119,7 @@ def capture(_root_parts=ROOT_PARTS):
 
         parents = {}
         for directory in ('config', 'provider', 'rollback'):
-            fd = opened_fd(directory, dir_flags, root, directory + '-path-access')
+            fd = opened_fd(directory, dir_flags, directory + '-path-access', root)
             s = os.fstat(fd)
             require(s.st_uid == 0 and stat.S_IMODE(s.st_mode) == 0o700, directory + '-owner-mode')
             parents[directory] = fd
@@ -130,7 +136,7 @@ def capture(_root_parts=ROOT_PARTS):
             require(before.st_nlink == 1, label + '-shared-file')
             require(before.st_uid == uid and stat.S_IMODE(before.st_mode) in (0o400, 0o600),
                     label + '-owner-mode')
-            fd = opened_fd(name, file_flags, parent, label + '-path-access')
+            fd = opened_fd(name, file_flags, label + '-path-access', parent)
             require(identity(os.fstat(fd)) == identity(before), label + '-changed-before-read')
             opened.append((label, parent, name, fd, identity(before)))
 

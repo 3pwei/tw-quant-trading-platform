@@ -98,6 +98,28 @@ class CaptureTests(unittest.TestCase):
         self.assertEqual(len(list(self.root.rglob('*'))), 9)
         self.assertNotIn('PRIVATE_SYNTHETIC_CONTENT', json.dumps(inventory.evidence(hashes)))
 
+    def test_root_path_components_have_exact_sanitized_reasons(self):
+        self.assertEqual(('/', *inventory.ROOT_PARTS), ('/', 'srv', 'trading-platform-p9'))
+        self.assertEqual(inventory.ROOT_ACCESS_REASONS, (
+            'production-root-slash-access',
+            'production-root-srv-access',
+            'production-root-platform-access',
+        ))
+        cases = (
+            ('/', 'production-root-slash-access'),
+            (self.root.parts[1], 'production-root-srv-access'),
+            (self.root.parts[-1], 'production-root-platform-access'),
+        )
+        for blocked_path, reason in cases:
+            with self.subTest(path=blocked_path, reason=reason):
+                def reject(path, _flags):
+                    if path == blocked_path:
+                        raise OSError('PRIVATE_SYNTHETIC_CONTENT')
+                with self.fixture(open_hook=reject,
+                                  read_hook=Mock(side_effect=AssertionError('read before validation'))):
+                    with self.assertRaisesRegex(inventory.CaptureBlocked, '^' + reason + '$'):
+                        self.capture()
+
     def test_owner_and_mode_rejected_before_any_hash_read(self):
         path = self.root / 'config/market.env'
         for invalid in ('uid', 'mode', 'directory'):
