@@ -18,7 +18,7 @@ import sys
 import tarfile
 import time
 
-ROOT = Path('/srv/trading-platform-p9')
+ROOT = Path('/srv/trading-platform-production')
 LEGACY = Path('/opt/tw-quant')
 SERVICES = ('market-api', 'execution-worker', 'gateway')
 DISABLED = ('LIVE_TRADING_ENABLED', 'LIVE_CANARY_ENABLED', 'LIVE_AUTO_ENABLED',

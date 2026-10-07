@@ -53,10 +53,10 @@
         "8000"
       ],
       "volumes": [
-        "/srv/trading-platform-p9/data:/data",
-        "/srv/trading-platform-p9/health:/run/tw-quant-execution:ro",
-        "/srv/trading-platform-p9/provider/factory:/run/staging-provider/factory:ro",
-        "/srv/trading-platform-p9/config/replay.csv:/run/production-market/replay.csv:ro"
+        "/srv/trading-platform-production/data:/data",
+        "/srv/trading-platform-production/health:/run/tw-quant-execution:ro",
+        "/srv/trading-platform-production/provider/factory:/run/staging-provider/factory:ro",
+        "/srv/trading-platform-production/config/replay.csv:/run/production-market/replay.csv:ro"
       ],
       "tmpfs": [
         "/tmp:rw,noexec,nosuid,nodev,size=64m,uid=10001,gid=10001,mode=1770"
@@ -109,8 +109,8 @@
         "${PRODUCTION_EXECUTION_ENV_FILE:?staging execution config is required}"
       ],
       "volumes": [
-        "/srv/trading-platform-p9/data:/data",
-        "/srv/trading-platform-p9/health:/run/tw-quant-execution"
+        "/srv/trading-platform-production/data:/data",
+        "/srv/trading-platform-production/health:/run/tw-quant-execution"
       ],
       "tmpfs": [
         "/tmp:rw,noexec,nosuid,nodev,size=64m,uid=10001,gid=10001,mode=1770"
@@ -161,9 +161,9 @@
         }
       },
       "volumes": [
-        "/srv/trading-platform-p9/gateway-data:/data",
-        "/srv/trading-platform-p9/gateway-config:/config",
-        "/srv/trading-platform-p9/bundle/Caddyfile:/etc/caddy/Caddyfile:ro"
+        "/srv/trading-platform-production/gateway-data:/data",
+        "/srv/trading-platform-production/gateway-config:/config",
+        "/srv/trading-platform-production/bundle/Caddyfile:/etc/caddy/Caddyfile:ro"
       ],
       "tmpfs": [
         "/tmp:rw,noexec,nosuid,nodev,size=32m,uid=10000,gid=10000,mode=1770"

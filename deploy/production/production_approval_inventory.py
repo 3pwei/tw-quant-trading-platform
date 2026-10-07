@@ -13,7 +13,7 @@ import re
 import stat
 import sys
 
-ROOT_PARTS = ('srv', 'trading-platform-p9')
+ROOT_PARTS = ('srv', 'trading-platform-production')
 ROOT_ACCESS_REASONS = (
     'production-root-slash-access',
     'production-root-srv-access',

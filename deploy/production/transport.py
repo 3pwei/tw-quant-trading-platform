@@ -86,7 +86,7 @@ def main():
         # Only selected sanitized JSON, never rollback archives/config/provider details.
         args.evidence.joinpath('host').mkdir(mode=0o700, exist_ok=True)
         for name in ('acceptance.json', 'failure.json', 'rollback-result.json', 'transaction.json'):
-            r = subprocess.run(ssh + ['sudo cat /srv/trading-platform-p9/' + name],
+            r = subprocess.run(ssh + ['sudo cat /srv/trading-platform-production/' + name],
                                stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=30)
             if r.returncode == 0:
                 require(len(r.stdout) <= 1024 * 1024, 'evidence-too-large')
@@ -117,11 +117,11 @@ def main():
             z.add(ROOT / 'deploy/staging/image_config_digest.py', arcname='image_config_digest.py', recursive=False)
             z.add(ROOT / 'deploy/staging/shioaji_capability.py', arcname='shioaji_capability.py', recursive=False)
         f.seek(0); bundle = f.read()
-    install = ('sudo install -d -m 700 /srv/trading-platform-p9/bundle && '
-               'sudo tar -xzf - -C /srv/trading-platform-p9/bundle --no-same-owner && '
-               'sudo chmod -R go-rwx /srv/trading-platform-p9/bundle && '
-               'sudo chmod 755 /srv/trading-platform-p9/bundle && '
-               'sudo chmod 644 /srv/trading-platform-p9/bundle/Caddyfile')
+    install = ('sudo install -d -m 700 /srv/trading-platform-production/bundle && '
+               'sudo tar -xzf - -C /srv/trading-platform-production/bundle --no-same-owner && '
+               'sudo chmod -R go-rwx /srv/trading-platform-production/bundle && '
+               'sudo chmod 755 /srv/trading-platform-production/bundle && '
+               'sudo chmod 644 /srv/trading-platform-production/bundle/Caddyfile')
     run(ssh + [install], bundle)
     # Token is stdin-only, temporary registry auth is removed on success/failure.
     actor = os.environ['GITHUB_ACTOR']
@@ -129,7 +129,7 @@ def main():
     script = ('set -eu; registry_dir=$(mktemp -d /run/p9-registry.XXXXXX); '
               'trap \'rm -rf "$registry_dir"\' EXIT; export DOCKER_CONFIG="$registry_dir"; '
               'IFS= read -r registry_token; printf \'%s\' \"$registry_token\" | docker login ghcr.io --username ' + shlex.quote(actor) + ' --password-stdin >/dev/null; unset registry_token; '
-              'timeout --signal=TERM --kill-after=90s 15m flock -w 30 /var/lock/tw-quant-deploy.lock python3 /srv/trading-platform-p9/bundle/cutover.py ' + command('cutover', gate))
+              'timeout --signal=TERM --kill-after=90s 15m flock -w 30 /var/lock/tw-quant-deploy.lock python3 /srv/trading-platform-production/bundle/cutover.py ' + command('cutover', gate))
     # Mark attempts before sending SSH so interrupted clients still invoke independent recovery.
     (args.evidence / 'cutover-attempted').write_text('yes\n')
     process = subprocess.Popen(ssh + ['sudo bash -c ' + shlex.quote(script)], stdin=subprocess.PIPE,

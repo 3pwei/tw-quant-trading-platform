@@ -44,7 +44,7 @@ Use GitHub environment `lightsail-production`, with Production-only credentials:
   `market.env`, `execution.env`, `gateway.env`, `factory`, `replay.csv`.
 - `LEGACY_ROLLBACK_INVENTORY_SHA256`: approved SHA256 of the sealed rollback inventory.
 
-Host files are independently provisioned under `/srv/trading-platform-p9`.
+Host files are independently provisioned under `/srv/trading-platform-production`.
 The root and its `config`, `provider`, `rollback` directories must be root-owned
 mode 700. The separate host transaction has a 15-minute deadline; TERM invokes
 compensation, with an additional 90 seconds before forced termination.
@@ -207,7 +207,7 @@ hard failure; manual incident recovery is required if SSH/host/storage itself is
 unavailable. Do not remove the retained Legacy containers, images, volumes or
 backup archives after success; that belongs to a separately authorized P10.
 
-Acceptance is stored separately in `/srv/trading-platform-p9/acceptance.json`;
+Acceptance is stored separately in `/srv/trading-platform-production/acceptance.json`;
 Legacy git and deployment record remain intact as recovery provenance. The P9
 record identifies the runtime source, control/master gates, manifest, backup,
 pre/post restart observations and external runner gate. Uploaded evidence contains
