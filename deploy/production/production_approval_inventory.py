@@ -17,7 +17,13 @@ ROOT_PARTS = ('srv', 'trading-platform-p9')
 ROOT_ACCESS_REASONS = (
     'production-root-slash-access',
     'production-root-srv-access',
-    'production-root-platform-access',
+)
+PLATFORM_PATH_REASONS = (
+    'production-root-platform-missing',
+    'production-root-platform-symlink',
+    'production-root-platform-not-directory',
+    'production-root-platform-permission',
+    'production-root-platform-open-failed',
 )
 LEGACY_REVISION = '683bb4ebc4c4980480a4786136701ff458338a14'
 FILES = (
@@ -34,7 +40,8 @@ SEALED_FILES = frozenset((
 ))
 REMOTE_REASONS = frozenset((
     'root-required', 'noatime-unavailable', 'invalid-root',
-    *ROOT_ACCESS_REASONS, 'root-not-directory', 'production-root-owner-mode',
+    *ROOT_ACCESS_REASONS, *PLATFORM_PATH_REASONS,
+    'root-not-directory', 'production-root-owner-mode',
     'config-path-access', 'config-owner-mode',
     'provider-path-access', 'provider-owner-mode',
     'rollback-path-access', 'rollback-owner-mode',
@@ -105,11 +112,31 @@ def capture(_root_parts=ROOT_PARTS):
             stack.callback(os.close, fd)
             return fd
 
+        def opened_platform_root(path, flags, parent):
+            try:
+                metadata = os.stat(path, dir_fd=parent, follow_symlinks=False)
+            except FileNotFoundError:
+                raise CaptureBlocked(PLATFORM_PATH_REASONS[0]) from None
+            except OSError:
+                raise CaptureBlocked(PLATFORM_PATH_REASONS[4]) from None
+            require(not stat.S_ISLNK(metadata.st_mode), PLATFORM_PATH_REASONS[1])
+            require(stat.S_ISDIR(metadata.st_mode), PLATFORM_PATH_REASONS[2])
+            try:
+                fd = os.open(path, flags, dir_fd=parent)
+            except PermissionError:
+                raise CaptureBlocked(PLATFORM_PATH_REASONS[3]) from None
+            except OSError:
+                raise CaptureBlocked(PLATFORM_PATH_REASONS[4]) from None
+            stack.callback(os.close, fd)
+            return fd
+
         current = opened_fd('/', dir_flags, ROOT_ACCESS_REASONS[0])
         for index, component in enumerate(_root_parts):
             parent = current
-            reason = ROOT_ACCESS_REASONS[2] if index == len(_root_parts) - 1 else ROOT_ACCESS_REASONS[1]
-            current = opened_fd(component, dir_flags, reason, parent)
+            if index == len(_root_parts) - 1:
+                current = opened_platform_root(component, dir_flags, parent)
+            else:
+                current = opened_fd(component, dir_flags, ROOT_ACCESS_REASONS[1], parent)
             s = os.fstat(current)
             require(stat.S_ISDIR(s.st_mode), 'root-not-directory')
             directory_links.append((parent, component, current, identity(s)))
