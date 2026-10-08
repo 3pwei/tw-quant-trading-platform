@@ -542,7 +542,7 @@
     },
     {
       "path": "deploy/production/provision_prerequisites.py",
-      "sha256": "ee0d02c33e9c2b4d34719bf27f0b410deefaa1eb71158050f5b29893a374bae7"
+      "sha256": "a9fc8ab906afab5c0e1775b186325ed37e5266ef2bbcd0b01853b5ab1fabd49d"
     },
     {
       "path": "deploy/production/readonly_host.py",
@@ -714,7 +714,7 @@
     },
     {
       "path": "docs/p9-production-cutover.md",
-      "sha256": "c1574cc76f0e730059c6e948fdfff7a6523a400d699035a3916e2a0eecaa5450"
+      "sha256": "49ab7fe9a2e280a4530f3274c20bf9570d30438a1e2ce1297b983ae8770fe596"
     },
     {
       "path": "docs/production-readonly-preflight.md",
@@ -1002,7 +1002,7 @@
     },
     {
       "path": "tests/test_p9_prerequisite_provision.py",
-      "sha256": "634bb7e671cf157bd443b19cd3f40527ca99dd5c0529bf8a46391fc41fa422a1"
+      "sha256": "1bee34af862dad89c775181a2dbc58fea3c16ca07cbfe9cb484ba692246494b1"
     },
     {
       "path": "tests/test_p9_production_cutover.py",
