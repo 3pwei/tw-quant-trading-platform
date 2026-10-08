@@ -1,0 +1,56 @@
+name: Production Rollback Snapshot Refresh
+
+on:
+  workflow_dispatch:
+    inputs:
+      previous_sha256:
+        description: "Current approved rollback inventory SHA256"
+        required: true
+        type: string
+      confirmation:
+        description: "REFRESH production rollback <exact-master-sha> from <approved-rollback-sha256>"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: lightsail-production
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: lightsail-production
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      PRODUCTION_HOST: ${{ vars.PRODUCTION_HOST }}
+      PRODUCTION_USER: ${{ vars.PRODUCTION_USER }}
+      STAGING_HOST_IDENTITY: ${{ vars.STAGING_HOST_IDENTITY }}
+      PRODUCTION_SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+      PRODUCTION_SSH_HOST_KEY: ${{ secrets.PRODUCTION_SSH_HOST_KEY }}
+      REFRESH_CONFIRMATION: ${{ inputs.confirmation }}
+      REFRESH_PREVIOUS_SHA256: ${{ inputs.previous_sha256 }}
+      PRODUCTION_APPROVED_CONFIG_SHA256_JSON: ${{ vars.PRODUCTION_APPROVED_CONFIG_SHA256_JSON }}
+      LEGACY_ROLLBACK_INVENTORY_SHA256: ${{ vars.LEGACY_ROLLBACK_INVENTORY_SHA256 }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify reviewed public tree before Production access
+        run: python tools/verify_public_candidate.py
+      - name: Refresh sealed rollback with preserved history
+        run: python -B deploy/production/refresh_rollback.py --runner
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: production-rollback-refresh
+          path: ${{ runner.temp }}/production-rollback-refresh.json
+          if-no-files-found: error
+          retention-days: 90
