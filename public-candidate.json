@@ -41,6 +41,10 @@
       "sha256": "392d1202cc26e9e7c9e47189d33914a9318c7d8063d21b4b14daefec02ef650d"
     },
     {
+      "path": ".github/workflows/production-rollback-refresh.yml",
+      "sha256": "90961c23694fb3dfbb8353be7ebe01f7d2c6a77a4c5b8ca926adf3537a104fad"
+    },
+    {
       "path": ".github/workflows/security-exception-expiry.yml",
       "sha256": "4a7f0ede25b910d75506be455579ef4c85f82f8d9249eb9674edf7970d20e0e6"
     },
@@ -553,6 +557,14 @@
       "sha256": "47a20ec9d63421964d1d764a4f7455136ccc151b130a82612cec2f36c22a368d"
     },
     {
+      "path": "deploy/production/refresh_rollback.py",
+      "sha256": "782de4396ecc2bfd263f710df2bdb64fa2de669772f744129baa2d845c36e34f"
+    },
+    {
+      "path": "deploy/production/refresh_rollback_host.py",
+      "sha256": "257e093eb5c7e7f367da5e1d3578a0acd62984a2ea4bd75e87eefd9cc048c38f"
+    },
+    {
       "path": "deploy/production/transport.py",
       "sha256": "bd68c7b9524174276b3177102ee662572d0e3f6d970da38200e6a4073e16079d"
     },
@@ -702,11 +714,15 @@
     },
     {
       "path": "docs/p9-production-cutover.md",
-      "sha256": "5cf5db0fcf10fc51481e4cd367ebff16ab74b189c66f175aeac18b63e3a25d1f"
+      "sha256": "c1574cc76f0e730059c6e948fdfff7a6523a400d699035a3916e2a0eecaa5450"
     },
     {
       "path": "docs/production-readonly-preflight.md",
       "sha256": "1a58874e183986232af172c43b40cd31248dac7e48764deba7d2bcf528b35e07"
+    },
+    {
+      "path": "docs/production-rollback-refresh.md",
+      "sha256": "ccaae9e8cfbbc92baefd5764067fb6ae2af736d082e8e9f30f55ebd8d6f51412"
     },
     {
       "path": "docs/provenance.md",
@@ -995,6 +1011,10 @@
     {
       "path": "tests/test_p9_readonly_preflight.py",
       "sha256": "6a17c413f7a7e52ff0ea8973d0c2deb462529bca5cb102f44d5a56a9891aca0f"
+    },
+    {
+      "path": "tests/test_p9_rollback_refresh.py",
+      "sha256": "d83eace5ddc492c9c242f4c556388cd0fa0d9b350f29930753d46bc5c29d1228"
     },
     {
       "path": "tests/test_p9_shioaji_capability.py",

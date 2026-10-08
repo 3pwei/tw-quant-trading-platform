@@ -61,6 +61,12 @@ provisioning run, the independent read-only approval inventory must capture and
 review the five config hashes and rollback inventory hash before approval variables
 may be configured.
 
+## Refreshing an existing rollback snapshot
+
+See [Versioned rollback refresh](production-rollback-refresh.md) for the separate,
+manually authorized snapshot writer. It preserves old evidence, requires renewed
+rollback digest approval, and retains all stale-backup and quiescence gates.
+
 ## Separate Production prerequisites
 
 These prerequisites must be prepared and separately reviewed before a future
