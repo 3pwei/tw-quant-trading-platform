@@ -87,7 +87,7 @@ jobs:
       - name: Verify public source before runtime outputs
         run: python tools/verify_public_candidate.py
       - name: Set up isolated Docker image store
-        uses: docker/setup-docker-action@e43656e248c0bd0647d3f5c195d116aacf6fcaf4 # v4
+        uses: docker/setup-docker-action@2bf61fb9464cc67f0cbdeabed6aa0380accd1c70 # v5.5.0
         with:
           version: v28.5.1
           daemon-config: |
