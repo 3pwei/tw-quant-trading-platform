@@ -131,6 +131,12 @@ class FirstPrepareTests(unittest.TestCase):
                 for name in poc_clean.REQUIRED_HASHES
             }
             payload = {'control_sha': 'a' * 40, 'pins': PINS, 'sources': sources}
+            original_stat = Path.stat
+
+            def root_owned_stat(path, *args, **kwargs):
+                result = original_stat(path, *args, **kwargs)
+                return types.SimpleNamespace(st_mode=result.st_mode, st_uid=0)
+
             def protected(path, expected=None, uid=0):
                 self.assertTrue(path.is_file())
                 if expected:
@@ -140,6 +146,7 @@ class FirstPrepareTests(unittest.TestCase):
                  patch.object(poc_clean_prepare_host, 'PARENT', target.parent), \
                  patch.object(poc_clean_prepare_host, 'LOCK', lock), \
                  patch.object(poc_clean_prepare_host.os, 'fchown'), \
+                 patch.object(poc_clean_prepare_host.Path, 'stat', new=root_owned_stat), \
                  patch.object(poc_clean.common, 'protected', side_effect=protected):
                 result = poc_clean_prepare_host.prepare(payload)
                 self.assertEqual(result['config_sha256'], hashes)
@@ -192,6 +199,11 @@ class FirstPrepareTests(unittest.TestCase):
                 for name in poc_clean.REQUIRED_HASHES
             }
             payload = {'control_sha': 'a' * 40, 'pins': PINS, 'sources': sources}
+            original_stat = Path.stat
+
+            def root_owned_stat(path, *args, **kwargs):
+                result = original_stat(path, *args, **kwargs)
+                return types.SimpleNamespace(st_mode=result.st_mode, st_uid=0)
 
             def protected(path, expected=None, uid=0):
                 if expected:
@@ -201,6 +213,7 @@ class FirstPrepareTests(unittest.TestCase):
                  patch.object(poc_clean_prepare_host, 'PARENT', target.parent), \
                  patch.object(poc_clean_prepare_host, 'LOCK', lock), \
                  patch.object(poc_clean_prepare_host.os, 'fchown'), \
+                 patch.object(poc_clean_prepare_host.Path, 'stat', new=root_owned_stat), \
                  patch.object(poc_clean.common, 'protected', side_effect=protected), \
                  self.assertRaisesRegex(poc_clean_prepare_host.PrepareBlocked,
                                         'clean-required-setting-missing'):
