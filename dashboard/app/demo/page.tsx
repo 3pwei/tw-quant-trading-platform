@@ -7,7 +7,6 @@ import { useCurrentUser } from "../components/current-user-context";
 import { formatTaipeiClock } from "../lib/formatters";
 import { formatDecimal, formatMoney, formatSignedMoney } from "../lib/formatters";
 import { exitReasonLabel } from "../components/exit-reason";
-import { StrategyParameterSummary } from "../backtest/strategy-diagnostics";
 import DemoEquityChart from "./demo-equity-chart";
 import { demoErrorMessage, loadDemoCases, runDemoCase, type DemoCase, type DemoResult } from "./demo-client";
 
@@ -52,7 +51,6 @@ export default function DemoPage() {
   }
 
   const trade = result?.trades[selected];
-  const diagnostics = result?.visualization.diagnostics ?? [];
   const summary = result?.summary;
   const worst = result?.trades.length ? Math.min(...result.trades.map(item => item.net_pnl)) : null;
   const best = result?.trades.length ? Math.max(...result.trades.map(item => item.net_pnl)) : null;
@@ -65,7 +63,7 @@ export default function DemoPage() {
     </div>
     <section className="panel demo-intro">
       <div><span className="kicker">SYNTHETIC BACKTEST</span><h2>選擇固定案例，觀察策略訊號</h2>
-        <p>選擇固定的合成策略案例，查看日期與 K 棒、參數、模擬績效、風險及逐筆交易。案例與設定由伺服器固定提供。</p>
+        <p>選擇固定的合成策略案例，查看日期與 K 棒、模擬績效、風險及逐筆交易。策略參數、組合配方與內部診斷不會由公開 Demo 回傳。</p>
         <div className="tags"><span className="synthetic">合成資料</span><span className="synthetic">模擬交易</span><span className="synthetic">不代表實際績效</span></div>
       </div>
       <div className="demo-actions"><label htmlFor="demo-case">展示案例</label>
@@ -92,30 +90,23 @@ export default function DemoPage() {
         ] as const).map(([label, value, note]) => <article className="metric" key={label}><span>{label}</span><strong>{value}</strong><small>{note}</small></article>)}
       </section>}
       <section className="panel demo-results"><div className="panel-head"><div><span>STRATEGY EXPLORER</span><h2>{result.visualization.strategy.name} · 價格與訊號</h2></div></div>
-        <p>合成資料 {result.date_range}。圖表時間軸顯示日期與時間；模擬績效不代表真實或未來績效。</p>
+          <p>合成資料 {result.date_range}。圖表時間軸顯示日期與時間；模擬績效不代表真實或未來績效。策略設定僅供管理員在受保護介面檢視。</p>
         {trade ? <>
           <div className="demo-trade-list" aria-label="模擬交易選擇">{result.trades.map((item, index) => <button type="button" key={`${item.entry_time}-${index}`} className={index === selected ? "active" : ""} aria-pressed={index === selected} onClick={() => setSelected(index)}>
             #{index + 1} · {item.entry_time.slice(0, 10)} · {item.direction === "long" ? "做多" : "做空"} · {formatSignedMoney(item.net_pnl)}
           </button>)}</div>
           <InteractiveTradeChart key={result.case_id} bars={result.bars} trades={result.trades} selectedTrade={trade} visualization={result.visualization} overlays={result.overlays} showDate />
           <p className="demo-trade-text">第 {selected + 1} 筆：{trade.entry_time.slice(0, 10)} {formatTaipeiClock(trade.entry_time)} 進場 {formatDecimal(trade.entry_price)}；{trade.exit_time.slice(0, 10)} {formatTaipeiClock(trade.exit_time)} 出場 {formatDecimal(trade.exit_price)}。淨損益 {formatSignedMoney(trade.net_pnl)}。</p>
-        </> : <><StrategyParameterSummary visualizations={[result.visualization]} /><p>這個案例有 K 棒，但沒有完整的模擬進出場交易。</p></>}
+        </> : <p>這個案例有 K 棒，但沒有完整的模擬進出場交易。</p>}
       </section>
       <div className="analysis demo-analysis"><section className="panel equity-panel"><div className="panel-head"><div><span>EQUITY CURVE</span><h2>累積權益與虧損節奏</h2></div></div><div className="equity-chart"><DemoEquityChart points={result.equity} /></div><p>初始示範資金 NT$ {formatMoney(result.config.initial_capital)}；每個節點對應一筆交易的結算。僅供理解回測介面。</p></section>
         <aside className="panel risk-panel"><span className="kicker">RISK CHECK</span><h2>承擔風險</h2><dl>
           <div><dt>最大回撤</dt><dd className="loss">{summary ? `${formatDecimal(summary.max_drawdown_pct)}%` : "N/A"}</dd></div>
           <div><dt>單筆最大虧損</dt><dd className="loss">{worst == null ? "N/A" : formatSignedMoney(worst)}</dd></div>
           <div><dt>單筆最大獲利</dt><dd className="profit">{best == null ? "N/A" : formatSignedMoney(best)}</dd></div>
-          <div><dt>策略停損／停利</dt><dd>{formatDecimal(result.config.stop_loss_pct * 100)}%／{formatDecimal(result.config.take_profit_pct * 100)}%</dd></div>
-          <div><dt>每筆口數</dt><dd>{result.config.quantity} 口</dd></div>
+          <div><dt>策略設定</dt><dd>受保護</dd></div>
         </dl><div className="alert"><b>合成成本與樣本限制</b><p>每邊手續費 NT$ {formatMoney(result.config.commission_per_side)}、滑價 {result.config.slippage_points} 點；僅三個合成交易日，風險與 Sharpe 不可外推。</p></div></aside></div>
       <section className="panel ledger demo-ledger"><div className="panel-head"><div><span>TRADE LEDGER</span><h2>逐筆交易明細</h2></div><small>共 {result.trades.length} 筆</small></div><div className="table-scroll"><table><thead><tr><th>#</th><th>交易日</th><th>方向</th><th>進場</th><th>出場</th><th>停損／停利</th><th>成本</th><th>淨損益</th><th>出場原因</th></tr></thead><tbody>{result.trades.map((item, index) => <tr key={`${item.entry_time}-${index}`} className={selected === index ? "selected" : ""} onClick={() => setSelected(index)}><td>{index + 1}</td><td>{item.trading_date ?? item.entry_time.slice(0, 10)}</td><td>{item.direction === "long" ? "多" : "空"}</td><td>{formatTaipeiClock(item.entry_time)}<small>{formatDecimal(item.entry_price)}</small></td><td>{formatTaipeiClock(item.exit_time)}<small>{formatDecimal(item.exit_price)}</small></td><td>{item.stop_loss_price == null ? "—" : formatDecimal(item.stop_loss_price)}<small>{item.take_profit_price == null ? "—" : formatDecimal(item.take_profit_price)}</small></td><td>NT$ {formatMoney(item.total_cost)}</td><td className={item.net_pnl >= 0 ? "profit" : "loss"}>{formatSignedMoney(item.net_pnl)}</td><td>{exitReasonLabel(item.exit_reason ?? "")}</td></tr>)}</tbody></table></div></section>
-      <section className="panel demo-diagnostics"><div className="panel-head"><div><span>DIAGNOSTICS</span><h2>策略診斷資料</h2></div></div>
-        {diagnostics.length ? <div className="demo-diagnostic-grid">{diagnostics.map(series => <article key={series.key}>
-          <strong>{series.label}</strong><p>{series.points.length} 個觀察點 · {series.type === "threshold" ? "參考門檻" : "策略訊號序列"}</p>
-          {series.points.length > 0 && <small>首筆 {series.points[0].time.slice(0, 10)} {formatTaipeiClock(series.points[0].time)}：{series.points[0].value} · 末筆 {series.points.at(-1)!.time.slice(0, 10)} {formatTaipeiClock(series.points.at(-1)!.time)}：{series.points.at(-1)!.value}</small>}
-        </article>)}</div> : <p>此案例沒有可顯示的診斷序列。</p>}
-      </section>
     </>}
   </main>;
 }

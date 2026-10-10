@@ -9,6 +9,7 @@ from time import monotonic
 from typing import Literal, Mapping, Protocol, Sequence
 
 from fastapi import APIRouter, HTTPException, Request, Response
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from tw_quant_core.strategy import (
     CompositeAnalysisRequest,
@@ -22,6 +23,59 @@ MAX_CASES = 100
 MAX_REQUESTS_PER_MINUTE = 10
 MAX_CONCURRENT_RUNS = 2
 TIMEOUT_SECONDS = 5
+PUBLIC_CATALOG_KEYS = frozenset({
+    "case_id", "id", "name", "label", "summary", "description",
+    "synthetic_data", "simulated_trades", "performance_claim",
+})
+PRIVATE_KEY_PARTS = (
+    "parameter", "member", "composition", "recipe", "diagnostic",
+    "strategy_snapshot", "plugin_identity", "provider_factory", "debug", "trace",
+)
+PUBLIC_DEMO_CONFIG_KEYS = frozenset({
+    "initial_capital", "commission_per_side", "slippage_points", "contract_multiplier",
+})
+
+
+def _private_key(key: object) -> bool:
+    normalized = str(key).strip().casefold()
+    return any(part in normalized for part in PRIVATE_KEY_PARTS)
+
+
+def _redact_demo_value(value: object) -> object:
+    """Remove private strategy material at the anonymous Demo boundary.
+
+    Admin strategy/settings endpoints use their existing authenticated response
+    models and do not pass through this function.
+    """
+    encoded = jsonable_encoder(value)
+    if isinstance(encoded, dict):
+        result = {}
+        for key, item in encoded.items():
+            if str(key).casefold() == "config" and isinstance(item, dict):
+                result[key] = {
+                    name: _redact_demo_value(value)
+                    for name, value in item.items()
+                    if name in PUBLIC_DEMO_CONFIG_KEYS
+                }
+                continue
+            if _private_key(key):
+                # Keep the stable public UI shape without exposing values.
+                if str(key).casefold() in {"parameters", "diagnostics"}:
+                    result[key] = [] if isinstance(item, list) else {}
+                continue
+            result[key] = _redact_demo_value(item)
+        return result
+    if isinstance(encoded, list):
+        return [_redact_demo_value(item) for item in encoded]
+    return encoded
+
+
+def _public_catalog_item(item: Mapping[str, object]) -> dict[str, object]:
+    return {
+        key: _redact_demo_value(value)
+        for key, value in item.items()
+        if key in PUBLIC_CATALOG_KEYS
+    }
 
 
 @dataclass(frozen=True)
@@ -90,7 +144,7 @@ class DemoService:
             if not case_id:
                 raise StrategyUnavailable("demo case identity is invalid")
             identifiers.append(case_id)
-            payload.append(dict(item))
+            payload.append(_public_catalog_item(item))
         if len(identifiers) != len(set(identifiers)):
             raise StrategyUnavailable("duplicate demo case identity")
         return {"cases": payload}
@@ -128,7 +182,7 @@ class DemoService:
             analysis = self.strategies.analyze_composite(execution.request)
         else:
             raise StrategyUnavailable("demo operation/schema is unavailable")
-        return {"case_id": case_id, "analysis": analysis}
+        return _redact_demo_value({"case_id": case_id, "analysis": analysis})
 
 
 def build_demo_router(

@@ -5,7 +5,7 @@ export type DemoCase = { id: string; label: string; synthetic_data: boolean; sim
 export type DemoResult = {
   case_id: string; synthetic_data: true; simulated_trades: true; performance_claim: false;
   date_range: string;
-  config: { initial_capital: number; quantity: number; stop_loss_pct: number; take_profit_pct: number; commission_per_side: number; slippage_points: number; contract_multiplier: number };
+  config: { initial_capital: number; commission_per_side: number; slippage_points: number; contract_multiplier: number };
   summary: { net_profit: number; return_pct: number; ending_equity: number; max_drawdown: number; max_drawdown_pct: number; win_rate_pct: number; profit_factor: number | null; daily_sharpe: number | null; total_cost: number };
   equity: { timestamp: string; equity: number; net_pnl: number; peak: number; drawdown: number; drawdown_pct: number }[];
   bars: BacktestBar[]; trades: (BacktestTrade & { total_cost: number; holding_minutes: number; mfe: number; mae: number })[];

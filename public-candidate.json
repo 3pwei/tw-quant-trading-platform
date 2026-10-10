@@ -14,11 +14,15 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "a35ca2cb468067c75c16f16824b762bba490f7646ee47a90470b6b34921f9f5e"
+      "sha256": "7b1f5b322e50cb0a6e006d5de1700fc62233e03ae6a846764b753fa4cf8f1af1"
     },
     {
       "path": ".github/workflows/deploy-lightsail.yml",
       "sha256": "0717eaff5e4536cf7312f5f86dbcf8167a64e190cebc3c84694d0eb45704c40b"
+    },
+    {
+      "path": ".github/workflows/deploy-production-poc-clean.yml",
+      "sha256": "fb9d61aa5071f18bbf3583f467d222e555dca512e1570f664e9a2839be77330a"
     },
     {
       "path": ".github/workflows/deploy-production.yml",
@@ -154,7 +158,7 @@
     },
     {
       "path": "dashboard/app/demo/demo-client.ts",
-      "sha256": "ecf2227897e6cb1f255b760d533edf6834ca1f20aca92008d7ee430033a93c9e"
+      "sha256": "1fb5526ff0f93cae1bff2857d7ee65a74d5c4e292be46e52d4855c2ae50ae36c"
     },
     {
       "path": "dashboard/app/demo/demo-equity-chart.tsx",
@@ -162,7 +166,7 @@
     },
     {
       "path": "dashboard/app/demo/page.tsx",
-      "sha256": "82cec80d0b840940af07e2b9554b368aa280bd65afe861c5e25dc328fc7b1e4c"
+      "sha256": "759278d9cc1de07dc849f06ca111f2b98a11ce6fff0c5efa684dc0a8999431a7"
     },
     {
       "path": "dashboard/app/globals.css",
@@ -374,7 +378,7 @@
     },
     {
       "path": "dashboard/tests/demo-client.test.ts",
-      "sha256": "3a70fb8fb8df75175229a1e908a4b41327394b28a6274fadda24a198d33d741d"
+      "sha256": "5ee4e2aea9678c3ed384d7daf47a317d8b5fdf094c55c214b0ff11f5804f5b9d"
     },
     {
       "path": "dashboard/tests/history-pagination.test.ts",
@@ -521,6 +525,10 @@
       "sha256": "43658b8058d4f12581ffc91b208f10cf857aa56cb69508413049e373b9f0e0bd"
     },
     {
+      "path": "deploy/production/docker-compose.poc-clean.yml",
+      "sha256": "9aa80dde319ef52abe20c782c15243e749d6b2605e20df426c114666d5462f35"
+    },
+    {
       "path": "deploy/production/docker-compose.yml",
       "sha256": "7893710b01be2175587f27dd7eee17e590dabccca7b1cf1c09be1faaef6d60eb"
     },
@@ -531,6 +539,14 @@
     {
       "path": "deploy/production/evidence.py",
       "sha256": "bbfa4bec4bd10691de5de4fb8b412556b7956b8f7bf6c06b0dfc4af5d7bce289"
+    },
+    {
+      "path": "deploy/production/poc_clean.py",
+      "sha256": "e142c0f04fccf55764ffd05749de6e827a4fdfa8dabc88a4d7bd047478590778"
+    },
+    {
+      "path": "deploy/production/poc_clean_transport.py",
+      "sha256": "72b0509fdb4e0ffb3f3ede46900d482b186702b11750d7230f3a57ff01641972"
     },
     {
       "path": "deploy/production/production_approval_inventory.py",
@@ -713,8 +729,12 @@
       "sha256": "77563ca6763dccd768c482f582ae30a2013cb96061fea2ed1e2fdfba24a0b4cb"
     },
     {
+      "path": "docs/p9-poc-clean-deployment.md",
+      "sha256": "9874d38e58a1327dad54f73fee6b76ccb538b59a6f63c35cff97522be277b0f2"
+    },
+    {
       "path": "docs/p9-production-cutover.md",
-      "sha256": "49ab7fe9a2e280a4530f3274c20bf9570d30438a1e2ce1297b983ae8770fe596"
+      "sha256": "7a3099dbf5861702cc39404deca8b960edcee888bba9a86e6b26adeccd05aa01"
     },
     {
       "path": "docs/production-readonly-preflight.md",
@@ -999,6 +1019,10 @@
     {
       "path": "tests/test_p9_approval_inventory.py",
       "sha256": "7f001bb58acc69867ced2dce71f216574beed880fd873afed848e7b483f74554"
+    },
+    {
+      "path": "tests/test_p9_poc_clean.py",
+      "sha256": "87372369f86d5fb703a25b46d0edd017e32d489fcaec6f5ec1d8334adfbe3227"
     },
     {
       "path": "tests/test_p9_prerequisite_provision.py",
@@ -1518,7 +1542,7 @@
     },
     {
       "path": "tw_quant/live/demo_backtest.py",
-      "sha256": "34eb31c7d7a5f650c70e0310749dfd165278ee4209b867c7dffefe7a0668a1db"
+      "sha256": "43e59474baf153001ec3a587d35b645010eb109777480af5d74306b5a25ed3e3"
     },
     {
       "path": "tw_quant/live/feed.py",
