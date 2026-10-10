@@ -44,11 +44,8 @@ def command(mode, gate=None):
     require(set(hashes) == HASH_NAMES and
             all(re.fullmatch('[0-9a-f]{64}', str(value)) for value in hashes.values()),
             'clean-config-approval-missing')
-    rollback = os.environ['LEGACY_ROLLBACK_INVENTORY_SHA256']
-    require(re.fullmatch('[0-9a-f]{64}', rollback), 'rollback-approval-missing')
     arguments = [
         mode, '--pins', b64((HERE / 'approved-p8.json').read_bytes()),
-        '--rollback-sha256', rollback,
         '--config-hashes', b64(json.dumps(hashes).encode()),
         '--durable-code', b64((HERE / 'durable_state.py').read_bytes()),
     ]
@@ -104,7 +101,7 @@ def in_memory():
 
 def capture(ssh, evidence):
     evidence.joinpath('host').mkdir(mode=0o700, exist_ok=True)
-    for name in ('acceptance-clean.json', 'failure-clean.json',
+    for name in ('acceptance-clean.json', 'failure-clean.json', 'backup-clean.json',
                  'rollback-clean-result.json', 'transaction-clean.json'):
         result = subprocess.run(
             ssh + ['sudo cat /srv/trading-platform-production/' + name],

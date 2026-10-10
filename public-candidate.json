@@ -22,7 +22,7 @@
     },
     {
       "path": ".github/workflows/deploy-production-poc-clean.yml",
-      "sha256": "fb9d61aa5071f18bbf3583f467d222e555dca512e1570f664e9a2839be77330a"
+      "sha256": "0802db1f68f4216db9cdb7c604d56540992a7b06d491ef8b1ab36b74c874ef8f"
     },
     {
       "path": ".github/workflows/deploy-production.yml",
@@ -31,6 +31,10 @@
     {
       "path": ".github/workflows/deploy-staging.yml",
       "sha256": "a1755ec19bf5f9946c605b8b9e49361710de5850269982645454f3192bddd5ea"
+    },
+    {
+      "path": ".github/workflows/prepare-production-poc-clean.yml",
+      "sha256": "e8429456494ce7153edd79f3d91bc82682f22f9c1fb046e5a3e60d3d76356275"
     },
     {
       "path": ".github/workflows/production-approval-inventory.yml",
@@ -542,11 +546,19 @@
     },
     {
       "path": "deploy/production/poc_clean.py",
-      "sha256": "e142c0f04fccf55764ffd05749de6e827a4fdfa8dabc88a4d7bd047478590778"
+      "sha256": "05505ef90bb327087b6b8881091c17703564ba09c8e49b6ce72d190db90214ea"
+    },
+    {
+      "path": "deploy/production/poc_clean_prepare.py",
+      "sha256": "1ee53b2c44206554d3df79cb8173f4cf6ceb1dbc4a60a11ee71b15ef5ce3d8a1"
+    },
+    {
+      "path": "deploy/production/poc_clean_prepare_host.py",
+      "sha256": "7bf6cd8ce270e31ca496140e4b9b5e245180f7d7c1c2e5b47bc099bdce4759ce"
     },
     {
       "path": "deploy/production/poc_clean_transport.py",
-      "sha256": "72b0509fdb4e0ffb3f3ede46900d482b186702b11750d7230f3a57ff01641972"
+      "sha256": "e2f1793e77229c2d51f02cc0a4fcda03713e1b3e3dafced560f37710b606ff01"
     },
     {
       "path": "deploy/production/production_approval_inventory.py",
@@ -730,7 +742,7 @@
     },
     {
       "path": "docs/p9-poc-clean-deployment.md",
-      "sha256": "9874d38e58a1327dad54f73fee6b76ccb538b59a6f63c35cff97522be277b0f2"
+      "sha256": "90bb09b9ebb1b5d514ece791f23ceee5a92d3bde3d2e1bfe428b900b217cfe38"
     },
     {
       "path": "docs/p9-production-cutover.md",
@@ -1026,7 +1038,7 @@
     },
     {
       "path": "tests/test_p9_poc_clean.py",
-      "sha256": "2e09d29f7a8531437b05c304cf8cc5161d7f17190d45a38e157773c78b52b452"
+      "sha256": "f6dd9665d9a16296b30dedf98672e67da126714d8f2301c3aad2731f4ee60753"
     },
     {
       "path": "tests/test_p9_prerequisite_provision.py",

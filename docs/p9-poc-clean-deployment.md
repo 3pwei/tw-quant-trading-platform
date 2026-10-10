@@ -52,18 +52,42 @@ Runtime and Production control-plane bytes change. Before dispatch:
 Until the new binding is committed, `P9 PoC Clean Deploy` stops before Production
 host access. It accepts the P8 source only across the two-file binding-only diff.
 
-## Production-only prerequisites
+## First-time Production configuration preparation
 
-The existing `/srv/trading-platform-production` root and its `config`, `provider`,
-and `rollback` directories remain root-owned mode 700. The prior rollback inventory
-still binds the exact running Legacy containers before any stop.
+The clean path does not run or consume `Production Prerequisite Provision`. On the
+first run, `/srv/trading-platform-production` must not exist. Dispatch the separate
+manual `P9 PoC Clean Prepare` workflow only after the new P8 binding and its CI and
+Security gates are complete. Its confirmation is:
 
-The `lightsail-production` Environment must provide:
+```text
+PREPARE P9 POC CLEAN production <current-master-sha>
+```
+
+The preparation transaction takes exactly four Production-only base64 secrets,
+validates them against the bound runtime, and atomically creates only root-owned
+mode-700 `config/` and `provider/` under the new root:
+
+- `PRODUCTION_POC_MARKET_ENV_B64`;
+- `PRODUCTION_POC_EXECUTION_ENV_B64`;
+- `PRODUCTION_POC_GATEWAY_ENV_B64`;
+- `PRODUCTION_POC_PROVIDER_FACTORY_B64`.
+
+It refuses an existing root or abandoned `.trading-platform-production.clean-prepare-*`
+state. It does not inspect, stop, or alter Legacy; create a DB; accept `replay.csv`;
+or create a `rollback/` directory. Its only artifact is a bounded status document
+containing the four SHA-256 values, never configuration bytes or the admin email.
+After independent review, set those exact values as
+`PRODUCTION_POC_APPROVED_CONFIG_SHA256_JSON`. Do not guess missing values and do not
+reuse Staging sources.
+
+Both workflows use these `lightsail-production` Environment values:
 
 - `PRODUCTION_HOST`, `PRODUCTION_USER`, distinct `STAGING_HOST_IDENTITY`;
-- `PRODUCTION_SSH_PRIVATE_KEY`, `PRODUCTION_SSH_HOST_KEY`;
+- `PRODUCTION_SSH_PRIVATE_KEY`, `PRODUCTION_SSH_HOST_KEY`.
+
+The deployment workflow additionally requires:
+
 - `PUBLIC_DASHBOARD_URL`;
-- `LEGACY_ROLLBACK_INVENTORY_SHA256`;
 - `PRODUCTION_POC_APPROVED_CONFIG_SHA256_JSON` with exactly `market.env`,
   `execution.env`, `gateway.env`, and `factory` SHA-256 values.
 
@@ -95,14 +119,18 @@ not contain Shioaji credential keys.
 ## Transaction order
 
 1. Verify exact master/P8 identity, CI/Security, artifacts, four config digests,
-   host separation, lock, Legacy revision/containers/images, Cloudflare settings,
-   provider digest, Shioaji capability, and execution lock.
+   host separation, lock, current Legacy revision and deployment-record digest,
+   exact container/image identities, Cloudflare settings, provider digest,
+   Shioaji capability, and execution lock. No old rollback inventory is read.
 2. Refuse prior clean transaction/acceptance/failure/backup/data/health/gateway
    state or partial prepare directories. Nothing is overwritten automatically.
 3. Write `transaction-clean.json`, then stop the exact Legacy containers.
 4. Atomically create `legacy-clean-backup/`: SQLite-backup and integrity-check the
-   independently resolved market and execution DBs, then copy verified config and
-   image archives. Backup bytes and inventory are never uploaded.
+   independently resolved market and execution DBs, directly archive the four
+   current Legacy config files, and run `docker image save` for each exact retained
+   image. Nothing is copied from an old `rollback/`. Verify the new inventory and
+   write its digest to root-only `backup-clean.json`; backup bytes and inventory are
+   never uploaded.
 5. Verify exact images and offline Shioaji capability. Create new empty runtime
    directories. Copy only Caddy state for TLS continuity; copy no Legacy DB.
 6. Run a no-network one-shot initialization in the exact runtime image. Refuse an
@@ -115,13 +143,18 @@ not contain Shioaji credential keys.
 
 ## Repeat and failure behavior
 
-A repeat fails `clean-environment-already-initialized`; it never clears or replaces
-an existing DB. A mid-transaction failure records a sanitized invariant, stops P9,
-restarts the exact Legacy IDs, and retains partial P9 state and backup for review.
+A repeat of preparation fails `production-root-exists`; a repeat deployment fails
+`clean-environment-already-initialized`. Neither clears or replaces an existing DB.
+A mid-transaction failure records a sanitized invariant, stops P9, restarts the exact
+Legacy IDs recorded before the stop, and retains partial P9 state and backup for
+review. If backup capture finished, recovery re-verifies its new inventory digest;
+if capture failed before publication, recovery still uses the pre-stop identity
+journal and reports that no completed backup was verified.
 
 Do not rerun a partial transaction. Confirm Legacy health; inspect root-only
 `transaction-clean.json`, `failure-clean.json`, and
-`rollback-clean-result.json`. Archive partial data/health/gateway/bundle/backup to
+`rollback-clean-result.json` (plus `backup-clean.json` when present). Archive partial
+data/health/gateway/bundle/backup to
 an operator-chosen root-only incident path. Only separate authorization may remove
 those paths and markers. There is intentionally no automatic cleanup command.
 
