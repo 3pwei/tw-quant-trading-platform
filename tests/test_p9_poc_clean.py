@@ -116,7 +116,7 @@ class CleanConfigTests(unittest.TestCase):
 class FirstPrepareTests(unittest.TestCase):
     def test_missing_root_is_created_with_exactly_four_validated_sources(self):
         with tempfile.TemporaryDirectory() as temporary:
-            workspace = Path(temporary)
+            workspace = Path(temporary).resolve()
             source = workspace / 'source'
             source.mkdir()
             _, _, hashes = config_files(source)
@@ -173,7 +173,7 @@ class FirstPrepareTests(unittest.TestCase):
 
     def test_missing_required_setting_is_named_and_root_is_not_published(self):
         with tempfile.TemporaryDirectory() as temporary:
-            workspace = Path(temporary)
+            workspace = Path(temporary).resolve()
             source = workspace / 'source'
             source.mkdir()
             config_files(source)
