@@ -8,6 +8,7 @@ from pathlib import Path
 import sqlite3
 import sys
 import tempfile
+import types
 import unittest
 from unittest.mock import patch
 
@@ -137,9 +138,16 @@ class FailureRecoveryTests(unittest.TestCase):
             root = Path(temporary)
             for name in ('config', 'provider', 'rollback', 'data'):
                 (root / name).mkdir(mode=0o700)
+            original_stat = Path.stat
+
+            def root_owned_stat(path, *args, **kwargs):
+                result = original_stat(path, *args, **kwargs)
+                return types.SimpleNamespace(st_mode=result.st_mode, st_uid=0)
+
             with patch.object(poc_clean, 'ROOT', root), \
                  patch.object(poc_clean, 'LEGACY', Path('/opt/tw-quant')), \
                  patch.object(poc_clean.os, 'geteuid', return_value=0), \
+                 patch.object(poc_clean.Path, 'stat', new=root_owned_stat), \
                  self.assertRaisesRegex(ValueError, 'clean-environment-already-initialized'):
                 host.preflight()
 

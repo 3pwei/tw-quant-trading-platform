@@ -1026,7 +1026,7 @@
     },
     {
       "path": "tests/test_p9_poc_clean.py",
-      "sha256": "3c71c9162fd1173affaa073f2ab602d20cb2905890db7d29d441b201273328e7"
+      "sha256": "2e09d29f7a8531437b05c304cf8cc5161d7f17190d45a38e157773c78b52b452"
     },
     {
       "path": "tests/test_p9_prerequisite_provision.py",
