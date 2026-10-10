@@ -861,6 +861,10 @@
       "sha256": "a9c218f4adf6cf18be2e50f28a57e3ff6ff47172fa04d4015161180eca6990da"
     },
     {
+      "path": "tests/test_demo_privacy.py",
+      "sha256": "cafed7d1101fe6386956210347540895469855f350fc1ce257241c37812d8951"
+    },
+    {
       "path": "tests/test_deployment_record.py",
       "sha256": "22586c9999cae3381748026e5c8acedd8424ef8518d927f94eb650501caecd5f"
     },
@@ -1022,7 +1026,7 @@
     },
     {
       "path": "tests/test_p9_poc_clean.py",
-      "sha256": "87372369f86d5fb703a25b46d0edd017e32d489fcaec6f5ec1d8334adfbe3227"
+      "sha256": "3c71c9162fd1173affaa073f2ab602d20cb2905890db7d29d441b201273328e7"
     },
     {
       "path": "tests/test_p9_prerequisite_provision.py",
@@ -1063,6 +1067,10 @@
     {
       "path": "tests/test_paper_trading.py",
       "sha256": "d9e00060f37c722b09821d6dc02427bf3f0778b16de54c7a21a9d18a178aceac"
+    },
+    {
+      "path": "tests/test_poc_clean_runtime.py",
+      "sha256": "3239ce1d11e2d292154743b2309b1d861ec141f0291c14702ea222ea036e45a0"
     },
     {
       "path": "tests/test_production_hardening.py",
