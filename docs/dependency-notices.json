@@ -22,15 +22,15 @@
       "license": "Apache-2.0",
       "license_files": [
         {
-          "path": "caddy-v2.11.6/LICENSE",
+          "path": "caddy-v2.11.7-buildable-artifact/LICENSE",
           "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
         }
       ],
       "name": "caddy",
-      "provenance": "official signed GitHub release asset; checksum pinned in gateway Dockerfile",
-      "sha256": "22c84f8d2d4e4e0e2d422f8049fdd0fc1ed8d5665d0fe166f506c7fd863b4555",
-      "source": "https://github.com/caddyserver/caddy/releases/download/v2.11.6/caddy_2.11.6_linux_amd64.tar.gz",
-      "version": "2.11.6"
+      "provenance": "official GitHub buildable release artifact rebuilt with pinned Go 1.26.9 and golang.org/x/net 0.60.0; checksum and module sum pinned in gateway Dockerfile",
+      "sha256": "b430516910839fbaf35c0a9e9df80d1e2e30aa792530293c39f4a97a1b2c9060",
+      "source": "https://github.com/caddyserver/caddy/releases/download/v2.11.7/caddy_2.11.7_buildable-artifact.tar.gz",
+      "version": "2.11.7+go1.26.9.xnet0.60.0"
     }
   ],
   "containers": [
@@ -51,6 +51,11 @@
     },
     {
       "dockerfile": "deploy/lightsail/Dockerfile.gateway",
+      "image": "golang:1.26.9-alpine3.23@sha256:6750308561953d451210ed1a8086d36c8c8bdcbf672d38d9d0d424b8a7a0216c",
+      "policy": "Retain upstream and OS package copyright/license files; build stage only; no base-image layers included in final image or source tree."
+    },
+    {
+      "dockerfile": "deploy/lightsail/Dockerfile.gateway",
       "image": "node:25-alpine@sha256:bdf2cca6fe3dabd014ea60163eca3f0f7015fbd5c7ee1b0e9ccb4ced6eb02ef4",
       "policy": "Retain upstream and OS package copyright/license files; SBOM each final image; no base-image layers included in source tree."
     },
@@ -63,7 +68,7 @@
   "inputs": {
     "Dockerfile": "727d80a2314691deba494ebadfaae1c904056bdf7992187bd1059a635ab99de6",
     "dashboard/package-lock.json": "5fc54fa18d702cdb60309fc7d2f4586c846815c8e810a7b73bb9827f80136f60",
-    "deploy/lightsail/Dockerfile.gateway": "4265c6e16833f35b4652d8fc39dd616341c3faefabc1a226131f216f1b9d56c5",
+    "deploy/lightsail/Dockerfile.gateway": "9d5f2f30c335344719fd7ff3e892ecea37aee97bbc4bacbf9328ce9469f98c29",
     "uv.lock": "30f1af09c504171254155c28c7ee5faeff9e0028ffccba9eb2f7718d18b442a4"
   },
   "npm": [

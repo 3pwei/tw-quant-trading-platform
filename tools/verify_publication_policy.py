@@ -98,11 +98,14 @@ def check(output: dict[str, bytes], *, syntax: bool = False) -> dict:
     ensure(notices["acceptance"]["license_texts_sha256"] == hashlib.sha256(output["docs/third-party-license-texts.txt"]).hexdigest(),
            "upstream notice texts changed")
     artifacts = notices.get("container_artifacts", [])
-    ensure(len(artifacts) == 1 and artifacts[0]["name"] == "caddy" and artifacts[0]["version"] == "2.11.6"
-           and artifacts[0]["sha256"] == "22c84f8d2d4e4e0e2d422f8049fdd0fc1ed8d5665d0fe166f506c7fd863b4555",
+    ensure(len(artifacts) == 1 and artifacts[0]["name"] == "caddy"
+           and artifacts[0]["version"] == "2.11.7+go1.26.9.xnet0.60.0"
+           and artifacts[0]["sha256"] == "b430516910839fbaf35c0a9e9df80d1e2e30aa792530293c39f4a97a1b2c9060",
            "Caddy release identity/notice")
     gateway = output["deploy/lightsail/Dockerfile.gateway"].decode()
     ensure(artifacts[0]["source"] in gateway and artifacts[0]["sha256"] in gateway
+           and "golang:1.26.9-alpine3.23@sha256:6750308561953d451210ed1a8086d36c8c8bdcbf672d38d9d0d424b8a7a0216c" in gateway
+           and "go mod edit -go=1.26.9 -require=golang.org/x/net@v0.60.0" in gateway
            and "alpine:3.23.6@sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0" in gateway,
            "gateway inputs must be checksum/digest pinned")
     license_texts = output["docs/third-party-license-texts.txt"].decode()

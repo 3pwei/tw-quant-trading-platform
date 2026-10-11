@@ -8,22 +8,40 @@ ENV NEXT_PUBLIC_BASE_PATH="" \
     NEXT_PUBLIC_MARKET_API_URL=""
 RUN npm run build
 
+FROM golang:1.26.9-alpine3.23@sha256:6750308561953d451210ed1a8086d36c8c8bdcbf672d38d9d0d424b8a7a0216c AS caddy-build
+
+WORKDIR /build
+RUN set -eux; \
+    apk add --no-cache ca-certificates; \
+    test "$(go env GOOS)" = linux; \
+    test "$(go env GOARCH)" = amd64; \
+    wget -O /tmp/caddy-source.tar.gz https://github.com/caddyserver/caddy/releases/download/v2.11.7/caddy_2.11.7_buildable-artifact.tar.gz; \
+    echo 'b430516910839fbaf35c0a9e9df80d1e2e30aa792530293c39f4a97a1b2c9060  /tmp/caddy-source.tar.gz' | sha256sum -c -; \
+    tar xzf /tmp/caddy-source.tar.gz -C /build; \
+    go mod edit -go=1.26.9 -require=golang.org/x/net@v0.60.0; \
+    go mod download golang.org/x/net@v0.60.0; \
+    grep -qx 'golang.org/x/net v0.60.0 h1:79p50tfZlm0J9YfoDsSi639qSXNGVwEzOPLCxM2FsYU=' go.sum; \
+    go mod vendor; \
+    install -d -m 0755 /out; \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+      -trimpath -buildvcs=false -mod=vendor -tags 'nobadger nomysql nopgx' \
+      -ldflags '-s -w -X github.com/caddyserver/caddy/v2.CustomVersion=v2.11.7+go1.26.9.xnet0.60.0' \
+      -o /out/caddy .; \
+    /out/caddy build-info | grep -Eq '^go[[:space:]]+go1\.26\.9$'; \
+    /out/caddy build-info | grep -Eq '^dep[[:space:]]+golang.org/x/net[[:space:]]+v0\.60\.0([[:space:]]|$)'
+
 FROM alpine:3.23.6@sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0
+COPY --from=caddy-build --chmod=0755 /out/caddy /usr/bin/caddy
 RUN set -eux; \
     test "$(apk --print-arch)" = x86_64; \
     apk add --no-cache ca-certificates curl libcap mailcap; \
-    wget -O /tmp/caddy.tar.gz https://github.com/caddyserver/caddy/releases/download/v2.11.6/caddy_2.11.6_linux_amd64.tar.gz; \
-    echo '22c84f8d2d4e4e0e2d422f8049fdd0fc1ed8d5665d0fe166f506c7fd863b4555  /tmp/caddy.tar.gz' | sha256sum -c -; \
-    tar xzf /tmp/caddy.tar.gz -C /usr/bin caddy; \
-    rm -f /tmp/caddy.tar.gz; \
-    chmod 0755 /usr/bin/caddy; \
     setcap cap_net_bind_service=+ep /usr/bin/caddy; \
     caddy version; \
     mkdir -p /data /config /srv; \
     addgroup -g 10000 -S caddy \
     && adduser -u 10000 -D -S -G caddy caddy \
     && chown -R caddy:caddy /data /config
-LABEL org.opencontainers.image.version="2.11.6" \
+LABEL org.opencontainers.image.version="2.11.7+go1.26.9.xnet0.60.0" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.source="https://github.com/caddyserver/caddy"
 COPY deploy/lightsail/Caddyfile /etc/caddy/Caddyfile

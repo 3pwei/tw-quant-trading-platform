@@ -35,11 +35,13 @@ components only.
 
 ## Containers
 
-Pinned Python/Debian, Node/Alpine build, Alpine runtime and the official Caddy
-release artifact are listed by digest. Retain their upstream licenses and OS package
-copyright/license files; preserve Apache-2.0 Caddy and Python/Node bundled notices.
-Generated SBOMs are required for each final runtime/gateway image. No image,
-font download or OS binary is included in the source manifest.
+Pinned Python/Debian, Node/Alpine build, Go/Alpine build, Alpine runtime and the
+official Caddy buildable release artifact are listed by digest. The gateway
+build fixes the Go toolchain and `golang.org/x/net` module versions and verifies
+their build metadata. Retain their upstream licenses and OS package
+copyright/license files; preserve Apache-2.0 Caddy and Python/Node/Go bundled
+notices. Generated SBOMs are required for each final runtime/gateway image. No
+image, font download or OS binary is included in the source manifest.
 
 ## Python locked identities
 
