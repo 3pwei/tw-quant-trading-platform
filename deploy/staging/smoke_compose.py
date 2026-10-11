@@ -17,7 +17,7 @@ import sys
 import tempfile
 import time
 
-from acceptance_evidence import INSPECT, check_health, continuity
+from acceptance_evidence import INSPECT, check_health, continuity, parse_json_object, run as collect_step
 
 HERE = Path(__file__).resolve().parent
 
@@ -153,8 +153,10 @@ def main():
                             assert inspect(cid, "{{.HostConfig.NetworkMode}}") == "none"
                             health = json.loads(run("docker", "exec", cid, "cat", "/run/tw-quant-execution/health.json"))
                             observed["execution"] = check_health(health, observed["containers"][service]["started"])
-                            observed["durable"] = json.loads(run("docker", "exec", "-i", cid, "python", "-", "snapshot",
-                                data=(HERE / "durable_probe.py").read_text()))
+                            # Exercise the actual collector's stdin, file-backed output and 15s bound.
+                            observed["durable"] = collect_step("durable-snapshot",
+                                ["docker", "exec", "-i", cid, "python", "-", "snapshot"],
+                                data=(HERE / "durable_probe.py").read_bytes(), parser=parse_json_object)
                             assert health["locked"] is True and health["external_order_calls"] == 0 and health["external_cancel_calls"] == 0
                         else:
                             networks = json.loads(inspect(cid, "{{json .NetworkSettings.Networks}}"))
