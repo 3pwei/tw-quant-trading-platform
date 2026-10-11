@@ -1,5 +1,10 @@
 # P9 Production Cutover — review gate
 
+> Historical migration-oriented flow. The current showcase-only Production uses
+> [P9 PoC clean Production deployment](p9-poc-clean-deployment.md), which creates a
+> fresh DB and retains a separate two-database Legacy recovery set. Do not dispatch
+> this migration flow for the clean PoC decision.
+
 This PR prepares a manual workflow. Merging is not authorization to dispatch.
 No Production run, live order, live canary, Legacy retirement or P10 is part of
 this change. P8 remains complete.

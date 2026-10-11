@@ -1,0 +1,53 @@
+name: P9 PoC Clean Prepare
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "PREPARE P9 POC CLEAN production <current-master-sha>"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: lightsail-production
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    environment: lightsail-production
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      PRODUCTION_POC_PREPARE_CONFIRMATION: ${{ inputs.confirmation }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact source inventory
+        run: python tools/verify_public_candidate.py
+      - name: Prepare four Production-only configuration files
+        env:
+          PRODUCTION_HOST: ${{ vars.PRODUCTION_HOST }}
+          PRODUCTION_USER: ${{ vars.PRODUCTION_USER }}
+          STAGING_HOST_IDENTITY: ${{ vars.STAGING_HOST_IDENTITY }}
+          PRODUCTION_SSH_PRIVATE_KEY: ${{ secrets.PRODUCTION_SSH_PRIVATE_KEY }}
+          PRODUCTION_SSH_HOST_KEY: ${{ secrets.PRODUCTION_SSH_HOST_KEY }}
+          PRODUCTION_POC_MARKET_ENV_B64: ${{ secrets.PRODUCTION_POC_MARKET_ENV_B64 }}
+          PRODUCTION_POC_EXECUTION_ENV_B64: ${{ secrets.PRODUCTION_POC_EXECUTION_ENV_B64 }}
+          PRODUCTION_POC_GATEWAY_ENV_B64: ${{ secrets.PRODUCTION_POC_GATEWAY_ENV_B64 }}
+          PRODUCTION_POC_PROVIDER_FACTORY_B64: ${{ secrets.PRODUCTION_POC_PROVIDER_FACTORY_B64 }}
+        run: python deploy/production/poc_clean_prepare.py --runner
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: p9-poc-clean-prepare-status
+          path: ${{ runner.temp }}/p9-poc-clean-prepare.json
+          if-no-files-found: error
+          retention-days: 30

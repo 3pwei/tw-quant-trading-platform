@@ -72,6 +72,12 @@ jobs:
           PRODUCTION_EXECUTION_ENV_FILE=/tmp/p9-execution.env \
           PRODUCTION_GATEWAY_ENV_FILE=/tmp/p9-gateway.env \
             docker compose --file deploy/production/docker-compose.yml config --quiet
+          PRODUCTION_RUNTIME_IMAGE=ghcr.io/example/runtime@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+          PRODUCTION_GATEWAY_IMAGE=ghcr.io/example/gateway@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
+          PRODUCTION_MARKET_ENV_FILE=/tmp/p9-market.env \
+          PRODUCTION_EXECUTION_ENV_FILE=/tmp/p9-execution.env \
+          PRODUCTION_GATEWAY_ENV_FILE=/tmp/p9-gateway.env \
+            docker compose --file deploy/production/docker-compose.poc-clean.yml config --quiet
 
   p8-image-store:
     name: P8 image identity (containerd=${{ matrix.containerd }})
