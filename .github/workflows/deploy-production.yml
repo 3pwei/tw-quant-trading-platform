@@ -51,7 +51,7 @@ jobs:
           git merge-base --is-ancestor "$P9_SOURCE" "$GITHUB_SHA"
           python deploy/production/evidence.py --source "$P9_SOURCE" --candidate "$P9_CANDIDATE" \
             --manifest "$P9_MANIFEST" --control-sha "$GITHUB_SHA" --output p9-evidence
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: p9-prehost-evidence
           path: p9-evidence
@@ -118,7 +118,7 @@ jobs:
               --attempts 1 --timeout 10 --retry-delay 0
             python deploy/production/transport.py capture --evidence p9-evidence
           fi
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         id: publish_evidence
         if: always()
         with:
