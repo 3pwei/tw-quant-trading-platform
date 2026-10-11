@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from time import monotonic_ns as collection_clock_ns
 
 ROOT = Path('/srv/trading-platform-staging')
 SERVICES = ('market-api', 'execution-worker', 'gateway')
@@ -75,10 +76,10 @@ def require_container_health(service, state):
 def run(step, argv, *, data=None, limit=65536, parser=None):
     """Run one allowlisted collection step without exposing tool inputs or outputs."""
     require(step in COLLECTOR_STEPS, 'invalid-collector-step')
-    started = time.monotonic_ns()
+    started = collection_clock_ns()
 
     def elapsed_ms():
-        return max(0, (time.monotonic_ns() - started) // 1_000_000)
+        return max(0, (collection_clock_ns() - started) // 1_000_000)
 
     # Never propagate stderr, raw response data, provider settings, command lines or exceptions.
     with tempfile.TemporaryFile() as output:

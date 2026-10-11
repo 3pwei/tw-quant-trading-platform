@@ -78,7 +78,7 @@ class ContainerHealthDiagnosticTests(unittest.TestCase):
 
 class CollectorDiagnosticTests(unittest.TestCase):
     def invoke(self, side_effect, *, parser=None, limit=65536):
-        with patch.object(evidence.time, 'monotonic_ns', side_effect=[0, 12_345_678]), \
+        with patch.object(evidence, 'collection_clock_ns', side_effect=[0, 12_345_678]), \
                 patch.object(evidence.subprocess, 'run', side_effect=side_effect), \
                 self.assertRaises(SystemExit) as raised:
             evidence.entrypoint(lambda: evidence.run(
@@ -130,7 +130,7 @@ class CollectorDiagnosticTests(unittest.TestCase):
             return evidence.subprocess.CompletedProcess(argv, 0)
 
         log = io.StringIO()
-        with patch.object(evidence.time, 'monotonic_ns', side_effect=[0, 8_765_432]), \
+        with patch.object(evidence, 'collection_clock_ns', side_effect=[0, 8_765_432]), \
                 patch.object(evidence.subprocess, 'run', side_effect=success) as invoked, redirect_stderr(log):
             self.assertEqual(evidence.run('worker-health', ['private-command']), 'safe-result')
         invoked.assert_called_once()
