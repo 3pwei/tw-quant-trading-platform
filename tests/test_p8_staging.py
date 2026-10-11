@@ -154,9 +154,25 @@ class P8BuildBoundaryTests(unittest.TestCase):
     def test_gateway_candidate_smoke_matches_staging_security_boundary(self):
         dockerfile = (STAGING / "Dockerfile.gateway").read_text()
         workflow = (ROOT / ".github/workflows/staging-candidate.yml").read_text()
+        security = (ROOT / ".github/workflows/security.yml").read_text()
 
         self.assertNotIn("setcap", dockerfile)
         self.assertNotIn("libcap", dockerfile)
+        for expected in (
+            "golang:1.26.9-alpine3.23@sha256:6750308561953d451210ed1a8086d36c8c8bdcbf672d38d9d0d424b8a7a0216c",
+            "caddy_2.11.7_buildable-artifact.tar.gz",
+            "b430516910839fbaf35c0a9e9df80d1e2e30aa792530293c39f4a97a1b2c9060",
+            "go mod edit -go=1.26.9 -require=golang.org/x/net@v0.60.0",
+            "golang.org/x/net v0.60.0 h1:79p50tfZlm0J9YfoDsSi639qSXNGVwEzOPLCxM2FsYU=",
+            "go1\\.26\\.9",
+            "golang.org/x/net[[:space:]]+v0\\.60\\.0",
+            "COPY --from=caddy-build --chmod=0755 /out/caddy /usr/bin/caddy",
+        ):
+            self.assertIn(expected, dockerfile)
+        self.assertNotIn("caddy_2.11.6", dockerfile)
+        self.assertIn("docker build --file deploy/staging/Dockerfile.gateway", security)
+        self.assertIn("image-ref: platform-gateway:security", security)
+        self.assertIn("artifact-name: platform-gateway-sbom.cdx.json", security)
 
         start = workflow.index(
             "      - name: Smoke gateway under exact staging security boundary"

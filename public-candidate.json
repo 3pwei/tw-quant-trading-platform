@@ -58,7 +58,7 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "05a59151659eddae821552aa86a78027fffb49264d1f95cb909cc145f445f1b3"
+      "sha256": "089dc7f08f6196a198c12a438ec030ff1b640405d0f920c5f61b9949cfac18ac"
     },
     {
       "path": ".github/workflows/staging-candidate.yml",
@@ -86,7 +86,7 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "sha256": "479c07750b5b585733837a24d1120c0381aff2e114b1900290fbf56631dddcf2"
+      "sha256": "2bbfdbad4d7a9c4ddf5e8f07a9c1c65ae5988ca2b1feb174e637d44c7ab498f4"
     },
     {
       "path": "dashboard/app/admin/users/page.tsx",
@@ -446,7 +446,7 @@
     },
     {
       "path": "deploy/lightsail/Dockerfile.gateway",
-      "sha256": "4265c6e16833f35b4652d8fc39dd616341c3faefabc1a226131f216f1b9d56c5"
+      "sha256": "9d5f2f30c335344719fd7ff3e892ecea37aee97bbc4bacbf9328ce9469f98c29"
     },
     {
       "path": "deploy/lightsail/bootstrap.sh",
@@ -626,7 +626,7 @@
     },
     {
       "path": "deploy/staging/Dockerfile.gateway",
-      "sha256": "244d23b7aa9307d7503c93d5f795dcb7801e2eb5e7cb1a94ed36bbb6ba2fd266"
+      "sha256": "167cd82ad61e25e6172ee06e0f4061cc424f8ca01f63ff37626d345cad5ff881"
     },
     {
       "path": "deploy/staging/Dockerfile.runtime",
@@ -730,7 +730,7 @@
     },
     {
       "path": "docs/dependency-notices.json",
-      "sha256": "bb0a230aaf42d3f4b4b489d3ac0a3cec3481c364b2730921698765783bb46800"
+      "sha256": "3131afc1f8e64d03f3aa72a30d0736e773e12387cc1cb68dd1069f02a4ec792f"
     },
     {
       "path": "docs/deployment.md",
@@ -854,7 +854,7 @@
     },
     {
       "path": "tests/test_container_origin_hardening.py",
-      "sha256": "05e6de81d059c30f2f9e84c72247c99d4857e4a4f1093f0437e69c66a1292245"
+      "sha256": "69319905abb0cca45834544664b2e99b5674afae7f7a59c8d8194047774af5ab"
     },
     {
       "path": "tests/test_costs.py",
@@ -1030,7 +1030,7 @@
     },
     {
       "path": "tests/test_p8_staging.py",
-      "sha256": "7baa310f8fb3eb5f6ab76a35c652bc44cc70f086e5e6bf0c7c69f11e1dbb25b0"
+      "sha256": "e78633c17b5339dcd9570e5b4989ecbe323af8ea66e1e68238cb91ad303cc897"
     },
     {
       "path": "tests/test_p9_approval_inventory.py",
@@ -1170,7 +1170,7 @@
     },
     {
       "path": "tools/verify_publication_policy.py",
-      "sha256": "d095338424739f18629e0869e1cb80757c09cc552ce38997c8a6f2cdd7a969cb"
+      "sha256": "5e33bde907f80ba4ee39eb46c11486e939b38fe8849c11dbf1325a46ec7c02ab"
     },
     {
       "path": "tw_quant/__init__.py",
