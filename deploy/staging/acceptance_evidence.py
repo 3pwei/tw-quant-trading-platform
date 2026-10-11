@@ -20,6 +20,16 @@ INSPECT = ('{"id":{{json .Id}},"image":{{json .Image}},"started":{{json .State.S
            '"restarts":{{.RestartCount}},"running":{{.State.Running}},'
            '"health":{{if .State.Health}}{{json .State.Health.Status}}{{else}}null{{end}},'
            '"network_mode":{{json .HostConfig.NetworkMode}}}')
+COLLECTOR_STEPS = frozenset({
+    'manifest-active', 'manifest-final-known-good', 'manifest-final-candidate',
+    'container-query-market-api', 'container-query-execution-worker', 'container-query-gateway',
+    'container-inspect-market-api', 'container-inspect-execution-worker', 'container-inspect-gateway',
+    'image-inspect-market-api', 'image-inspect-execution-worker', 'image-inspect-gateway',
+    'worker-health', 'durable-snapshot', 'soak-ingress',
+})
+COLLECTOR_FAILURES = frozenset({
+    'timeout', 'nonzero-exit', 'output-limit', 'parse-failed', 'invocation-failed',
+})
 
 
 def require(condition, code):
@@ -44,19 +54,57 @@ class ContainerHealthError(ValueError):
                 ',health:' + self.health + ',restarts:' + self.restarts)
 
 
+class CollectionStepError(Exception):
+    """A fixed, non-secret collector failure suitable for workflow logs."""
+    def __init__(self, step, category, elapsed_ms):
+        self.step = step if step in COLLECTOR_STEPS else 'invalid'
+        self.category = category if category in COLLECTOR_FAILURES else 'invalid'
+        self.elapsed_ms = elapsed_ms if type(elapsed_ms) is int and elapsed_ms >= 0 else 0
+        super().__init__('collector-step-failed')
+
+    def diagnostic(self):
+        return ('P8_EVIDENCE=FAIL step=' + self.step + ' category=' + self.category +
+                ' elapsed_ms=' + str(self.elapsed_ms))
+
+
 def require_container_health(service, state):
     if state.get('running') is not True or state.get('health') != 'healthy':
         raise ContainerHealthError(service, state.get('running'), state.get('health'), state.get('restarts'))
 
 
-def run(argv, *, data=None, limit=65536):
-    # Never propagate stderr, raw response data, provider settings or command lines.
+def run(step, argv, *, data=None, limit=65536, parser=None):
+    """Run one allowlisted collection step without exposing tool inputs or outputs."""
+    require(step in COLLECTOR_STEPS, 'invalid-collector-step')
+    started = time.monotonic_ns()
+
+    def elapsed_ms():
+        return max(0, (time.monotonic_ns() - started) // 1_000_000)
+
+    # Never propagate stderr, raw response data, provider settings, command lines or exceptions.
     with tempfile.TemporaryFile() as output:
-        result = subprocess.run(argv, input=data, stdout=output, stderr=subprocess.DEVNULL, timeout=15)
-        require(result.returncode == 0, 'command-failed')
-        require(output.tell() <= limit, 'command-output-too-large')
+        try:
+            result = subprocess.run(argv, input=data, stdout=output, stderr=subprocess.DEVNULL, timeout=15)
+        except subprocess.TimeoutExpired:
+            raise CollectionStepError(step, 'timeout', elapsed_ms()) from None
+        except OSError:
+            raise CollectionStepError(step, 'invocation-failed', elapsed_ms()) from None
+        if result.returncode != 0:
+            raise CollectionStepError(step, 'nonzero-exit', elapsed_ms())
+        if output.tell() > limit:
+            raise CollectionStepError(step, 'output-limit', elapsed_ms())
         output.seek(0)
-        return output.read().decode()
+        try:
+            value = output.read().decode()
+        except UnicodeError:
+            raise CollectionStepError(step, 'parse-failed', elapsed_ms()) from None
+    if parser is not None:
+        try:
+            value = parser(value)
+        except (ValueError, TypeError, KeyError, IndexError, UnicodeError):
+            raise CollectionStepError(step, 'parse-failed', elapsed_ms()) from None
+    duration = elapsed_ms()
+    print('P8_EVIDENCE_STEP=PASS step=' + step + ' elapsed_ms=' + str(duration), file=sys.stderr)
+    return value
 
 
 def compose(root=ROOT):
@@ -100,20 +148,45 @@ def record_hashes(root):
     return result
 
 
+def parse_release_values(value):
+    values = {}
+    for line in value.splitlines():
+        key, item = line.split('=', 1)
+        if not re.fullmatch('[A-Z][A-Z0-9_]*', key) or key in values:
+            raise ValueError('invalid-release-field')
+        values[key] = item
+    required = {'CONFIGURATION_IDENTITY', 'STAGING_RUNTIME_IMAGE', 'STAGING_RUNTIME_CONFIG_DIGEST',
+                'STAGING_GATEWAY_IMAGE', 'STAGING_GATEWAY_CONFIG_DIGEST', 'RELEASE_NAME'}
+    if not required.issubset(values):
+        raise ValueError('missing-release-field')
+    return values
+
+
+def parse_json_object(value):
+    document = json.loads(value)
+    if not isinstance(document, dict):
+        raise ValueError('json-object-required')
+    return document
+
+
 def capture(root=ROOT):
     values = release_values(root / 'deployments/active-release.env')
     role = values.get('RELEASE_NAME')
     require(role in ('known_good', 'candidate'), 'invalid-active-release')
-    emitted = run(['python3', str(root / 'bundle/candidate_manifest.py'), 'emit-env',
-                   str(root / 'bundle/candidate-manifest.json'), '--release', role])
-    approved = dict(line.split('=', 1) for line in emitted.splitlines())
+    approved = run('manifest-active',
+        ['python3', str(root / 'bundle/candidate_manifest.py'), 'emit-env',
+         str(root / 'bundle/candidate-manifest.json'), '--release', role],
+        parser=parse_release_values)
     require(all(values.get(k) == v for k, v in approved.items()), 'active-manifest-mismatch')
     containers = {}
     expected_images = {}
     for service in SERVICES:
-        cid = run([*compose(root), 'ps', '-q', service]).strip()
+        cid = run('container-query-' + service, [*compose(root), 'ps', '-q', service], parser=str.strip)
         require(re.fullmatch('[0-9a-f]{12,64}', cid) is not None, 'missing-or-ambiguous-container')
-        d = json.loads(run(['docker', 'inspect', '--format', INSPECT, cid]))
+        d = run('container-inspect-' + service,
+                ['docker', 'inspect', '--format', INSPECT, cid], parser=parse_json_object)
+        require({'id', 'image', 'started', 'restarts', 'running', 'health', 'network_mode'}.issubset(d),
+                'container-inspect-invalid')
         require(re.fullmatch('[0-9a-f]{64}', d['id']) is not None and
                 re.fullmatch('sha256:[0-9a-f]{64}', d['image']) is not None, 'container-identity-invalid')
         require_container_health(service, d)
@@ -122,15 +195,19 @@ def capture(root=ROOT):
         require(re.fullmatch('[A-Za-z0-9_-]+', d['network_mode']) is not None, 'network-mode-invalid')
         containers[service] = d
         prefix = 'STAGING_GATEWAY' if service == 'gateway' else 'STAGING_RUNTIME'
-        expected_id = run(['docker', 'image', 'inspect', '--format', '{{.Id}}', approved[prefix + '_IMAGE']]).strip()
+        expected_id = run('image-inspect-' + service,
+            ['docker', 'image', 'inspect', '--format', '{{.Id}}', approved[prefix + '_IMAGE']],
+            parser=str.strip)
         require(expected_id == d['image'], 'running-image-mismatch')
         expected_images[service] = {'ref': approved[prefix + '_IMAGE'],
                                     'config_digest': approved[prefix + '_CONFIG_DIGEST'], 'local_image_id': expected_id}
     worker = containers['execution-worker']
     require(worker['network_mode'] == 'none', 'worker-network-exposed')
-    health = json.loads(run(['docker', 'exec', worker['id'], 'cat', '/run/tw-quant-execution/health.json']))
-    durable = json.loads(run(['docker', 'exec', '-i', worker['id'], 'python', '-', 'snapshot'],
-        data=(root / 'bundle/durable_probe.py').read_bytes()))
+    health = run('worker-health',
+        ['docker', 'exec', worker['id'], 'cat', '/run/tw-quant-execution/health.json'], parser=parse_json_object)
+    durable = run('durable-snapshot',
+        ['docker', 'exec', '-i', worker['id'], 'python', '-', 'snapshot'],
+        data=(root / 'bundle/durable_probe.py').read_bytes(), parser=parse_json_object)
     require(set(durable) == {'locked_target_sha256', 'sqlite_integrity', 'target_count', 'active_targets'} and
             re.fullmatch('[0-9a-f]{64}', durable['locked_target_sha256']) is not None and
             durable['sqlite_integrity'] == 'ok' and durable['target_count'] == 1 and durable['active_targets'] == 0,
@@ -248,9 +325,10 @@ def final_check(root=ROOT):
     current, active, previous = [release_values(root / 'deployments' / (x + '.env')) for x in ('current', 'active-release', 'previous')]
     require(current == active, 'active-current-disagree')
     for role, actual in (('known_good', current), ('candidate', previous)):
-        output = run(['python3', str(root / 'bundle/candidate_manifest.py'), 'emit-env',
-                      str(root / 'bundle/candidate-manifest.json'), '--release', role])
-        expected_record = dict(line.split('=', 1) for line in output.splitlines())
+        expected_record = run('manifest-final-' + role.replace('_', '-'),
+            ['python3', str(root / 'bundle/candidate_manifest.py'), 'emit-env',
+             str(root / 'bundle/candidate-manifest.json'), '--release', role],
+            parser=parse_release_values)
         require(all(actual.get(k) == v for k, v in expected_record.items()), 'final-release-identity-mismatch')
     require(current.get('DEPLOYMENT_MODE') == 'rollback', 'final-not-rollback')
     require(rows[0]['data']['containers']['market-api']['image'] != rows[4]['data']['containers']['market-api']['image'], 'a-b-image-not-distinct')
@@ -356,7 +434,7 @@ def soak(minutes, root=ROOT):
         while True:
             after = capture(root)
             continuity(before, after)
-            run(['python3', str(root / 'bundle/ingress_probe.py')])
+            run('soak-ingress', ['python3', str(root / 'bundle/ingress_probe.py')])
             logs.check()
             now = time.monotonic()
             max_gap = max(max_gap, now - previous)
@@ -404,6 +482,8 @@ def entrypoint(action=None):
     try:
         (action or main)()
     except Exception as exc:
+        if isinstance(exc, CollectionStepError):
+            raise SystemExit(exc.diagnostic())
         if isinstance(exc, ContainerHealthError):
             raise SystemExit(exc.diagnostic())
         # All explicit invariant messages are fixed codes; never stringify tool exceptions.

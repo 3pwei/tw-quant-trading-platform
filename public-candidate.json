@@ -634,7 +634,7 @@
     },
     {
       "path": "deploy/staging/acceptance_evidence.py",
-      "sha256": "3127580a4bfaa9caa7194e6f118196b46cbe627607d921b386916f60f6ac4f3f"
+      "sha256": "19f4631010050cbef5dca98fe96b1baa07b48df7b4b50ad3741ceef32c1efd02"
     },
     {
       "path": "deploy/staging/candidate_manifest.py",
@@ -998,7 +998,7 @@
     },
     {
       "path": "tests/test_p8_evidence.py",
-      "sha256": "9116c161ba9f3241ef9cd6217b7993e9adc807dff8bd6cab91c5e2ee278236b1"
+      "sha256": "ca592cedd1f43f474652f2d49722a8188f118ba5bf9c00eac45d9bd3dbaeb58e"
     },
     {
       "path": "tests/test_p8_failure_snapshot.py",

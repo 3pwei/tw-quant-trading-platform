@@ -1,5 +1,6 @@
 """Fault injection for continuity, safe diagnostics and complete acceptance evidence."""
 import copy
+from contextlib import redirect_stderr
 from datetime import datetime, timedelta, timezone
 import hashlib
 import importlib.util
@@ -73,6 +74,74 @@ class ContainerHealthDiagnosticTests(unittest.TestCase):
         evidence.require_container_health('gateway', {
             'running': True, 'health': 'healthy', 'restarts': 0,
         })
+
+
+class CollectorDiagnosticTests(unittest.TestCase):
+    def invoke(self, side_effect, *, parser=None, limit=65536):
+        with patch.object(evidence.time, 'monotonic_ns', side_effect=[0, 12_345_678]), \
+                patch.object(evidence.subprocess, 'run', side_effect=side_effect), \
+                self.assertRaises(SystemExit) as raised:
+            evidence.entrypoint(lambda: evidence.run(
+                'manifest-active', ['private-command', 'token=never-log'],
+                parser=parser, limit=limit,
+            ))
+        return str(raised.exception)
+
+    def test_collector_failures_have_fixed_step_category_and_duration_only(self):
+        secret = 'credential=never-log'
+
+        def timeout(argv, **kwargs):
+            raise evidence.subprocess.TimeoutExpired(secret, 15, stderr=secret)
+
+        def nonzero(argv, **kwargs):
+            kwargs['stdout'].write(secret.encode())
+            return evidence.subprocess.CompletedProcess(argv, 23)
+
+        def oversized(argv, **kwargs):
+            kwargs['stdout'].write(secret.encode())
+            return evidence.subprocess.CompletedProcess(argv, 0)
+
+        def invalid_json(argv, **kwargs):
+            kwargs['stdout'].write(secret.encode())
+            return evidence.subprocess.CompletedProcess(argv, 0)
+
+        def invocation(argv, **kwargs):
+            raise OSError(secret)
+
+        cases = (
+            ('timeout', timeout, None, 65536),
+            ('nonzero-exit', nonzero, None, 65536),
+            ('output-limit', oversized, None, 1),
+            ('parse-failed', invalid_json, evidence.parse_json_object, 65536),
+            ('invocation-failed', invocation, None, 65536),
+        )
+        for category, action, parser, limit in cases:
+            with self.subTest(category=category):
+                diagnostic = self.invoke(action, parser=parser, limit=limit)
+                self.assertEqual(diagnostic,
+                    'P8_EVIDENCE=FAIL step=manifest-active category=' + category + ' elapsed_ms=12')
+                self.assertNotIn('private-command', diagnostic)
+                self.assertNotIn('never-log', diagnostic)
+
+    def test_success_log_has_fixed_step_and_duration_without_tool_details(self):
+        def success(argv, **kwargs):
+            self.assertEqual(kwargs['timeout'], 15)
+            kwargs['stdout'].write(b'safe-result')
+            return evidence.subprocess.CompletedProcess(argv, 0)
+
+        log = io.StringIO()
+        with patch.object(evidence.time, 'monotonic_ns', side_effect=[0, 8_765_432]), \
+                patch.object(evidence.subprocess, 'run', side_effect=success) as invoked, redirect_stderr(log):
+            self.assertEqual(evidence.run('worker-health', ['private-command']), 'safe-result')
+        invoked.assert_called_once()
+        self.assertEqual(log.getvalue(), 'P8_EVIDENCE_STEP=PASS step=worker-health elapsed_ms=8\n')
+        self.assertNotIn('private-command', log.getvalue())
+
+    def test_unapproved_step_is_rejected_before_invocation(self):
+        with patch.object(evidence.subprocess, 'run') as invoked, self.assertRaisesRegex(
+                ValueError, 'invalid-collector-step'):
+            evidence.run('user-controlled-step', ['private-command'])
+        invoked.assert_not_called()
 
 
 class ContinuityTests(unittest.TestCase):
@@ -264,7 +333,10 @@ class LedgerTests(unittest.TestCase):
             def check(rows):
                 (output / 'ledger.jsonl').write_text(''.join(json.dumps(r) + '\n' for r in rows))
                 final_snapshot = rows[-1]['data']['after'] if rows[-1]['event'] == 'soak' else after
-                with patch.object(evidence, 'capture', return_value=final_snapshot), patch.object(evidence, 'run', side_effect=lambda argv: 'RELEASE_NAME=' + argv[-1] + '\n'):
+                with patch.object(evidence, 'capture', return_value=final_snapshot), \
+                        patch.object(evidence, 'run', side_effect=lambda step, argv, **kwargs: {
+                            'RELEASE_NAME': argv[-1],
+                        }):
                     return evidence.final_check(root)
             self.assertEqual(check(baseline)['acceptance'], 'PASS')
             bad_cases = [baseline[:-1], [baseline[1], baseline[0], *baseline[2:]]]
