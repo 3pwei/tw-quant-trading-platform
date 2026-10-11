@@ -634,7 +634,7 @@
     },
     {
       "path": "deploy/staging/acceptance_evidence.py",
-      "sha256": "6279983c0e392b60e86a3ba49f6ecf7585cde029e4cba81a454f7eae50d3258b"
+      "sha256": "d35cda71f2e440c4370884737277d7184b39848411fc5e3e4acec8d2fb3e6eda"
     },
     {
       "path": "deploy/staging/candidate_manifest.py",
@@ -658,7 +658,7 @@
     },
     {
       "path": "deploy/staging/durable_probe.py",
-      "sha256": "2f1448e9a2e49b466436f68238044ca6df25abb3c702b4d650d67b439660bfd9"
+      "sha256": "efa6b1aba6bc979fe7f3fbaf63d7108f7b52f2847299376240526311b9258476"
     },
     {
       "path": "deploy/staging/identities.conf",
@@ -710,7 +710,7 @@
     },
     {
       "path": "deploy/staging/smoke_compose.py",
-      "sha256": "b57b87fcfb9782fcba6caefbbe13d6a0b65a42e6a1e27b7d32e323db1fef560f"
+      "sha256": "1cc1d3a4b84db4acf4acf7210fa325c1ed1854ceaab4140d7d8e21f60193f185"
     },
     {
       "path": "deploy/staging/soak.sh",
@@ -998,7 +998,7 @@
     },
     {
       "path": "tests/test_p8_evidence.py",
-      "sha256": "143510bc6bc3abb0ea05306638e736375d8856648efe6c3f806f2a3c2c196990"
+      "sha256": "428f6da76f8b7e754b474556d3331bd40b0c7f37945b042082067869e2779cea"
     },
     {
       "path": "tests/test_p8_failure_snapshot.py",

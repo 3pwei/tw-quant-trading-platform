@@ -9,6 +9,7 @@ import json
 import os
 from pathlib import Path
 import sqlite3
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -142,6 +143,130 @@ class CollectorDiagnosticTests(unittest.TestCase):
                 ValueError, 'invalid-collector-step'):
             evidence.run('user-controlled-step', ['private-command'])
         invoked.assert_not_called()
+
+
+class DurableDiagnosticTests(unittest.TestCase):
+    def fixture(self, directory):
+        path = Path(directory) / 'fixture.sqlite3'
+        with sqlite3.connect(path) as db:
+            db.execute('CREATE TABLE execution_targets(target_id, owner_user_id, broker_name, account_id, secret_ref, status)')
+            db.execute('INSERT INTO execution_targets VALUES(?,?,?,?,?,?)', (
+                durable.TARGET, 'p8-synthetic-owner', 'disabled', 'P8-SYNTHETIC',
+                'unavailable:p8-synthetic', 'locked'))
+        return path
+
+    def source(self, path):
+        # Real Python stdin/EOF and SQLite, without Docker or a deployed database.
+        return (STAGING / 'durable_probe.py').read_text().replace(
+            'PATH = "/data/staging.sqlite3"', 'PATH = ' + repr(str(path))).encode()
+
+    def test_real_stdin_probe_preserves_snapshot_and_reports_stages_without_rows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.fixture(directory)
+            expected = durable.snapshot(path)
+            before = path.read_bytes()
+            log = io.StringIO()
+            with redirect_stderr(log):
+                actual = evidence.run('durable-snapshot', [sys.executable, '-', 'snapshot'],
+                    data=self.source(path), parser=evidence.parse_json_object)
+            self.assertEqual(actual, expected)
+            self.assertEqual(path.read_bytes(), before)
+            for step in ('python-imports', 'sqlite-connect', 'sqlite-integrity', 'targets-query',
+                         'targets-validate', 'targets-digest', 'sqlite-close', 'result'):
+                self.assertIn('P8_DURABLE_STEP=PASS step=' + step + ' ', log.getvalue())
+            for private in (str(path), durable.TARGET, 'p8-synthetic-owner', 'unavailable:p8-synthetic'):
+                self.assertNotIn(private, log.getvalue())
+
+    def test_real_exclusive_lock_is_classified_without_raw_sqlite_error(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = self.fixture(directory)
+            db = sqlite3.connect(path)
+            db.execute('BEGIN EXCLUSIVE')
+            log = io.StringIO()
+            try:
+                with redirect_stderr(log), self.assertRaises(evidence.CollectionStepError) as raised:
+                    evidence.run('durable-snapshot', [sys.executable, '-', 'snapshot'],
+                        data=self.source(path), parser=evidence.parse_json_object)
+            finally:
+                db.rollback()
+                db.close()
+            self.assertEqual(raised.exception.category, 'nonzero-exit')
+            self.assertIn('P8_DURABLE_STEP=FAIL step=sqlite-integrity ', log.getvalue())
+            self.assertIn('category=sqlite-busy', log.getvalue())
+            self.assertNotIn('database is locked', log.getvalue())
+            self.assertNotIn(str(path), log.getvalue())
+
+    def test_outer_real_timeout_retains_completed_stages_and_discards_untrusted_stderr(self):
+        safe = 'P8_DURABLE_STEP=PASS step=sqlite-connect elapsed_ms=1 category=none\n'
+        pending = 'P8_DURABLE_STEP=START step=sqlite-integrity elapsed_ms=0 category=none\n'
+        source = ('import sys,time\n'
+                  'sys.stderr.write(' + repr(safe + pending + 'credential=never-log\n') + ')\n'
+                  'sys.stderr.flush()\n'
+                  'time.sleep(60)\n').encode()
+        log = io.StringIO()
+        with redirect_stderr(log), self.assertRaises(evidence.CollectionStepError) as raised:
+            evidence.run('durable-snapshot', [sys.executable, '-'], data=source)
+        self.assertEqual(raised.exception.category, 'timeout')
+        self.assertGreaterEqual(raised.exception.elapsed_ms, 15000)
+        self.assertEqual(log.getvalue(), safe + pending)
+
+    def test_stderr_filter_rejects_raw_partial_injected_and_oversized_records(self):
+        safe = b'P8_DURABLE_STEP=PASS step=sqlite-connect elapsed_ms=1 category=none\n'
+        invalid = [b'Traceback credential=never-log\n', safe.replace(b'sqlite-connect', b'private-step'),
+                   safe.replace(b'category=none', b'category=secret'),
+                   safe.replace(b'elapsed_ms=1', b'elapsed_ms=1234567890'),
+                   safe.rstrip(b'\n') + b' token=never-log\n', b'prefix ' + safe,
+                   safe.rstrip(b'\n')]
+        for line in invalid:
+            log = io.StringIO()
+            with redirect_stderr(log):
+                evidence.emit_durable_diagnostics(io.BytesIO(safe + line))
+            self.assertEqual(log.getvalue(), safe.decode())
+        log = io.StringIO()
+        with redirect_stderr(log):
+            evidence.emit_durable_diagnostics(io.BytesIO(b'x' * 8192 + b'\n' + safe))
+        self.assertEqual(log.getvalue(), '')
+
+    def test_corrupt_missing_and_unlocked_targets_still_fail_closed(self):
+        for failure in ('corrupt', 'missing', 'unlocked'):
+            with self.subTest(failure=failure), tempfile.TemporaryDirectory() as directory:
+                path = self.fixture(directory)
+                if failure == 'corrupt':
+                    path.write_bytes(b'private-database-content')
+                else:
+                    with sqlite3.connect(path) as db:
+                        db.execute('DELETE FROM execution_targets' if failure == 'missing' else
+                                   "UPDATE execution_targets SET status='active', secret_ref='credential=never-log'")
+                log = io.StringIO()
+                with redirect_stderr(log), self.assertRaises(evidence.CollectionStepError) as raised:
+                    evidence.run('durable-snapshot', [sys.executable, '-', 'snapshot'],
+                        data=self.source(path), parser=evidence.parse_json_object)
+                self.assertEqual(raised.exception.category, 'nonzero-exit')
+                self.assertIn('P8_DURABLE_STEP=FAIL', log.getvalue())
+                self.assertNotIn('private-database-content', log.getvalue())
+                self.assertNotIn('credential=never-log', log.getvalue())
+                self.assertNotIn(str(path), log.getvalue())
+
+    def test_without_stdin_eof_python_has_not_started_the_probe(self):
+        with tempfile.TemporaryDirectory() as directory, tempfile.TemporaryFile() as output:
+            path = self.fixture(directory)
+            process = subprocess.Popen([sys.executable, '-', 'snapshot'], stdin=subprocess.PIPE,
+                stdout=subprocess.DEVNULL, stderr=output)
+            try:
+                process.stdin.write(self.source(path))
+                process.stdin.flush()
+                with self.assertRaises(subprocess.TimeoutExpired):
+                    process.wait(timeout=0.2)
+                self.assertEqual(output.tell(), 0)
+                process.stdin.close()
+                self.assertEqual(process.wait(timeout=5), 0)
+                output.seek(0)
+                self.assertIn(b'P8_DURABLE_STEP=PASS step=result ', output.read())
+            finally:
+                if process.poll() is None:
+                    process.kill()
+                process.wait()
+                process.stdin.close()
 
 
 class ContinuityTests(unittest.TestCase):

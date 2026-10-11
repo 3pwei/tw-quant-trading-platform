@@ -31,6 +31,20 @@ COLLECTOR_STEPS = frozenset({
 COLLECTOR_FAILURES = frozenset({
     'timeout', 'nonzero-exit', 'output-limit', 'parse-failed', 'invocation-failed',
 })
+DURABLE_DIAGNOSTIC = re.compile(
+    rb'P8_DURABLE_STEP=(START|PASS|FAIL) '
+    rb'step=(python-imports|sqlite-connect|sqlite-integrity|targets-query|targets-validate|targets-digest|sqlite-close|result) '
+    rb'elapsed_ms=([0-9]{1,9}) category=(none|sqlite-busy|sqlite-locked|sqlite-error|validation-failed|operation-failed)\n'
+)
+
+
+def emit_durable_diagnostics(stream):
+    """Forward only complete allowlisted records, including after an outer timeout."""
+    stream.seek(0)
+    # Inspect a bounded prefix; never forward arbitrary tool stderr or a partial line.
+    for line in stream.read(8192).splitlines(keepends=True)[:32]:
+        if DURABLE_DIAGNOSTIC.fullmatch(line):
+            print(line.decode('ascii').rstrip('\n'), file=sys.stderr, flush=True)
 
 
 def require(condition, code):
@@ -82,13 +96,17 @@ def run(step, argv, *, data=None, limit=65536, parser=None):
         return max(0, (collection_clock_ns() - started) // 1_000_000)
 
     # Never propagate stderr, raw response data, provider settings, command lines or exceptions.
-    with tempfile.TemporaryFile() as output:
+    with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as diagnostic_output:
         try:
-            result = subprocess.run(argv, input=data, stdout=output, stderr=subprocess.DEVNULL, timeout=15)
+            result = subprocess.run(argv, input=data, stdout=output,
+                stderr=diagnostic_output if step == 'durable-snapshot' else subprocess.DEVNULL, timeout=15)
         except subprocess.TimeoutExpired:
             raise CollectionStepError(step, 'timeout', elapsed_ms()) from None
         except OSError:
             raise CollectionStepError(step, 'invocation-failed', elapsed_ms()) from None
+        finally:
+            if step == 'durable-snapshot':
+                emit_durable_diagnostics(diagnostic_output)
         if result.returncode != 0:
             raise CollectionStepError(step, 'nonzero-exit', elapsed_ms())
         if output.tell() > limit:
