@@ -10,14 +10,16 @@ from unittest.mock import patch
 
 from tw_quant.level2_acceptance import run_level2_soak, SQLiteBarRepository
 from tw_quant.maintenance import backup_sqlite, restore_sqlite, verify_sqlite
+from level2_write_diagnostics import observe_level2_writes
 
 
 class Level2SoakAcceptanceTests(unittest.IsolatedAsyncioTestCase):
     async def test_tick_callback_queue_and_sqlite_stay_within_ci_budget(self):
-        report = await run_level2_soak(
-            2.0,
-            tick_interval_seconds=0.005,
-        )
+        with observe_level2_writes():
+            report = await run_level2_soak(
+                2.0,
+                tick_interval_seconds=0.005,
+            )
         # Preserve all original latency budgets and include startup writes. A
         # 250ms run can be dominated by one sub-budget cold commit (four ticks).
         diagnostic = json.dumps(report.to_dict(), sort_keys=True)

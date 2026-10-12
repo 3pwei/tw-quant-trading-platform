@@ -785,6 +785,10 @@
       "sha256": "07697f5aba8c308840edff9ed1a379df0b872c153fc6d7535a2c2450b709316f"
     },
     {
+      "path": "tests/level2_write_diagnostics.py",
+      "sha256": "4df1e6dab4a09c02dcfdbb63d4f3e5bd2566f9481e43b433f07268ef9512dbc4"
+    },
+    {
       "path": "tests/p8_compose_backend.py",
       "sha256": "ccb8079c76751c4b9c9b18f04043460caf682397d85a0214eaec430c98fcfd49"
     },
@@ -926,7 +930,11 @@
     },
     {
       "path": "tests/test_level2_acceptance.py",
-      "sha256": "8482fe601db8fc764e0bbac3d1e9fad25c67cd54147b3d15e213777e569af2b5"
+      "sha256": "cf2c8bc7d506500347133fd3d26d0b9fd84036d3fa2c971305c4b14701cff17f"
+    },
+    {
+      "path": "tests/test_level2_write_diagnostics.py",
+      "sha256": "24b95b7c51f5976ba3a113eaf2f4b2564a4cc578759012ff848a2765a2e76f18"
     },
     {
       "path": "tests/test_live_aggregator.py",
