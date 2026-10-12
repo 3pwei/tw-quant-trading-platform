@@ -293,6 +293,8 @@ class TransportTests(unittest.TestCase):
                 'step=container-inspect-execution-worker', 'step=container-query-execution-worker').replace(
                 'step=swap', 'step=container-inspect-execution-worker'),
             reordered + 'P8_DURABLE_STEP=FAIL step=sqlite-integrity elapsed_ms=1 category=sqlite-error\n',
+            reordered + 'P8_DURABLE_STEP=FAIL step=sqlite-integrity-fetchone elapsed_ms=1 '
+                        'category=sqlite-busy sqlite_errorcode=517\n',
             reordered + 'P8_EVIDENCE=FAIL step=durable-snapshot category=timeout elapsed_ms=15002\n',
             reordered + 'P8_EVIDENCE_FAIL check=container-health service=execution-worker '
                         'expected=running:true,health:healthy actual=running:true,health:unhealthy,restarts:0\n',
@@ -313,6 +315,19 @@ class TransportTests(unittest.TestCase):
                b'P8_DIAGNOSTIC=PASS acceptance=false')
         self.assertEqual(diagnostic.safe_lines(raw), ['P8_DIAGNOSTIC_HOST=START',
                         'P8_EVIDENCE=FAIL check=worker-isolation-invalid'])
+
+    def test_integrity_call_records_and_codes_survive_both_sanitizers(self):
+        for stage in ('execute', 'fetchone'):
+            for code in ('5', '517', 'unknown'):
+                record = ('P8_DURABLE_STEP=FAIL step=sqlite-integrity-' + stage +
+                          ' elapsed_ms=12 category=sqlite-busy sqlite_errorcode=' + code + '\n').encode()
+                log = io.StringIO()
+                with redirect_stderr(log):
+                    evidence.emit_durable_diagnostics(io.BytesIO(record))
+                self.assertEqual(diagnostic.safe_lines(log.getvalue().encode()), [record.decode().strip()])
+                for invalid in ('secret', '-1', '12345678901', '5 token=secret'):
+                    self.assertEqual(diagnostic.safe_lines(record.replace(
+                        ('sqlite_errorcode=' + code).encode(), ('sqlite_errorcode=' + invalid).encode())), [])
 
     def test_control_failure_never_creates_ssh_material_or_invokes_transport(self):
         with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {'RUNNER_TEMP': directory}), \

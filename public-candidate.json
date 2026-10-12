@@ -638,7 +638,7 @@
     },
     {
       "path": "deploy/staging/acceptance_evidence.py",
-      "sha256": "d35cda71f2e440c4370884737277d7184b39848411fc5e3e4acec8d2fb3e6eda"
+      "sha256": "64141366f3fcd9cefb8e04b06db345eb51c8178efa224f9bdac0f2f31952b2d4"
     },
     {
       "path": "deploy/staging/candidate_manifest.py",
@@ -662,7 +662,7 @@
     },
     {
       "path": "deploy/staging/durable_probe.py",
-      "sha256": "efa6b1aba6bc979fe7f3fbaf63d7108f7b52f2847299376240526311b9258476"
+      "sha256": "21725073934c0b61b114cbe5a64b4c7ff2efb8d2fd548f88274fd8fa3fdf273d"
     },
     {
       "path": "deploy/staging/identities.conf",
@@ -698,7 +698,7 @@
     },
     {
       "path": "deploy/staging/readonly_diagnostics.py",
-      "sha256": "37dd72586b918d5a6799aca492ecbdbb938ea84c94a58f1160614707ea850848"
+      "sha256": "a1e676eba8be837a977be14edc45ed20fbc26446e7f1578fb6211af54172f408"
     },
     {
       "path": "deploy/staging/runtime_acceptance.py",
@@ -778,7 +778,7 @@
     },
     {
       "path": "docs/staging-readonly-diagnostics.md",
-      "sha256": "8cc28fad0101d9fe706289ccffcdf93457424df7f5b37065745b93725640b223"
+      "sha256": "6bc2901e4aa67090a5291f93c3e7d124fef28f2742445fd6108807c8ac79ce53"
     },
     {
       "path": "docs/third-party-license-texts.txt",
@@ -1018,7 +1018,7 @@
     },
     {
       "path": "tests/test_p8_evidence.py",
-      "sha256": "428f6da76f8b7e754b474556d3331bd40b0c7f37945b042082067869e2779cea"
+      "sha256": "8f1d436945c666d2211afe1bc94cec1e493b6d74469cb237c3582e595ff893b7"
     },
     {
       "path": "tests/test_p8_failure_snapshot.py",
@@ -1038,7 +1038,7 @@
     },
     {
       "path": "tests/test_p8_readonly_diagnostics.py",
-      "sha256": "5a057414b0be8cc300843e24b7e4d81e48d9ed0790d3c8ece443fe82f75b8782"
+      "sha256": "6fd1b2432d3ed015c080c893cfbada7d16389b097814aefdf21847fcd8caccaf"
     },
     {
       "path": "tests/test_p8_recovery_provenance.py",

@@ -171,9 +171,11 @@ class DurableDiagnosticTests(unittest.TestCase):
                     data=self.source(path), parser=evidence.parse_json_object)
             self.assertEqual(actual, expected)
             self.assertEqual(path.read_bytes(), before)
-            for step in ('python-imports', 'sqlite-connect', 'sqlite-integrity', 'targets-query',
-                         'targets-validate', 'targets-digest', 'sqlite-close', 'result'):
-                self.assertIn('P8_DURABLE_STEP=PASS step=' + step + ' ', log.getvalue())
+            completed = [line.split('step=')[1].split()[0] for line in log.getvalue().splitlines()
+                         if line.startswith('P8_DURABLE_STEP=PASS')]
+            self.assertEqual(completed, ['python-imports', 'sqlite-connect', 'sqlite-integrity-execute',
+                'sqlite-integrity-fetchone', 'sqlite-integrity', 'targets-query',
+                'targets-validate', 'targets-digest', 'sqlite-close', 'result'])
             for private in (str(path), durable.TARGET, 'p8-synthetic-owner', 'unavailable:p8-synthetic'):
                 self.assertNotIn(private, log.getvalue())
 
@@ -192,29 +194,83 @@ class DurableDiagnosticTests(unittest.TestCase):
                 db.close()
             self.assertEqual(raised.exception.category, 'nonzero-exit')
             self.assertIn('P8_DURABLE_STEP=FAIL step=sqlite-integrity ', log.getvalue())
-            self.assertIn('category=sqlite-busy', log.getvalue())
+            self.assertIn('P8_DURABLE_STEP=FAIL step=sqlite-integrity-execute ', log.getvalue())
+            self.assertNotIn('step=sqlite-integrity-fetchone', log.getvalue())
+            self.assertIn('category=sqlite-busy sqlite_errorcode=5', log.getvalue())
             self.assertNotIn('database is locked', log.getvalue())
             self.assertNotIn(str(path), log.getvalue())
 
-    def test_outer_real_timeout_retains_completed_stages_and_discards_untrusted_stderr(self):
-        safe = 'P8_DURABLE_STEP=PASS step=sqlite-connect elapsed_ms=1 category=none\n'
-        pending = 'P8_DURABLE_STEP=START step=sqlite-integrity elapsed_ms=0 category=none\n'
-        source = ('import sys,time\n'
-                  'sys.stderr.write(' + repr(safe + pending + 'credential=never-log\n') + ')\n'
-                  'sys.stderr.flush()\n'
-                  'time.sleep(60)\n').encode()
-        log = io.StringIO()
-        with redirect_stderr(log), self.assertRaises(evidence.CollectionStepError) as raised:
-            evidence.run('durable-snapshot', [sys.executable, '-'], data=source)
-        self.assertEqual(raised.exception.category, 'timeout')
-        self.assertGreaterEqual(raised.exception.elapsed_ms, 15000)
-        self.assertEqual(log.getvalue(), safe + pending)
+    def test_real_timeouts_distinguish_execute_from_fetchone_without_changing_deadline(self):
+        for stage in ('execute', 'fetchone'):
+            with self.subTest(stage=stage), tempfile.TemporaryDirectory() as directory:
+                path = self.fixture(directory)
+                # Wrap a real readonly SQLite connection; stall only the selected call.
+                setup = '''import sqlite3, time, sys
+original_connect = sqlite3.connect
+class SlowCursor(sqlite3.Cursor):
+    def fetchone(self):
+        if STALL == 'fetchone':
+            time.sleep(60)
+        return super().fetchone()
+class SlowConnection(sqlite3.Connection):
+    def execute(self, sql, *args):
+        if sql == 'PRAGMA integrity_check':
+            if STALL == 'execute':
+                time.sleep(60)
+            return self.cursor(factory=SlowCursor).execute(sql, *args)
+        return super().execute(sql, *args)
+sqlite3.connect = lambda *a, **k: original_connect(*a, factory=SlowConnection, **k)
+print('credential=never-log', file=sys.stderr, flush=True)
+'''
+                source = ('STALL = ' + repr(stage) + '\n' + setup).encode() + self.source(path)
+                log = io.StringIO()
+                with redirect_stderr(log), self.assertRaises(evidence.CollectionStepError) as raised:
+                    evidence.run('durable-snapshot', [sys.executable, '-', 'snapshot'], data=source)
+                self.assertEqual(raised.exception.category, 'timeout')
+                self.assertGreaterEqual(raised.exception.elapsed_ms, 15000)
+                self.assertIn('P8_DURABLE_STEP=START step=sqlite-integrity-' + stage + ' ', log.getvalue())
+                self.assertNotIn('P8_DURABLE_STEP=PASS step=sqlite-integrity-' + stage + ' ', log.getvalue())
+                self.assertNotIn('sqlite_errorcode=', log.getvalue())
+                self.assertNotIn('never-log', log.getvalue())
+                self.assertNotIn('P8_DURABLE_STEP=PASS step=sqlite-integrity ', log.getvalue())
+                if stage == 'execute':
+                    self.assertNotIn('step=sqlite-integrity-fetchone', log.getvalue())
+                else:
+                    self.assertIn('P8_DURABLE_STEP=PASS step=sqlite-integrity-execute ', log.getvalue())
+
+    def test_fetchone_error_reports_extended_code_without_exception_text(self):
+        for code, expected in ((517, 'sqlite-busy sqlite_errorcode=517'),
+                               (None, 'sqlite-error sqlite_errorcode=unknown'),
+                               ('credential=never-log', 'sqlite-error sqlite_errorcode=unknown')):
+            error = sqlite3.OperationalError('private database path and SQL')
+            if code is not None:
+                error.sqlite_errorcode = code
+            connection = Mock()
+            connection.execute.return_value.fetchone.side_effect = error
+            log = io.StringIO()
+            with self.subTest(code=code), patch.object(durable, 'DIAGNOSTICS', True), \
+                    patch.object(durable.sqlite3, 'connect', return_value=connection), \
+                    redirect_stderr(log), self.assertRaises(sqlite3.Error):
+                durable.snapshot()
+            self.assertIn('P8_DURABLE_STEP=PASS step=sqlite-integrity-execute ', log.getvalue())
+            self.assertIn('P8_DURABLE_STEP=FAIL step=sqlite-integrity-fetchone ', log.getvalue())
+            self.assertIn('category=' + expected, log.getvalue())
+            self.assertNotIn('private database', log.getvalue())
+            self.assertNotIn('credential=', log.getvalue())
+            connection.close.assert_called_once()
+            forwarded = io.StringIO()
+            with redirect_stderr(forwarded):
+                evidence.emit_durable_diagnostics(io.BytesIO(log.getvalue().encode()))
+            self.assertEqual(forwarded.getvalue(), log.getvalue())
 
     def test_stderr_filter_rejects_raw_partial_injected_and_oversized_records(self):
         safe = b'P8_DURABLE_STEP=PASS step=sqlite-connect elapsed_ms=1 category=none\n'
         invalid = [b'Traceback credential=never-log\n', safe.replace(b'sqlite-connect', b'private-step'),
                    safe.replace(b'category=none', b'category=secret'),
                    safe.replace(b'elapsed_ms=1', b'elapsed_ms=1234567890'),
+                   safe.replace(b'category=none', b'category=sqlite-error sqlite_errorcode=secret'),
+                   safe.replace(b'category=none', b'category=sqlite-error sqlite_errorcode=-1'),
+                   safe.replace(b'category=none', b'category=sqlite-error sqlite_errorcode=12345678901'),
                    safe.rstrip(b'\n') + b' token=never-log\n', b'prefix ' + safe,
                    safe.rstrip(b'\n')]
         for line in invalid:
