@@ -14,13 +14,15 @@ import urllib.request
 HERE = Path(__file__).resolve().parent
 REPOSITORY = '3pwei/tw-quant-trading-platform'
 CASES = ('python-argv', 'python-stdin', 'durable')
-STAGES = ('python-imports', 'sqlite-connect', 'sqlite-integrity', 'targets-query',
+STAGES = ('python-imports', 'sqlite-connect', 'sqlite-integrity-execute',
+          'sqlite-integrity-fetchone', 'sqlite-integrity', 'targets-query',
           'targets-validate', 'targets-digest', 'sqlite-close', 'result')
 SAFE_LINE = re.compile(
     r'(?:P8_DIAGNOSTIC_HOST=START|P8_DIAGNOSTIC=PASS acceptance=false|'
     r'P8_DIAGNOSTIC_CASE=(?:python-argv|python-stdin|durable)|'
     r'P8_DURABLE_STEP=(?:START|PASS|FAIL) step=(?:' + '|'.join(STAGES) + r') '
-    r'elapsed_ms=[0-9]{1,9} category=(?:none|sqlite-busy|sqlite-locked|sqlite-error|validation-failed|operation-failed)|'
+    r'elapsed_ms=[0-9]{1,9} category=(?:none|sqlite-busy|sqlite-locked|sqlite-error|validation-failed|operation-failed)'
+    r'(?: sqlite_errorcode=(?:[0-9]{1,10}|unknown))?|'
     r'P8_EVIDENCE_STEP=PASS step=(?:container-query-execution-worker|container-inspect-execution-worker|worker-health|durable-snapshot) elapsed_ms=[0-9]{1,9}|'
     r'P8_EVIDENCE=FAIL step=(?:container-query-execution-worker|container-inspect-execution-worker|worker-health|durable-snapshot) '
     r'category=(?:timeout|nonzero-exit|output-limit|parse-failed|invocation-failed) elapsed_ms=[0-9]{1,9}|'

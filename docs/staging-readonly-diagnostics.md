@@ -68,6 +68,17 @@ SQLite/target check, retry policy or P8 acceptance requirement.
 - Failure before a Python-import marker alone does not distinguish Docker, EOF,
   interpreter startup, or transport loss; use the preceding argv/stdin cases.
 - A START without PASS/FAIL identifies the unfinished probe segment.
+- `sqlite-integrity` retains the total integrity duration and result validation.
+  Its nested `sqlite-integrity-execute` and `sqlite-integrity-fetchone` records
+  separately time `execute("PRAGMA integrity_check")` and `fetchone()`. These are
+  Python API call boundaries, not a claim that SQLite performs all work in one
+  of them. The ordered PASS records are execute, fetchone, then integrity.
+  If SQLite raises an error, FAIL records include its numeric extended
+  `sqlite_errorcode` (or `unknown` if unavailable); category uses the primary
+  code. No exception text, SQL result, path or row is emitted. An outer timeout
+  preserves received START/PASS records but does not invent a SQLite error code.
+  The 15-second collector deadline, SQL, readonly connection and acceptance
+  conditions are unchanged; this only distinguishes where the probe stopped.
 - A result PASS followed by collector timeout points beyond completed probe work.
 - A successful diagnostic cannot retroactively explain P8 #18 or grant acceptance.
 

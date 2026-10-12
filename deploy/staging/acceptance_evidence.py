@@ -33,8 +33,9 @@ COLLECTOR_FAILURES = frozenset({
 })
 DURABLE_DIAGNOSTIC = re.compile(
     rb'P8_DURABLE_STEP=(START|PASS|FAIL) '
-    rb'step=(python-imports|sqlite-connect|sqlite-integrity|targets-query|targets-validate|targets-digest|sqlite-close|result) '
-    rb'elapsed_ms=([0-9]{1,9}) category=(none|sqlite-busy|sqlite-locked|sqlite-error|validation-failed|operation-failed)\n'
+    rb'step=(python-imports|sqlite-connect|sqlite-integrity|sqlite-integrity-execute|sqlite-integrity-fetchone|targets-query|targets-validate|targets-digest|sqlite-close|result) '
+    rb'elapsed_ms=([0-9]{1,9}) category=(none|sqlite-busy|sqlite-locked|sqlite-error|validation-failed|operation-failed)'
+    rb'(?: sqlite_errorcode=(?:[0-9]{1,10}|unknown))?\n'
 )
 
 

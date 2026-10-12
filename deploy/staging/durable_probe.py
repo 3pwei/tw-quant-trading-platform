@@ -6,10 +6,11 @@ from time import monotonic_ns
 DIAGNOSTICS = __name__ == "__main__" and sys.argv[1:] == ["snapshot"]
 
 
-def diagnostic(status, step, elapsed_ms, category="none"):
+def diagnostic(status, step, elapsed_ms, category="none", sqlite_errorcode=None):
     if DIAGNOSTICS:
+        code = "" if sqlite_errorcode is None else " sqlite_errorcode=" + str(sqlite_errorcode)
         print("P8_DURABLE_STEP=" + status + " step=" + step +
-              " elapsed_ms=" + str(elapsed_ms) + " category=" + category,
+              " elapsed_ms=" + str(elapsed_ms) + " category=" + category + code,
               file=sys.stderr, flush=True)
 
 
@@ -36,13 +37,16 @@ def probe_step(step):
     except Exception as error:
         # Never emit exception text, database paths, SQL or row contents.
         category = "operation-failed"
+        sqlite_errorcode = None
         if isinstance(error, sqlite3.Error):
-            code = getattr(error, "sqlite_errorcode", 0) & 0xff
+            raw_code = getattr(error, "sqlite_errorcode", None)
+            sqlite_errorcode = raw_code if type(raw_code) is int and 0 <= raw_code <= 0x7fffffff else "unknown"
+            code = sqlite_errorcode & 0xff if type(sqlite_errorcode) is int else 0
             category = {sqlite3.SQLITE_BUSY: "sqlite-busy", sqlite3.SQLITE_LOCKED: "sqlite-locked"}.get(
                 code, "sqlite-error")
         elif isinstance(error, ValueError):
             category = "validation-failed"
-        diagnostic("FAIL", step, (monotonic_ns() - started) // 1_000_000, category)
+        diagnostic("FAIL", step, (monotonic_ns() - started) // 1_000_000, category, sqlite_errorcode)
         raise
     else:
         diagnostic("PASS", step, (monotonic_ns() - started) // 1_000_000)
@@ -54,7 +58,11 @@ def snapshot(path=None):
         connection = sqlite3.connect(Path(path).resolve().as_uri() + "?mode=ro", uri=True)
     try:
         with probe_step("sqlite-integrity"):
-            if connection.execute("PRAGMA integrity_check").fetchone() != ("ok",):
+            with probe_step("sqlite-integrity-execute"):
+                cursor = connection.execute("PRAGMA integrity_check")
+            with probe_step("sqlite-integrity-fetchone"):
+                integrity = cursor.fetchone()
+            if integrity != ("ok",):
                 raise ValueError("sqlite integrity failure")
         with probe_step("targets-query"):
             rows = connection.execute("SELECT * FROM execution_targets ORDER BY target_id").fetchall()
