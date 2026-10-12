@@ -1,0 +1,60 @@
+name: Staging READ-ONLY Diagnostics
+
+on:
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: "Exact reviewed master SHA"
+        required: true
+        type: string
+      confirmation:
+        description: "Type DIAGNOSE staging followed by a space and expected_sha"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: p8-staging
+  cancel-in-progress: false
+
+jobs:
+  inspect:
+    if: ${{ github.repository == '3pwei/tw-quant-trading-platform' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' && github.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: staging
+    env:
+      EXPECTED_SHA: ${{ inputs.expected_sha }}
+      CONFIRMATION: ${{ inputs.confirmation }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Verify reviewed source and exact manual request before SSH secrets
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python tools/verify_public_candidate.py
+          python -B deploy/staging/readonly_diagnostics.py check
+      - name: Inspect once through pinned Staging SSH
+        id: inspect
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          STAGING_HOST: ${{ vars.STAGING_HOST }}
+          STAGING_USER: ${{ vars.STAGING_USER }}
+          STAGING_SSH_PRIVATE_KEY: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          STAGING_SSH_HOST_KEY: ${{ secrets.STAGING_SSH_HOST_KEY }}
+        run: python -B deploy/staging/readonly_diagnostics.py inspect
+      - name: Upload sanitized diagnostic evidence only
+        if: ${{ always() && steps.inspect.outcome != 'skipped' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: staging-readonly-diagnostics
+          path: ${{ runner.temp }}/p8-readonly-diagnostics.json
+          if-no-files-found: error
+          retention-days: 30
