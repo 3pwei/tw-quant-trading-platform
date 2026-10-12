@@ -108,14 +108,17 @@ def remote_main(namespace, probe):
                  type(value['active_targets']) is int and value['active_targets'] == 0, 'durable-state-invalid')
         else:
             need(value == 'P8_PYTHON_READY', 'diagnostic-result-invalid')
-    print('P8_DIAGNOSTIC=PASS acceptance=false', flush=True)
+    # Keep host markers on the collector's stream; SSH transports stdout and
+    # stderr independently, so merging them does not preserve cross-stream order.
+    print('P8_DIAGNOSTIC=PASS acceptance=false', file=sys.stderr, flush=True)
 
 
 def payload():
     # Ship reviewed source in memory; never read/copy factory, env or private artifacts.
     collector = (HERE / 'acceptance_evidence.py').read_text()
     probe = (HERE / 'durable_probe.py').read_bytes()
-    return ("print('P8_DIAGNOSTIC_HOST=START', flush=True)\n"
+    return ("import sys\n"
+            "print('P8_DIAGNOSTIC_HOST=START', file=sys.stderr, flush=True)\n"
             "namespace = {'__name__': 'p8_diagnostic'}\n"
             'exec(compile(' + repr(collector) + ", '<reviewed-collector>', 'exec'), namespace)\n" +
             'probe = ' + repr(probe) + '\n' + inspect.getsource(remote_main) +
@@ -170,6 +173,10 @@ def inspect_once():
             if len(raw) > 65536:
                 reason = 'output-limit'
             elif reason == 'incomplete-output':
+                # Completion requires every ordered evidence sequence, one host
+                # start, one success marker and no failure. Do not use the last
+                # merged line: a collector record can arrive after stdout's
+                # success marker even though it was emitted first (run #2).
                 cases = [line for line in lines if line.startswith('P8_DIAGNOSTIC_CASE=')]
                 collected = [line.split('step=')[1].split()[0] for line in lines
                              if line.startswith('P8_EVIDENCE_STEP=PASS')]
@@ -180,7 +187,6 @@ def inspect_once():
                                       'worker-health', 'durable-snapshot', 'durable-snapshot', 'durable-snapshot'] and
                         finished == list(STAGES) and lines.count('P8_DIAGNOSTIC_HOST=START') == 1 and
                         lines.count('P8_DIAGNOSTIC=PASS acceptance=false') == 1 and
-                        lines[-1] == 'P8_DIAGNOSTIC=PASS acceptance=false' and
                         not any(line.startswith(('P8_EVIDENCE=FAIL', 'P8_EVIDENCE_FAIL', 'P8_DURABLE_STEP=FAIL')) for line in lines)):
                     reason = 'completed'
     except Exception:

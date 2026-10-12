@@ -140,7 +140,8 @@ class RemoteTests(unittest.TestCase):
             with redirect_stdout(out), redirect_stderr(err):
                 diagnostic.remote_main(namespace, probe)
             self.assertEqual(path.read_bytes(), before)
-            self.assertEqual(out.getvalue(), 'P8_DIAGNOSTIC=PASS acceptance=false\n')
+            self.assertEqual(out.getvalue(), '')
+            self.assertEqual(err.getvalue().splitlines()[-1], 'P8_DIAGNOSTIC=PASS acceptance=false')
             self.assertEqual([line for line in err.getvalue().splitlines() if line.startswith('P8_DIAGNOSTIC_CASE=')],
                              ['P8_DIAGNOSTIC_CASE=' + case for case in diagnostic.CASES])
             self.assertEqual(len(calls), 6)
@@ -183,6 +184,21 @@ class RemoteTests(unittest.TestCase):
         self.assertNotIn(b'STAGING_SSH_PRIVATE_KEY', source)
         self.assertNotIn(b'GITHUB_TOKEN', source)
 
+    def test_host_start_and_completion_share_collector_stderr(self):
+        with tempfile.TemporaryDirectory() as directory:
+            namespace, probe, *_ = self.fixture(directory)
+            out, err = io.StringIO(), io.StringIO()
+            # Execute the payload prelude itself, rather than restating its print.
+            prelude = diagnostic.payload().decode().split("namespace =", 1)[0]
+            with redirect_stdout(out), redirect_stderr(err):
+                exec(compile(prelude, '<diagnostic-prelude>', 'exec'), {})
+                diagnostic.remote_main(namespace, probe)
+            self.assertEqual(out.getvalue(), '')
+            lines = diagnostic.safe_lines(err.getvalue().encode())
+            self.assertEqual(lines[0], 'P8_DIAGNOSTIC_HOST=START')
+            self.assertEqual(lines[-1], 'P8_DIAGNOSTIC=PASS acceptance=false')
+            self.assertTrue(lines[-2].startswith('P8_EVIDENCE_STEP=PASS step=durable-snapshot '))
+
 
 class TransportTests(unittest.TestCase):
     def exercise(self, action):
@@ -223,7 +239,7 @@ class TransportTests(unittest.TestCase):
         self.assertEqual(document['reason'], 'transport-timeout')
         self.assertEqual(document['stages'], [safe.decode().strip()])
 
-    def test_success_requires_zero_exit_all_cases_and_final_sentinel(self):
+    def test_success_requires_zero_exit_complete_evidence_and_unique_success(self):
         complete = 'P8_DIAGNOSTIC_HOST=START\n'
         complete += ''.join('P8_EVIDENCE_STEP=PASS step=' + step + ' elapsed_ms=1\n' for step in (
             'container-query-execution-worker', 'container-inspect-execution-worker', 'worker-health'))
@@ -234,7 +250,12 @@ class TransportTests(unittest.TestCase):
                                     for step in diagnostic.STAGES)
             complete += 'P8_EVIDENCE_STEP=PASS step=durable-snapshot elapsed_ms=1\n'
         complete += 'P8_DIAGNOSTIC=PASS acceptance=false\n'
+        # Run #2: SSH delivered stdout's success before stderr's final timing.
+        records = complete.splitlines(keepends=True)
+        reordered = ''.join(records[:-2] + [records[-1], records[-2]])
         for content, exit_code, expected in [(complete, 0, 'completed'), (complete, 1, 'remote-failed'),
+                                            (reordered, 0, 'completed'),
+                                            (reordered, 1, 'remote-failed'),
                                             (complete, 255, 'transport-failed'),
                                             ('P8_DIAGNOSTIC=PASS acceptance=false\n', 0, 'incomplete-output'),
                                             (complete.replace('step=targets-query', 'step=invalid'), 0, 'incomplete-output'),
@@ -247,6 +268,42 @@ class TransportTests(unittest.TestCase):
                 code, document = self.exercise(execute)
                 self.assertEqual(document['reason'], expected)
                 self.assertEqual(code == 0, expected == 'completed')
+
+        # A success marker can never compensate for missing/duplicated records,
+        # a broken per-kind order, truncated output or any explicit failure.
+        for index, record in enumerate(records):
+            for content in (''.join(records[:index] + records[index + 1:]),
+                            ''.join(records[:index] + [record] + records[index:])):
+                def execute(argv, kwargs):
+                    kwargs['stdout'].write(content.encode())
+                    return subprocess.CompletedProcess(argv, 0)
+                with self.subTest(record=record, content=content):
+                    code, document = self.exercise(execute)
+                    self.assertEqual(code, 1)
+                    self.assertEqual(document['reason'], 'incomplete-output')
+
+        for content in (
+            complete[:-1],
+            complete.replace('step=python-imports', 'step=swap').replace(
+                'step=sqlite-connect', 'step=python-imports').replace('step=swap', 'step=sqlite-connect'),
+            complete.replace('P8_DIAGNOSTIC_CASE=python-argv', 'P8_DIAGNOSTIC_CASE=swap').replace(
+                'P8_DIAGNOSTIC_CASE=python-stdin', 'P8_DIAGNOSTIC_CASE=python-argv').replace(
+                'P8_DIAGNOSTIC_CASE=swap', 'P8_DIAGNOSTIC_CASE=python-stdin'),
+            complete.replace('step=container-query-execution-worker', 'step=swap').replace(
+                'step=container-inspect-execution-worker', 'step=container-query-execution-worker').replace(
+                'step=swap', 'step=container-inspect-execution-worker'),
+            reordered + 'P8_DURABLE_STEP=FAIL step=sqlite-integrity elapsed_ms=1 category=sqlite-error\n',
+            reordered + 'P8_EVIDENCE=FAIL step=durable-snapshot category=timeout elapsed_ms=15002\n',
+            reordered + 'P8_EVIDENCE_FAIL check=container-health service=execution-worker '
+                        'expected=running:true,health:healthy actual=running:true,health:unhealthy,restarts:0\n',
+        ):
+            def execute(argv, kwargs):
+                kwargs['stdout'].write(content.encode())
+                return subprocess.CompletedProcess(argv, 0)
+            with self.subTest(content=content):
+                code, document = self.exercise(execute)
+                self.assertEqual(code, 1)
+                self.assertEqual(document['reason'], 'incomplete-output')
 
     def test_sanitizer_drops_raw_exceptions_values_partial_lines_and_fake_steps(self):
         raw = (b'P8_DIAGNOSTIC_HOST=START\nTraceback raw-secret\n'
