@@ -24,6 +24,15 @@ from pathlib import Path
 import sqlite3
 diagnostic("PASS", "python-imports", (monotonic_ns() - _imports_started) // 1_000_000)
 
+if DIAGNOSTICS:
+    try:
+        # Private collector handshake, not a PASS marker. Never emit raw /proc text.
+        _start_ticks = int(Path('/proc/self/stat').read_text().rsplit(')', 1)[1].split()[19])
+        print('P8_PROBE_ID pid=' + str(os.getpid()) + ' start_ticks=' + str(_start_ticks),
+              file=sys.stderr, flush=True)
+    except (OSError, ValueError, IndexError):
+        pass
+
 TARGET = "exec_P8SyntheticLocked0001"
 PATH = "/data/staging.sqlite3"
 
