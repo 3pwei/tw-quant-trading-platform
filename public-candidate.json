@@ -65,6 +65,10 @@
       "sha256": "86ee3dfc67960f538626558a83859c3c42ee76238846922c0b999b515eca1753"
     },
     {
+      "path": ".github/workflows/staging-readonly-diagnostics.yml",
+      "sha256": "d1d542faf26d87dd6401bb69ce9703054942dbeb6fa7bd35af23ae6f1c39915b"
+    },
+    {
       "path": ".gitignore",
       "sha256": "67fdb684405a866f5c4b479cc5d8a46db122b2734470ef713dcf5c47f6e2cbcd"
     },
@@ -693,6 +697,10 @@
       "sha256": "e1a814efb834329b4b015bc6f0ae66d8b440cefe39d09180867093892d24339f"
     },
     {
+      "path": "deploy/staging/readonly_diagnostics.py",
+      "sha256": "8652ab7100e89b65a4d17903075e7daff361eaefd2c456c3c8ceac0d8749c90e"
+    },
+    {
       "path": "deploy/staging/runtime_acceptance.py",
       "sha256": "027b05c18fe058b48e0d53c2b936f7aeffd0c70c040359a7a990a99741d51137"
     },
@@ -767,6 +775,10 @@
     {
       "path": "docs/security-expiry-notifications.md",
       "sha256": "e5c4e6e8a4315eb5a586413a2b9243ae23e62803485f4d9dc51472f602e68a3d"
+    },
+    {
+      "path": "docs/staging-readonly-diagnostics.md",
+      "sha256": "0e7daf0724d4864ee8d1600ffb04341a6e45bfb4ad323b09b7352350a157d1c9"
     },
     {
       "path": "docs/third-party-license-texts.txt",
@@ -1023,6 +1035,10 @@
     {
       "path": "tests/test_p8_ingress.py",
       "sha256": "213fa28cec7fb9af02d6b012114379e2f92ad57e16fb87ac49cc7936279e4dff"
+    },
+    {
+      "path": "tests/test_p8_readonly_diagnostics.py",
+      "sha256": "640543c5f69fe7fb49942ad8edf23f00aae785c6d4cc53a006f430c5ec38176f"
     },
     {
       "path": "tests/test_p8_recovery_provenance.py",
