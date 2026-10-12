@@ -56,6 +56,15 @@ Only fixed allowlisted records reach logs and the 30-day artifact
 environment, IDs/hostnames, SQL rows and private parameters are not published.
 Completed stage records survive collector and transport timeouts where received.
 
+Host start, case and completion markers use the collector's stderr stream.
+Completion is checked using the exact ordered case, collector-PASS and
+durable-PASS sequences, exactly one host start and success marker, no failure
+records, and a zero remote exit status. The success marker need not be the last
+merged line: SSH can deliver a stdout success marker before an earlier stderr
+timing record, as observed in diagnostic run #2. This fixes that diagnostic
+false failure only; it does not explain run #1's timeout or change any timeout,
+SQLite/target check, retry policy or P8 acceptance requirement.
+
 - Failure before a Python-import marker alone does not distinguish Docker, EOF,
   interpreter startup, or transport loss; use the preceding argv/stdin cases.
 - A START without PASS/FAIL identifies the unfinished probe segment.
