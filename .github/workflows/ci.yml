@@ -52,6 +52,11 @@ jobs:
               "$image" python /app/p8_runtime_source.py verify --root /app --revision "$GITHUB_SHA"
           done
 
+      - name: Verify container-local SQLite deadline survives Docker client loss
+        env:
+          P8_PROBE_TEST_IMAGE: p8-shioaji-runtime-a:ci
+        run: python -m unittest discover -s tests -p 'test_p8_probe_timeout.py' -v
+
   p9-cutover:
     name: P9 fail-closed cutover regressions
     runs-on: ubuntu-latest

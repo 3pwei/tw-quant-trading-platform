@@ -33,10 +33,13 @@ It then executes each command once, stopping at the first failure:
 
 1. `docker exec <verified-worker> python -c '<fixed readiness print>'`
 2. `docker exec -i <verified-worker> python -` with that print on stdin.
-3. `docker exec -i <verified-worker> python - snapshot` with the reviewed probe.
+3. `docker exec -i <verified-worker> /usr/bin/timeout --signal=TERM --kill-after=5s 120s python - snapshot` with the reviewed probe.
 
-The existing collector keeps its 15-second per-command deadline. The SSH wrapper
-has a 120-second deadline; the workflow job has a five-minute bound. There is no
+Small collector commands retain their 15-second deadline. The full durable
+snapshot has a 120-second container-local deadline, followed by at most five
+seconds for TERM before KILL. Its Docker client has a 140-second deadline.
+The SSH wrapper allows 300 seconds for all serial commands, cleanup and output;
+the diagnostic workflow job allows ten minutes. There is no
 container stop/start/restart, pull/build, SQL write/DDL, seed, config/Secrets
 change, broker import, backup or acceptance-ledger write. Full `integrity_check`
 and the existing readonly target validation/hash are retained. SQLite readers
@@ -44,9 +47,24 @@ can consume I/O and take read locks; normal WAL shared-memory coordination is no
 bypassed with `immutable=1`. Anonymous collector output files on the host and
 temporary runner SSH files are closed/removed on normal exit and handled timeout.
 
-Killing a timed-out Docker CLI or SSH process does not guarantee that its remote
-exec process has exited. Report timeout and stop; never restart the service or
-retry automatically. This diagnostic does not change that existing boundary.
+GNU timeout runs inside the container in a separate process group and remains
+responsible for stopping the probe if the Docker CLI or SSH disconnects. It
+signals only its probe group, not the application or container. The runtime
+image build verifies that `/usr/bin/timeout` exists; diagnostics install nothing.
+Exit 124 is reported as timeout. Exit 137 remains a nonzero failure because it
+can also mean an external KILL or OOM. A lost transport cannot prove cleanup,
+and an uninterruptible kernel I/O wait can delay signal handling; never report
+these as PASS or retry automatically.
+
+P8 deploy A, deploy B and rollback SSH deadlines allow 30 minutes each, including
+serial evidence captures, health checks and compensation. The existing overall
+workflow limit is explicitly 360 minutes, leaving room for these stages and the
+currently requested 30-minute soak. The pre-existing 360-minute soak input cannot
+fit with deployment overhead in a 360-minute hosted job; it is not covered by
+this budget and is not changed by this patch. The soak
+duration and 30-second maximum sample-gap acceptance gate are unchanged: a slow
+integrity scan can still fail that gate. This patch addresses probe lifecycle
+and deadline nesting, not a relaxation of acceptance requirements.
 
 ## Evidence and interpretation
 
@@ -62,8 +80,8 @@ durable-PASS sequences, exactly one host start and success marker, no failure
 records, and a zero remote exit status. The success marker need not be the last
 merged line: SSH can deliver a stdout success marker before an earlier stderr
 timing record, as observed in diagnostic run #2. This fixes that diagnostic
-false failure only; it does not explain run #1's timeout or change any timeout,
-SQLite/target check, retry policy or P8 acceptance requirement.
+false failure only; it does not explain run #1's timeout. The subsequent deadline
+change above preserves SQLite/target checks, retry policy and P8 acceptance gates.
 
 - Failure before a Python-import marker alone does not distinguish Docker, EOF,
   interpreter startup, or transport loss; use the preceding argv/stdin cases.
@@ -77,8 +95,8 @@ SQLite/target check, retry policy or P8 acceptance requirement.
   `sqlite_errorcode` (or `unknown` if unavailable); category uses the primary
   code. No exception text, SQL result, path or row is emitted. An outer timeout
   preserves received START/PASS records but does not invent a SQLite error code.
-  The 15-second collector deadline, SQL, readonly connection and acceptance
-  conditions are unchanged; this only distinguishes where the probe stopped.
+  The SQL, readonly connection and acceptance conditions are unchanged; these
+  timing records distinguish where the probe stopped.
 - A result PASS followed by collector timeout points beyond completed probe work.
 - A successful diagnostic cannot retroactively explain P8 #18 or grant acceptance.
 
@@ -100,8 +118,7 @@ The collector now starts one separate, short-lived Python standard-library
 observer alongside the actual Docker stdin snapshot. It reads Linux `/proc`,
 PSI and cgroup v2 files. No monitoring package, service, `ptrace`, container
 capability or database setting is installed or changed. The existing probe
-command, SQL, readonly URI, 15-second subprocess deadline and acceptance gates
-remain unchanged. Instrumentation itself consumes some resources and may alter
+SQL, readonly URI and acceptance gates remain unchanged. Instrumentation itself consumes some resources and may alter
 timing; sampling is evidence, not a performance-neutral experiment.
 
 The probe emits a numeric PID/start-ticks handshake on its diagnostic stream.
@@ -129,14 +146,16 @@ SQLite lock. CPU time in seconds is the tick delta divided by clock ticks/second
 PSI and counter deltas over each sample interval are more useful than absolute
 cumulative totals. An `S` or `D` process state alone is not a root-cause verdict.
 
-The observer samples approximately once per second for at most 15 seconds and
-16 samples, with offsets on the collector's host monotonic clock (not the delayed
-GitHub log delivery timestamps). Its output is capped to 32 KiB/64 fixed-schema lines. The original
+The observer samples approximately every five seconds for at most 125 seconds
+and 26 samples, covering the longer probe deadline with bounded overhead. Offsets
+use the collector's host monotonic clock, not delayed GitHub log timestamps.
+Its output is capped to 64 KiB/96 fixed-schema lines. The SSH collector accepts
+at most 128 KiB/160 lines so late completion markers still fit. The original
 probe result is preserved if sampling is unavailable. Completion/timeout wakes
 the observer through a pipe; bounded cleanup can kill only the observer's own
 process group (including its read-only metadata lookup), never a container or
-the application. This change does not claim to solve a possibly surviving
-container exec process after the existing Docker CLI timeout.
+the application. The independent container-local watchdog controls the probe
+itself even when the Docker client disappears.
 
 Samples are retained in P8 workflow logs, including on timeout. The read-only
 diagnostic workflow also includes them in its existing JSON `stages` artifact.
@@ -145,7 +164,10 @@ are no environment values, SQL rows, process command lines, host device names,
 cgroup paths or raw error messages in their output.
 
 Local tests cover PID reuse/ambiguity, parser failures, missing metrics, output
-sanitization, real subprocess completion and the real 15-second timeout. A
+sanitization, completion beyond the old 15-second deadline, native SQLite TERM
+interruption and KILL escalation. CI also kills the Docker client while SQLite
+is running in the exact runtime fixture image, verifies the probe stops for both
+TERM and KILL cases, and verifies the container remains running. A
 restricted local `/proc` may prevent real namespace lookup; CI must exercise
 namespace-bound process counter sampling without that restriction. Remote
 staging evidence requires separately authorized workflow execution after merge.

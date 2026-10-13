@@ -9,8 +9,10 @@ import sys
 import time
 
 UNKNOWN = 'unknown'
-MAX_SAMPLES = 16
-MAX_BYTES = 32768
+MAX_SAMPLES = 26
+MAX_BYTES = 65536
+SAMPLE_SECONDS = 5
+DURATION_SECONDS = 125
 NUMBER = r'(?:[0-9]{1,20}|unknown)'
 FIELDS = {
     'probe': ('host_pid', 'container_pid', 'start_ticks', 'user_ticks', 'system_ticks',
@@ -26,9 +28,9 @@ PATTERNS = {}
 for _scope, _fields in FIELDS.items():
     _suffix = r' state=(?:R|S|D|T|t|Z|X|I|unknown)' if _scope == 'probe' else ''
     PATTERNS[_scope] = re.compile(r'P8_RESOURCE scope=' + _scope +
-        r' sample=(?:[0-9]|1[0-5]) elapsed_ms=[0-9]{1,9}' +
+        r' sample=(?:[0-9]|1[0-9]|2[0-5]) elapsed_ms=[0-9]{1,9}' +
         ''.join(' ' + key + '=' + NUMBER for key in _fields) + _suffix + r'\n')
-STATUS = re.compile(r'P8_RESOURCE status=(?:unavailable|complete|stopped) samples=(?:[0-9]|1[0-6])\n')
+STATUS = re.compile(r'P8_RESOURCE status=(?:unavailable|complete|stopped) samples=(?:[0-9]|1[0-9]|2[0-6])\n')
 IDENTITY = re.compile(rb'P8_PROBE_ID pid=([1-9][0-9]{0,9}) start_ticks=([0-9]{1,20})\n')
 
 
@@ -242,7 +244,7 @@ def sample(cid, diagnostic_fd, stop_fd, started_ns):
     bound, host_pid, count = None, None, 0
     for index in range(MAX_SAMPLES):
         elapsed = time.monotonic() - started
-        if elapsed >= 15:
+        if elapsed >= DURATION_SECONDS:
             break
         if type(initial) is int and optional(lambda: stat(init_pid)['start_ticks']) != initial:
             break
@@ -255,7 +257,7 @@ def sample(cid, diagnostic_fd, stop_fd, started_ns):
         emit('host', index, int(elapsed * 1000), host_sample(device))
         emit('cgroup', index, int(elapsed * 1000), cgroup_sample(group, device))
         count += 1
-        remaining = min(1.0, 15 - (time.monotonic() - started))
+        remaining = min(SAMPLE_SECONDS, DURATION_SECONDS - (time.monotonic() - started))
         if remaining <= 0:
             break
         if select.select([stop_fd], [], [], remaining)[0]:

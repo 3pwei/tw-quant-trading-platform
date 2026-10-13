@@ -128,10 +128,27 @@ class IdentityAndCounterTests(unittest.TestCase):
         self.assertTrue(all(sampling.safe_line(line) for line in lines))
         self.assertNotIn('never-log', out.getvalue())
         self.assertEqual(len(diagnostic.safe_lines(out.getvalue().encode())), 4)
-        for bad in (lines[0].replace('unknown', '-1', 1), lines[0].replace('sample=15', 'sample=16'),
+        for bad in (lines[0].replace('unknown', '-1', 1), lines[0].replace('sample=15', 'sample=26'),
                     lines[0].rstrip() + ' secret=abc\n', lines[0].rstrip('\n'),
                     'P8_RESOURCE status=private samples=0\n'):
             self.assertFalse(sampling.safe_line(bad))
+
+    def test_full_duration_samples_preserve_late_completion_markers(self):
+        out = io.StringIO()
+        with redirect_stdout(out):
+            sampling.emit('limits', 0, 0, {key: 10**20 - 1 for key in sampling.FIELDS['limits']})
+            for index in range(sampling.MAX_SAMPLES):
+                for scope in ('probe', 'host', 'cgroup'):
+                    sampling.emit(scope, index, index * 5000,
+                                  {key: 10**20 - 1 for key in sampling.FIELDS[scope]})
+            print('P8_RESOURCE status=complete samples=26')
+        raw = out.getvalue().encode()
+        self.assertLess(len(raw), sampling.MAX_BYTES)
+        self.assertLess(len(raw.splitlines()), 96)
+        marker = b'P8_DIAGNOSTIC=PASS acceptance=false\n'
+        records = diagnostic.safe_lines(raw + marker)
+        self.assertEqual(len(records), len(raw.splitlines()) + 1)
+        self.assertEqual(records[-1], marker.decode().strip())
 
 
 @unittest.skipUnless(sys.platform == 'linux', 'Linux /proc required')
@@ -143,7 +160,7 @@ class RealProcessTests(unittest.TestCase):
                 "if sys.argv[1] == 'inspect':\n" +
                 (' import time; time.sleep(30)\n' if slow_inspect else '') +
                 (" raise SystemExit(1)\n" if fail_inspect else ' print(' + str(os.getpid()) + ')\n') +
-                "else:\n os.execv(sys.executable, [sys.executable, *sys.argv[5:]])\n")
+                "else:\n os.execv(sys.argv[4], sys.argv[4:])\n")
             docker.chmod(0o755)
             source = '''import os,time,sys
 from pathlib import Path
@@ -158,6 +175,7 @@ print('{}')
 '''.replace('DURATION', str(duration)).encode()
             log, processes = io.StringIO(), []
             original = subprocess.Popen
+            sampler_source = (STAGING / 'resource_sampling.py').read_text().replace('SAMPLE_SECONDS = 5', 'SAMPLE_SECONDS = 1')
             def launch(*args, **kwargs):
                 process = original(*args, **kwargs)
                 processes.append(process)
@@ -165,7 +183,9 @@ print('{}')
             started = time.monotonic()
             failure = None
             with patch.dict(os.environ, {'PATH': directory + os.pathsep + os.environ['PATH']}), \
-                    patch.object(evidence.subprocess, 'Popen', side_effect=launch), redirect_stderr(log):
+                    patch.object(evidence.subprocess, 'Popen', side_effect=launch), \
+                    patch.object(evidence, 'DURABLE_SECONDS', 15), \
+                    patch.dict(vars(evidence), {'RESOURCE_SAMPLER_SOURCE': sampler_source}), redirect_stderr(log):
                 try:
                     evidence.run('durable-snapshot', ['docker', 'exec', '-i', 'a' * 64, 'python', '-', 'snapshot'], data=source)
                 except evidence.CollectionStepError as error:

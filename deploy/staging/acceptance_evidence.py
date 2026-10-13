@@ -16,6 +16,11 @@ import time
 from time import monotonic_ns as collection_clock_ns
 
 ROOT = Path('/srv/trading-platform-staging')
+# The timer runs INSIDE the container and survives a disconnected Docker client.
+# Leave 15 seconds outside its 120-second deadline plus 5-second kill grace.
+DURABLE_SECONDS = 120
+DURABLE_KILL_SECONDS = 5
+DURABLE_TRANSPORT_SECONDS = 140
 SERVICES = ('market-api', 'execution-worker', 'gateway')
 PHASES = ('deploy-known_good', 'deploy-candidate', 'rollback-rollback')
 INSPECT = ('{"id":{{json .Id}},"image":{{json .Image}},"started":{{json .State.StartedAt}},'
@@ -49,10 +54,22 @@ def emit_durable_diagnostics(stream):
             print(line.decode('ascii').rstrip('\n'), file=sys.stderr, flush=True)
 
 
+def is_durable_probe(argv):
+    return (len(argv) == 7 and argv[:3] == ['docker', 'exec', '-i'] and
+            argv[4:] == ['python', '-', 'snapshot'] and
+            re.fullmatch('[0-9a-f]{64}', argv[3]) is not None)
+
+
+def bounded_probe_command(argv):
+    # Never use --foreground: TERM/KILL must reach the probe's own process group.
+    return [*argv[:4], '/usr/bin/timeout', '--signal=TERM',
+            '--kill-after=' + str(DURABLE_KILL_SECONDS) + 's',
+            str(DURABLE_SECONDS) + 's', *argv[4:]]
+
+
 def start_resource_sampling(argv, diagnostic_output, sample_output, started_ns):
     """Observe only the actual Docker stdin snapshot; optional diagnostics cannot gate it."""
-    if (len(argv) != 7 or argv[:3] != ['docker', 'exec', '-i'] or
-            argv[4:] != ['python', '-', 'snapshot'] or re.fullmatch('[0-9a-f]{64}', argv[3]) is None):
+    if not is_durable_probe(argv):
         return None
     read_fd = write_fd = None
     try:
@@ -98,7 +115,7 @@ def finish_resource_sampling(sampler, output):
             process.wait(timeout=0.25)
             print('P8_RESOURCE status=unavailable samples=0', file=sys.stderr, flush=True)
         output.seek(0)
-        for raw in output.read(32768).splitlines(keepends=True)[:64]:
+        for raw in output.read(65536).splitlines(keepends=True)[:96]:
             line = raw.decode('ascii', errors='replace')
             if safe_line(line):
                 print(line.rstrip('\n'), file=sys.stderr, flush=True)
@@ -150,6 +167,8 @@ def require_container_health(service, state):
 def run(step, argv, *, data=None, limit=65536, parser=None):
     """Run one allowlisted collection step without exposing tool inputs or outputs."""
     require(step in COLLECTOR_STEPS, 'invalid-collector-step')
+    durable = step == 'durable-snapshot' and is_durable_probe(argv)
+    command = bounded_probe_command(argv) if durable else argv
     started = collection_clock_ns()
 
     def elapsed_ms():
@@ -160,8 +179,9 @@ def run(step, argv, *, data=None, limit=65536, parser=None):
             tempfile.TemporaryFile() as sample_output:
         sampler = start_resource_sampling(argv, diagnostic_output, sample_output, started) if step == 'durable-snapshot' else None
         try:
-            result = subprocess.run(argv, input=data, stdout=output,
-                stderr=diagnostic_output if step == 'durable-snapshot' else subprocess.DEVNULL, timeout=15)
+            result = subprocess.run(command, input=data, stdout=output,
+                stderr=diagnostic_output if step == 'durable-snapshot' else subprocess.DEVNULL,
+                timeout=DURABLE_TRANSPORT_SECONDS if durable else 15)
         except subprocess.TimeoutExpired:
             raise CollectionStepError(step, 'timeout', elapsed_ms()) from None
         except OSError:
@@ -170,6 +190,9 @@ def run(step, argv, *, data=None, limit=65536, parser=None):
             if step == 'durable-snapshot':
                 emit_durable_diagnostics(diagnostic_output)
             finish_resource_sampling(sampler, sample_output)
+        # 137 can also mean an external KILL/OOM, so never call it proven timeout.
+        if durable and result.returncode == 124:
+            raise CollectionStepError(step, 'timeout', elapsed_ms())
         if result.returncode != 0:
             raise CollectionStepError(step, 'nonzero-exit', elapsed_ms())
         if output.tell() > limit:
