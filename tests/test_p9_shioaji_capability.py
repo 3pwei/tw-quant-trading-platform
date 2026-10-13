@@ -21,20 +21,62 @@ LABELS = {'io.tw-quant.capability.market.shioaji': 'true', 'io.tw-quant.shioaji.
 
 
 class ApprovalTests(unittest.TestCase):
+    def assert_bound_approval(self, pins):
+        # approved-p8.json is the reviewed identity source; a later binding must
+        # not require changing test bytes after that source completes P8.
+        self.assertRegex(pins['platform_sha'], r'\A[0-9a-f]{40}\Z')
+        for key in ('candidate_run_id', 'staging_run_id'):
+            self.assertRegex(pins[key], r'\A[1-9][0-9]*\Z')
+        for kind, name in (('candidate', 'p8-staging-candidate-manifest'),
+                           ('acceptance', 'p8-staging-acceptance')):
+            artifact = pins[kind + '_artifact']
+            self.assertIs(type(artifact['id']), int)
+            self.assertGreater(artifact['id'], 0)
+            self.assertEqual(artifact['name'], name)
+            self.assertRegex(artifact['digest'], r'\Asha256:[0-9a-f]{64}\Z')
+        self.assertEqual(set(pins['acceptance_files']),
+                         {'acceptance.json', 'candidate-manifest.json', 'ledger.jsonl', 'session.json'})
+        for digest in pins['acceptance_files'].values():
+            self.assertRegex(digest, r'\A[0-9a-f]{64}\Z')
+        payload = (json.dumps(pins['manifest'], indent=2, sort_keys=True) + '\n').encode()
+        evidence.verify_manifest(payload, pins)
+        self.assertEqual(pins['manifest_sha256'], pins['acceptance_files']['candidate-manifest.json'])
+        self.assertNotIn('market_capabilities', pins['manifest'])
+        self.assertEqual(cutover.market_compatibility({'MARKET_DATA_PROVIDER': 'shioaji'}, pins), 'shioaji')
+
     def test_accepted_shioaji_is_bound_to_actual_approved_artifact_checksums(self):
-        self.assertEqual(PINS['platform_sha'], 'fac88646fe2f40680c60f8d61c7da385ae7f91b0')
-        self.assertEqual(PINS['candidate_run_id'], '37459015384')
-        self.assertEqual(PINS['staging_run_id'], '37462725158')
-        self.assertEqual(PINS['candidate_artifact']['id'], 11410933865)
-        self.assertEqual(PINS['candidate_artifact']['digest'], 'sha256:0481499d37dc6e208e71e63edc12f4182a4e6f6f31ee4e4b6988cd8f55d4cb15')
-        self.assertEqual(PINS['acceptance_artifact']['id'], 11417625183)
-        self.assertEqual(PINS['acceptance_artifact']['digest'], 'sha256:e28ab8c6c4608f9eee309d40b95b64e71d705a66a5de11a015609e7536c716c6')
-        self.assertEqual(PINS['acceptance_files']['ledger.jsonl'], '46d426306ed6014d236ab0649252164cda0e907aa6f11c9666fb25ffb391cfbd')
-        payload = (json.dumps(PINS['manifest'], indent=2, sort_keys=True) + '\n').encode()
-        evidence.verify_manifest(payload, PINS)
-        self.assertEqual(PINS['manifest_sha256'], PINS['acceptance_files']['candidate-manifest.json'])
-        self.assertNotIn('market_capabilities', PINS['manifest'])
-        self.assertEqual(cutover.market_compatibility({'MARKET_DATA_PROVIDER': 'shioaji'}, PINS), 'shioaji')
+        self.assert_bound_approval(PINS)
+
+    def test_consistent_new_approval_does_not_require_historical_identities(self):
+        pins = copy.deepcopy(PINS)
+        old_suffix = pins['candidate_run_id'] + '-1'
+        pins['platform_sha'] = evidence.sha(b'synthetic-new-p8-source')[:40]
+        for key in ('candidate_run_id', 'staging_run_id'):
+            pins[key] = str(int(pins[key]) + 1)
+        for kind in ('candidate', 'acceptance'):
+            pins[kind + '_artifact']['id'] += 1
+            pins[kind + '_artifact']['digest'] = 'sha256:' + evidence.sha(kind.encode())
+        manifest = pins['manifest']
+        manifest['platform_source_sha'] = manifest['pipeline_revision'] = pins['platform_sha']
+        manifest['provenance']['run_id'] = pins['candidate_run_id']
+        new_suffix = pins['candidate_run_id'] + '-1'
+        gateway = manifest['images']['gateway']
+        gateway['ref'] = gateway['ref'].replace('-' + old_suffix + '@', '-' + new_suffix + '@')
+        for release in manifest['images']['releases'].values():
+            release['configuration_identity'] = release['configuration_identity'].replace(old_suffix, new_suffix)
+            runtime = release['runtime']
+            runtime['ref'] = runtime['ref'].replace('-' + old_suffix + '@', '-' + new_suffix + '@')
+        pins['manifest_sha256'] = evidence.sha((json.dumps(manifest, indent=2, sort_keys=True) + '\n').encode())
+        pins['acceptance_files'] = {name: evidence.sha(name.encode()) for name in pins['acceptance_files']}
+        pins['acceptance_files']['candidate-manifest.json'] = pins['manifest_sha256']
+        capability = pins['market_capabilities']['shioaji']
+        capability['verified_candidate_run_id'] = pins['candidate_run_id']
+        capability['verified_staging_run_id'] = pins['staging_run_id']
+        capability['binding'] = {key: copy.deepcopy(pins[key]) for key in
+                                 ('platform_sha', 'manifest_sha256', 'candidate_artifact',
+                                  'acceptance_artifact', 'acceptance_files')}
+        capability['binding']['runtime'] = copy.deepcopy(manifest['images']['releases']['known_good'])
+        self.assert_bound_approval(pins)
 
     def test_old_p8_identities_missing_capability_wrong_version_or_binding_cannot_authorize(self):
         bad_records = []

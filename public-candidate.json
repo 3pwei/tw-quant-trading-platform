@@ -1098,7 +1098,7 @@
     },
     {
       "path": "tests/test_p9_shioaji_capability.py",
-      "sha256": "24dcab3ea7e5604f30f83aea0416fb577b7fd9e536f5589edc9bf3e8a29dd311"
+      "sha256": "999bab6bb824d85b6414f47cd1982759d256232e787ab0db563656ad9fe3f4fe"
     },
     {
       "path": "tests/test_paper_auto.py",
