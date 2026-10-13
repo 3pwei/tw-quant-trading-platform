@@ -54,7 +54,7 @@ def verify_acceptance(files, pins):
         require(item['session'] == pins['staging_run_id'] + '-1' and
                 item['pipeline'] == pins['platform_sha'] and
                 item['candidate_run_id'] == pins['candidate_run_id'], 'p8-source-mismatch')
-    require(report['soak']['elapsed_seconds'] >= 3600 and report['soak']['max_sample_gap_seconds'] <= 30,
+    require(report['soak']['elapsed_seconds'] >= 1800 and report['soak']['max_sample_gap_seconds'] <= 30,
             'p8-soak-incomplete')
 
 

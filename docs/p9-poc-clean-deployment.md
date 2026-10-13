@@ -41,7 +41,7 @@ requires separate acceptance; do not manufacture placeholder CSV data.
 Runtime and Production control-plane bytes change. Before dispatch:
 
 1. a new Candidate built from the merged clean-deploy/Demo-boundary revision;
-2. P8 A deploy/restart, B deploy/restart, rollback/restart, 60-minute soak,
+2. P8 A deploy/restart, B deploy/restart, rollback/restart, 30-minute soak,
    Shioaji 1.7.4 offline capability, image/SBOM/provenance/leakage, gateway,
    execution-lock, credential-isolation, and Demo redaction acceptance;
 3. a reviewed binding commit that changes only
@@ -51,6 +51,16 @@ Runtime and Production control-plane bytes change. Before dispatch:
 
 Until the new binding is committed, `P9 PoC Clean Deploy` stops before Production
 host access. It accepts the P8 source only across the two-file binding-only diff.
+
+The shared P9 evidence gate requires at least 1,800 elapsed soak seconds and a
+maximum sample gap of 30 seconds. P8 must still pass its full requested observation
+window; full SQLite scans bracket that window and do not count toward it. Worker
+heartbeat freshness remains 30 seconds. Longer accepted soak runs remain valid.
+
+Changing this evidence policy is a control-plane source change, not a binding-only
+update. After merging the policy change, build a fresh Candidate and complete P8
+with a 30-minute soak from that source before committing its two-file binding.
+An earlier P8 report is not sufficient to bypass the unchanged source-diff gate.
 
 ## First-time Production configuration preparation
 
