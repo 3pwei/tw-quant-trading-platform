@@ -48,6 +48,8 @@ LABEL org.opencontainers.image.revision="${PLATFORM_SOURCE_SHA}" \
       io.tw-quant.shioaji.version="1.7.4"
 
 WORKDIR /app
+# Required by the container-local probe watchdog; never install at diagnostic time.
+RUN test -x /usr/bin/timeout && /usr/bin/timeout --version
 RUN python -m pip install --no-cache-dir "uv==0.11.33"
 COPY pyproject.toml uv.lock README.md THIRD_PARTY_NOTICES.md ./
 COPY docs/dependency-notices.json ./dependency-notices.json

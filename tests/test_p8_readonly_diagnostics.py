@@ -90,7 +90,7 @@ class ControlTests(unittest.TestCase):
         self.assertEqual(job['environment'], 'staging')
         self.assertIn("github.run_attempt == 1", job['if'])
         self.assertIn("github.ref == 'refs/heads/master'", job['if'])
-        self.assertEqual(job['timeout-minutes'], '5')
+        self.assertEqual(job['timeout-minutes'], '10')
         steps = job['steps']
         self.assertNotIn('STAGING_SSH_PRIVATE_KEY', str(steps[:2]))
         self.assertIn('readonly_diagnostics.py check', steps[1]['run'])
@@ -208,7 +208,7 @@ class TransportTests(unittest.TestCase):
                    'GITHUB_TOKEN': 'token-never-log'}
             paths = []
             def execute(argv, **kwargs):
-                self.assertEqual(kwargs['timeout'], 120)
+                self.assertEqual(kwargs['timeout'], 300)
                 self.assertEqual(set(kwargs['env']), {'PATH', 'LANG'})
                 self.assertEqual(argv[-2:], ['staging.invalid', 'sudo -n python3 -B -'])
                 self.assertIn('StrictHostKeyChecking=yes', argv)
@@ -233,7 +233,7 @@ class TransportTests(unittest.TestCase):
         safe = b'P8_DURABLE_STEP=PASS step=sqlite-connect elapsed_ms=3 category=none\n'
         def execute(argv, kwargs):
             kwargs['stdout'].write(safe + b'raw-secret\n')
-            raise subprocess.TimeoutExpired('raw-secret', 120)
+            raise subprocess.TimeoutExpired('raw-secret', 300)
         code, document = self.exercise(execute)
         self.assertEqual(code, 1)
         self.assertEqual(document['reason'], 'transport-timeout')
@@ -260,7 +260,7 @@ class TransportTests(unittest.TestCase):
                                             ('P8_DIAGNOSTIC=PASS acceptance=false\n', 0, 'incomplete-output'),
                                             (complete.replace('step=targets-query', 'step=invalid'), 0, 'incomplete-output'),
                                             ('P8_EVIDENCE=FAIL check=worker-isolation-invalid\n' + complete, 0, 'incomplete-output'),
-                                            (complete + 'x' * 65536, 0, 'output-limit')]:
+                                            (complete + 'x' * 131072, 0, 'output-limit')]:
             def execute(argv, kwargs):
                 kwargs['stdout'].write(content.encode())
                 return subprocess.CompletedProcess(argv, exit_code)

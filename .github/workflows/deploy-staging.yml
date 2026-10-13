@@ -30,6 +30,7 @@ jobs:
   deploy:
     if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 360
     environment: staging
     steps:
       - name: Validate staging-only request before secrets
@@ -184,11 +185,11 @@ jobs:
 
       - name: Deploy A, verify B, and rollback to previous known-good A
         run: |
-          timeout --signal=TERM --kill-after=30s 20m ssh p8-staging \
+          timeout --signal=TERM --kill-after=30s 30m ssh p8-staging \
             "sudo flock -w 30 /var/lock/tw-quant-staging.lock /srv/trading-platform-staging/bundle/deploy.sh deploy /srv/trading-platform-staging/bundle/candidate-manifest.json known_good"
-          timeout --signal=TERM --kill-after=30s 20m ssh p8-staging \
+          timeout --signal=TERM --kill-after=30s 30m ssh p8-staging \
             "sudo flock -w 30 /var/lock/tw-quant-staging.lock /srv/trading-platform-staging/bundle/deploy.sh deploy /srv/trading-platform-staging/bundle/candidate-manifest.json candidate"
-          timeout --signal=TERM --kill-after=30s 20m ssh p8-staging \
+          timeout --signal=TERM --kill-after=30s 30m ssh p8-staging \
             "sudo flock -w 30 /var/lock/tw-quant-staging.lock /srv/trading-platform-staging/bundle/deploy.sh rollback"
 
       - name: Complete staging soak

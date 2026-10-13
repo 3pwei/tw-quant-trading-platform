@@ -151,7 +151,7 @@ def ssh_command(directory, env):
 
 def safe_lines(raw):
     resource_safe = runpy.run_path(str(HERE / 'resource_sampling.py'))['safe_line']
-    return [line.decode('ascii').rstrip('\n') for line in raw[:65536].splitlines(keepends=True)[:128]
+    return [line.decode('ascii').rstrip('\n') for line in raw[:131072].splitlines(keepends=True)[:160]
             if (len(line) <= 256 and SAFE_LINE.fullmatch(line.decode('ascii', errors='replace'))) or
                resource_safe(line.decode('ascii', errors='replace'))]
 
@@ -167,7 +167,9 @@ def inspect_once():
             data = payload()
             reason = 'transport-failed'
             try:
-                result = subprocess.run(argv, input=data, stdout=output, stderr=output, timeout=120,
+                # Five small probes (5 * 15s), one bounded durable probe (140s),
+                # then room for SSH setup, sampling cleanup and evidence output.
+                result = subprocess.run(argv, input=data, stdout=output, stderr=output, timeout=300,
                     env={'PATH': os.environ.get('PATH', '/usr/bin:/bin'), 'LANG': 'C'})
                 reason = ('transport-failed' if result.returncode == 255 else
                           'remote-failed' if result.returncode else 'incomplete-output')
@@ -175,9 +177,9 @@ def inspect_once():
                 reason = 'transport-timeout'
             finally:
                 output.seek(0)
-                raw = output.read(65537)
+                raw = output.read(131073)
                 lines = safe_lines(raw)
-            if len(raw) > 65536:
+            if len(raw) > 131072:
                 reason = 'output-limit'
             elif reason == 'incomplete-output':
                 # Completion requires every ordered evidence sequence, one host
