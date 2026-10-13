@@ -722,7 +722,7 @@
     },
     {
       "path": "deploy/staging/smoke_compose.py",
-      "sha256": "1cc1d3a4b84db4acf4acf7210fa325c1ed1854ceaab4140d7d8e21f60193f185"
+      "sha256": "93354890b30be71b981a56fb0a72ba3efc8873c8821c888f78596fd264df3bce"
     },
     {
       "path": "deploy/staging/soak.sh",
@@ -1030,7 +1030,7 @@
     },
     {
       "path": "tests/test_p8_fresh_health.py",
-      "sha256": "dd71dc3a789a1141cba3aa1e0e694c398086b5ac0252d6c26c0a0ac8c16e27ea"
+      "sha256": "7745cb63a2ace32820c81765270831483df1c61c1ae180ed85ebd3e94e542437"
     },
     {
       "path": "tests/test_p8_gateway.py",

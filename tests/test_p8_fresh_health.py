@@ -116,6 +116,28 @@ class CaptureFreshnessTests(unittest.TestCase):
         self.assertIn('durable-targets', self.calls)
         self.assertNotIn('durable-snapshot', self.calls)
 
+    def test_shared_worker_health_preserves_generation_for_restart_consumers(self):
+        now = datetime.now(timezone.utc)
+        before = snapshot()
+        after = copy.deepcopy(before)
+        for value in before['containers'].values():
+            value['started'] = (now - timedelta(seconds=20)).isoformat()
+        for value in after['containers'].values():
+            value['started'] = (now - timedelta(seconds=10)).isoformat()
+        health = {'locked': True, 'enabled': False, 'ordering_enabled': False, 'connected': False,
+                  'execution_state': 'disabled', 'recovery_status': 'locked', 'broker_name': 'disabled',
+                  'external_order_calls': 0, 'external_cancel_calls': 0,
+                  'issue_codes': ['execution_disabled', 'execution_target_not_active']}
+        for sample, generation, age in ((before, 'a' * 32, 15), (after, 'b' * 32, 5)):
+            with patch.object(evidence, 'run', return_value={**health, 'generation': generation,
+                    'heartbeat_at': (now - timedelta(seconds=age)).isoformat()}):
+                sample['execution'] = evidence.worker_health(sample['containers']['execution-worker'])
+            self.assertEqual(sample['execution']['generation'], generation)
+        evidence.continuity(before, after, restarted=True)
+        after['execution']['generation'] = before['execution']['generation']
+        with self.assertRaisesRegex(ValueError, 'worker-generation-drift'):
+            evidence.continuity(before, after, restarted=True)
+
 
 class TargetProbeTests(unittest.TestCase):
     def test_target_probe_is_readonly_without_integrity_sql_and_detects_drift(self):
