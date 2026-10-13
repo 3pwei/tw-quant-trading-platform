@@ -228,6 +228,25 @@ container IDs/start times, record hashes and the synthetic target hash. Partial
 or out-of-order stages cannot generate a PASS report. Failure diagnostics are a
 separate artifact and cannot substitute for acceptance.
 
+Each evidence capture validates worker health immediately before its DB probe
+and re-reads/validates it after the probe. The heartbeat age limit remains 30
+seconds. All three services must retain their Compose container IDs, images,
+start times, restart counts, network modes and healthy state across the probe;
+worker generation must also remain unchanged. Planned restart verification
+requires a new generation and a renewed heartbeat.
+
+Full SQLite integrity checks remain mandatory for deployment/restart captures
+and before/after soak. The soak clock starts only after the initial full scan;
+the final full scan follows the complete requested observation window and must
+pass before evidence is appended. Log monitoring remains active through that
+final scan. During the window, each sample uses a read-only target-only probe
+that validates the synthetic lock, target count and digest. It does not run
+`integrity_check` or claim a new integrity PASS. Full scans have the existing
+120-second container-local timeout (5-second kill grace, 140-second transport);
+target-only probes have a 10-second container-local timeout (2-second kill grace,
+15-second transport). Either failure stops acceptance without retry. The ledger
+retains both full boundary snapshots and rejects missing integrity results.
+
 Soak permits no container replacement, manual/automatic restart, record drift,
 stale heartbeat, external calls or synthetic state change. Samples must remain
 within 30 seconds; log followers cover the observation window without a tail

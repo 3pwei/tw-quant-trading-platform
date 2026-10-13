@@ -61,18 +61,19 @@ def probe_step(step):
         diagnostic("PASS", step, (monotonic_ns() - started) // 1_000_000)
 
 
-def snapshot(path=None):
+def snapshot(path=None, *, full_integrity=True):
     path = PATH if path is None else path
     with probe_step("sqlite-connect"):
         connection = sqlite3.connect(Path(path).resolve().as_uri() + "?mode=ro", uri=True)
     try:
-        with probe_step("sqlite-integrity"):
-            with probe_step("sqlite-integrity-execute"):
-                cursor = connection.execute("PRAGMA integrity_check")
-            with probe_step("sqlite-integrity-fetchone"):
-                integrity = cursor.fetchone()
-            if integrity != ("ok",):
-                raise ValueError("sqlite integrity failure")
+        if full_integrity:
+            with probe_step("sqlite-integrity"):
+                with probe_step("sqlite-integrity-execute"):
+                    cursor = connection.execute("PRAGMA integrity_check")
+                with probe_step("sqlite-integrity-fetchone"):
+                    integrity = cursor.fetchone()
+                if integrity != ("ok",):
+                    raise ValueError("sqlite integrity failure")
         with probe_step("targets-query"):
             rows = connection.execute("SELECT * FROM execution_targets ORDER BY target_id").fetchall()
             columns = [r[1] for r in connection.execute("PRAGMA table_info(execution_targets)")]
@@ -88,7 +89,8 @@ def snapshot(path=None):
         with probe_step("targets-digest"):
             digest = hashlib.sha256(json.dumps(rows, separators=(",", ":")).encode()).hexdigest()
         return {"locked_target_sha256": digest,
-                "sqlite_integrity": "ok", "target_count": 1, "active_targets": 0}
+                "target_count": 1, "active_targets": 0,
+                **({"sqlite_integrity": "ok"} if full_integrity else {})}
     finally:
         with probe_step("sqlite-close"):
             connection.close()
@@ -113,9 +115,9 @@ def seed():
 
 if __name__ == "__main__":
     try:
-        if len(sys.argv) != 2 or sys.argv[1] not in ("seed", "snapshot"):
+        if len(sys.argv) != 2 or sys.argv[1] not in ("seed", "snapshot", "targets"):
             raise ValueError("unknown operation")
-        result = seed() if sys.argv[1] == "seed" else snapshot()
+        result = seed() if sys.argv[1] == "seed" else snapshot(full_integrity=sys.argv[1] == "snapshot")
         with probe_step("result"):
             print(json.dumps(result, sort_keys=True))
     except Exception:

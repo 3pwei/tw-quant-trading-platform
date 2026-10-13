@@ -33,10 +33,10 @@ diagnostics = load('diagnostics')
 def snapshot():
     return {'observed_at': '2026-10-04T01:00:15Z', 'containers': {s: {'id': str(i) * 64, 'image': 'sha256:' + str(i) * 64,
         'started': '2026-10-04T01:00:00Z', 'restarts': 0, 'network_mode': 'none' if s == 'execution-worker' else 'internal'}
-        for i, s in enumerate(evidence.SERVICES, 1)}, 'durable': {'locked_target_sha256': 'f' * 64},
+        for i, s in enumerate(evidence.SERVICES, 1)}, 'durable': {'locked_target_sha256': 'f' * 64, 'sqlite_integrity': 'ok'},
         'records': {'current': 'a' * 64, 'active-release': 'a' * 64, 'previous': 'b' * 64},
         'release': {'name': 'known_good'}, 'expected_images': {},
-        'execution': {'heartbeat_at': '2026-10-04T01:00:05Z'}}
+        'execution': {'heartbeat_at': '2026-10-04T01:00:05Z', 'generation': 'a' * 32}}
 
 
 class ContainerHealthDiagnosticTests(unittest.TestCase):
@@ -366,6 +366,7 @@ class ContinuityTests(unittest.TestCase):
         after = copy.deepcopy(before)
         for service in evidence.SERVICES:
             after['containers'][service]['started'] = '2026-10-04T01:00:10Z'
+        after['execution']['generation'] = 'b' * 32
         after['execution']['heartbeat_at'] = '2026-10-04T01:00:15Z'
         evidence.continuity(before, after, restarted=True)
 
@@ -494,6 +495,7 @@ class LedgerTests(unittest.TestCase):
                     before['containers'][service]['image'] = 'sha256:' + 'b' * 64
             after = copy.deepcopy(before)
             for service in evidence.SERVICES: after['containers'][service]['started'] = '2026-10-04T01:00:10Z'
+            after['execution']['generation'] = 'b' * 32
             after['execution']['heartbeat_at'] = '2026-10-04T01:00:15Z'
             committed = copy.deepcopy(after)
             committed['records'] = {'current': str(index + 4) * 64, 'active-release': str(index + 4) * 64,
@@ -591,7 +593,7 @@ class LedgerTests(unittest.TestCase):
             logs = Mock()
             logs.stats = {s: {'complete': True} for s in evidence.SERVICES}
             for clock, success in (([0, *range(0, 1801, 10)], True), ([0, 31], False)):
-                with self.subTest(success=success), patch.object(evidence, 'capture', side_effect=lambda root: snapshot()), \
+                with self.subTest(success=success), patch.object(evidence, 'capture', side_effect=lambda root, **kwargs: snapshot()), \
                         patch.object(evidence, 'LogMonitor', return_value=logs), \
                         patch.object(evidence, 'run'), patch.object(evidence, 'append') as append, \
                         patch.object(evidence.time, 'monotonic', side_effect=clock), patch.object(evidence.time, 'sleep'):
