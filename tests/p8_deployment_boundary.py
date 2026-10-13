@@ -60,6 +60,11 @@ def execute(args):
         print(json.dumps(health()))
     elif args == ['python', '-m', 'tw_quant.execution_service', 'healthcheck']:
         return
+    elif args == ['/usr/bin/timeout', '--signal=TERM', '--kill-after=5s', '120s',
+                  'python', '-', 'snapshot']:
+        # Keep the real watchdog while remapping only the synthetic DB boundary.
+        os.execv(args[0], [*args[:4], sys.executable, __file__,
+                          'docker', 'exec', 'snapshot-fixture', *args[4:]])
     elif args == ['python', '-', 'snapshot']:
         sys.stdin.buffer.read()
         import durable_probe
