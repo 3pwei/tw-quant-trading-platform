@@ -28,7 +28,7 @@ def manifest():
     return (json.dumps(PINS['manifest'], indent=2, sort_keys=True) + '\n').encode()
 
 
-def acceptance_fixture():
+def acceptance_fixture(*, elapsed_seconds=1801, max_sample_gap_seconds=15):
     pins = copy.deepcopy(PINS)
     session = {'session': pins['staging_run_id'] + '-1', 'candidate_run_id': pins['candidate_run_id'],
                'pipeline': pins['platform_sha']}
@@ -36,13 +36,33 @@ def acceptance_fixture():
              'session.json': json.dumps(session).encode()}
     report = {**session, 'acceptance': 'PASS', 'final_release': pins['release'],
               'manifest_sha256': pins['manifest_sha256'], 'ledger_sha256': evidence.sha(files['ledger.jsonl']),
-              'soak': {'elapsed_seconds': 3601, 'max_sample_gap_seconds': 15}}
+              'soak': {'elapsed_seconds': elapsed_seconds,
+                       'max_sample_gap_seconds': max_sample_gap_seconds}}
     files['acceptance.json'] = json.dumps(report).encode()
     pins['acceptance_files'] = {k: evidence.sha(v) for k, v in files.items()}
     return files, pins
 
 
 class IdentityTests(unittest.TestCase):
+    def test_p8_soak_requires_at_least_thirty_minutes(self):
+        for elapsed in (0, 1799, 1799.999):
+            files, pins = acceptance_fixture(elapsed_seconds=elapsed)
+            with self.subTest(elapsed=elapsed), self.assertRaisesRegex(ValueError, 'p8-soak-incomplete'):
+                evidence.verify_acceptance(files, pins)
+        for elapsed in (1800, 1801.9659730569692, 3601):
+            files, pins = acceptance_fixture(elapsed_seconds=elapsed)
+            with self.subTest(elapsed=elapsed):
+                evidence.verify_acceptance(files, pins)
+
+    def test_p8_soak_keeps_thirty_second_sample_gap_limit(self):
+        for elapsed in (1800, 3601):
+            files, pins = acceptance_fixture(elapsed_seconds=elapsed, max_sample_gap_seconds=30)
+            with self.subTest(elapsed=elapsed, gap=30):
+                evidence.verify_acceptance(files, pins)
+            files, pins = acceptance_fixture(elapsed_seconds=elapsed, max_sample_gap_seconds=30.001)
+            with self.subTest(elapsed=elapsed, gap=30.001), self.assertRaisesRegex(ValueError, 'p8-soak-incomplete'):
+                evidence.verify_acceptance(files, pins)
+
     def test_approved_exact_identity(self):
         evidence.request(PINS, PINS['platform_sha'], PINS['candidate_run_id'], PINS['manifest_sha256'], evidence.confirmation(PINS))
         evidence.verify_manifest(manifest(), PINS)

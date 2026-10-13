@@ -546,7 +546,7 @@
     },
     {
       "path": "deploy/production/evidence.py",
-      "sha256": "bbfa4bec4bd10691de5de4fb8b412556b7956b8f7bf6c06b0dfc4af5d7bce289"
+      "sha256": "2ee745e487134d6158b54629762a31424ebfc4d49cf8a5c03c162f410912d1df"
     },
     {
       "path": "deploy/production/poc_clean.py",
@@ -754,11 +754,11 @@
     },
     {
       "path": "docs/p9-poc-clean-deployment.md",
-      "sha256": "90bb09b9ebb1b5d514ece791f23ceee5a92d3bde3d2e1bfe428b900b217cfe38"
+      "sha256": "59b2038a7d230903150e3a900c27a556e11b0c0c24772d4b9ab6ae7d8deefa47"
     },
     {
       "path": "docs/p9-production-cutover.md",
-      "sha256": "7a3099dbf5861702cc39404deca8b960edcee888bba9a86e6b26adeccd05aa01"
+      "sha256": "37e9892227d2a54bfeaac21add95c9c3afad4f0ce3e0692902cea4dfdc16deeb"
     },
     {
       "path": "docs/production-readonly-preflight.md",
@@ -1086,7 +1086,7 @@
     },
     {
       "path": "tests/test_p9_production_cutover.py",
-      "sha256": "5d4e8b6aacf48b1ac1716541f945655c5943f544b6d41032185d3dd4b4c58055"
+      "sha256": "0b97d02c04b6684b1ab898e4d189fd0c4efb4f85e980e5bc599305b1ef5f4f42"
     },
     {
       "path": "tests/test_p9_readonly_preflight.py",

@@ -18,6 +18,10 @@ The acceptance archive contains four individually pinned files. The ledger and
 manifest hashes must agree with the acceptance report. Expired/missing artifacts
 fail; replacing them, rerunning Candidate or rebuilding is not a fallback.
 
+The shared P9 evidence gate requires at least 1,800 elapsed seconds (30 minutes)
+of accepted P8 soak, with a maximum sample gap of 30 seconds. It still requires
+the exact artifact identities, checksums, successful report and source binding.
+
 Production deploys runtime A (`known_good`), which is the final P8 rollback/soak
 release, and the exact accepted gateway image. Runtime B remains recorded in the
 pinned manifest but is not a Production rollback target. The rollback target is
