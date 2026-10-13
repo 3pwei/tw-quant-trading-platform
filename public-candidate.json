@@ -30,7 +30,7 @@
     },
     {
       "path": ".github/workflows/deploy-staging.yml",
-      "sha256": "a1755ec19bf5f9946c605b8b9e49361710de5850269982645454f3192bddd5ea"
+      "sha256": "a063f8c71478cd5f4541301028753785ab54d04f3172aae16e5a68dfc8a8b370"
     },
     {
       "path": ".github/workflows/prepare-production-poc-clean.yml",
@@ -638,7 +638,7 @@
     },
     {
       "path": "deploy/staging/acceptance_evidence.py",
-      "sha256": "64141366f3fcd9cefb8e04b06db345eb51c8178efa224f9bdac0f2f31952b2d4"
+      "sha256": "cc35b65412168bfce9cee1b79e1f017d68bdffba50fdd573f039c9b1b5cca296"
     },
     {
       "path": "deploy/staging/candidate_manifest.py",
@@ -662,7 +662,7 @@
     },
     {
       "path": "deploy/staging/durable_probe.py",
-      "sha256": "21725073934c0b61b114cbe5a64b4c7ff2efb8d2fd548f88274fd8fa3fdf273d"
+      "sha256": "f4b4d0b5493938db96c3320406e254813eeb98f5766f85d7c1b6f6961ba99d0f"
     },
     {
       "path": "deploy/staging/identities.conf",
@@ -698,7 +698,11 @@
     },
     {
       "path": "deploy/staging/readonly_diagnostics.py",
-      "sha256": "a1e676eba8be837a977be14edc45ed20fbc26446e7f1578fb6211af54172f408"
+      "sha256": "995d5f07af11432d0c06c69d4c32e9203a62d505f7746b36a148e9b824fc8480"
+    },
+    {
+      "path": "deploy/staging/resource_sampling.py",
+      "sha256": "b1d03bd5140a7e5fb4e240df766a7185b427252ae3b896ddb36c910ec354b668"
     },
     {
       "path": "deploy/staging/runtime_acceptance.py",
@@ -778,7 +782,7 @@
     },
     {
       "path": "docs/staging-readonly-diagnostics.md",
-      "sha256": "6bc2901e4aa67090a5291f93c3e7d124fef28f2742445fd6108807c8ac79ce53"
+      "sha256": "743f0439646641e8eb72b2a3f34eefbc41babb9b0896319bfb888695154570b8"
     },
     {
       "path": "docs/third-party-license-texts.txt",
@@ -1043,6 +1047,10 @@
     {
       "path": "tests/test_p8_recovery_provenance.py",
       "sha256": "5975c1fe23d13bc9bb65724098c37aa5e215cbf0c49c52bfffd6f07c7ed38619"
+    },
+    {
+      "path": "tests/test_p8_resource_sampling.py",
+      "sha256": "07852bca40f517ff803a322a06c6b3085414c7fe5391f78542dca7c2179a916d"
     },
     {
       "path": "tests/test_p8_runtime_source.py",

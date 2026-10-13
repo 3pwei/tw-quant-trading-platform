@@ -8,6 +8,7 @@ import math
 import os
 from pathlib import Path
 import re
+import signal
 import subprocess
 import sys
 import tempfile
@@ -46,6 +47,64 @@ def emit_durable_diagnostics(stream):
     for line in stream.read(8192).splitlines(keepends=True)[:32]:
         if DURABLE_DIAGNOSTIC.fullmatch(line):
             print(line.decode('ascii').rstrip('\n'), file=sys.stderr, flush=True)
+
+
+def start_resource_sampling(argv, diagnostic_output, sample_output, started_ns):
+    """Observe only the actual Docker stdin snapshot; optional diagnostics cannot gate it."""
+    if (len(argv) != 7 or argv[:3] != ['docker', 'exec', '-i'] or
+            argv[4:] != ['python', '-', 'snapshot'] or re.fullmatch('[0-9a-f]{64}', argv[3]) is None):
+        return None
+    read_fd = write_fd = None
+    try:
+        source = globals().get('RESOURCE_SAMPLER_SOURCE')
+        if source is None:
+            source = Path(__file__).with_name('resource_sampling.py').read_text()
+        namespace = {'__name__': 'p8_resource_library'}
+        exec(compile(source, '<reviewed-resource-sampler>', 'exec'), namespace)
+        read_fd, write_fd = os.pipe()
+        process = subprocess.Popen([sys.executable, '-B', '-c', source, argv[3],
+            str(diagnostic_output.fileno()), str(read_fd), str(started_ns)], stdin=subprocess.DEVNULL,
+            stdout=sample_output, stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            pass_fds=(diagnostic_output.fileno(), read_fd),
+            env={'PATH': os.environ.get('PATH', '/usr/bin:/bin'), 'LANG': 'C'})
+        os.close(read_fd)
+        return process, write_fd, namespace['safe_line']
+    except Exception:
+        for fd in (read_fd, write_fd):
+            if fd is not None:
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
+        print('P8_RESOURCE status=unavailable samples=0', file=sys.stderr, flush=True)
+        return None
+
+
+def finish_resource_sampling(sampler, output):
+    if sampler is None:
+        return
+    process, stop_fd, safe_line = sampler
+    try:
+        os.close(stop_fd)  # EOF wakes select even when the probe never returned.
+        try:
+            process.wait(timeout=0.25)
+        except subprocess.TimeoutExpired:
+            # Own session only, including a still-running read-only docker inspect.
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            process.wait(timeout=0.25)
+            print('P8_RESOURCE status=unavailable samples=0', file=sys.stderr, flush=True)
+        output.seek(0)
+        for raw in output.read(32768).splitlines(keepends=True)[:64]:
+            line = raw.decode('ascii', errors='replace')
+            if safe_line(line):
+                print(line.rstrip('\n'), file=sys.stderr, flush=True)
+    except Exception:
+        # Preserve the original probe result even when diagnostic cleanup fails.
+        print('P8_RESOURCE status=unavailable samples=0', file=sys.stderr, flush=True)
 
 
 def require(condition, code):
@@ -97,7 +156,9 @@ def run(step, argv, *, data=None, limit=65536, parser=None):
         return max(0, (collection_clock_ns() - started) // 1_000_000)
 
     # Never propagate stderr, raw response data, provider settings, command lines or exceptions.
-    with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as diagnostic_output:
+    with tempfile.TemporaryFile() as output, tempfile.TemporaryFile() as diagnostic_output, \
+            tempfile.TemporaryFile() as sample_output:
+        sampler = start_resource_sampling(argv, diagnostic_output, sample_output, started) if step == 'durable-snapshot' else None
         try:
             result = subprocess.run(argv, input=data, stdout=output,
                 stderr=diagnostic_output if step == 'durable-snapshot' else subprocess.DEVNULL, timeout=15)
@@ -108,6 +169,7 @@ def run(step, argv, *, data=None, limit=65536, parser=None):
         finally:
             if step == 'durable-snapshot':
                 emit_durable_diagnostics(diagnostic_output)
+            finish_resource_sampling(sampler, sample_output)
         if result.returncode != 0:
             raise CollectionStepError(step, 'nonzero-exit', elapsed_ms())
         if output.tell() > limit:

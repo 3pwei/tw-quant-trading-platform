@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import re
+import runpy
 import subprocess
 import sys
 import tempfile
@@ -119,9 +120,11 @@ def payload():
     # Ship reviewed source in memory; never read/copy factory, env or private artifacts.
     collector = (HERE / 'acceptance_evidence.py').read_text()
     probe = (HERE / 'durable_probe.py').read_bytes()
+    sampler = (HERE / 'resource_sampling.py').read_text()
     return ("import sys\n"
             "print('P8_DIAGNOSTIC_HOST=START', file=sys.stderr, flush=True)\n"
             "namespace = {'__name__': 'p8_diagnostic'}\n"
+            'namespace["RESOURCE_SAMPLER_SOURCE"] = ' + repr(sampler) + '\n' +
             'exec(compile(' + repr(collector) + ", '<reviewed-collector>', 'exec'), namespace)\n" +
             'probe = ' + repr(probe) + '\n' + inspect.getsource(remote_main) +
             "\nnamespace['entrypoint'](lambda: remote_main(namespace, probe))\n").encode()
@@ -147,8 +150,10 @@ def ssh_command(directory, env):
 
 
 def safe_lines(raw):
+    resource_safe = runpy.run_path(str(HERE / 'resource_sampling.py'))['safe_line']
     return [line.decode('ascii').rstrip('\n') for line in raw[:65536].splitlines(keepends=True)[:128]
-            if len(line) <= 256 and SAFE_LINE.fullmatch(line.decode('ascii', errors='replace'))]
+            if (len(line) <= 256 and SAFE_LINE.fullmatch(line.decode('ascii', errors='replace'))) or
+               resource_safe(line.decode('ascii', errors='replace'))]
 
 
 def inspect_once():

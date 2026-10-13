@@ -90,3 +90,62 @@ dedicated test and this document; update `public-candidate.json` accordingly.
 Keep the reusable collector/probe diagnostics and regression tests from PR #55.
 No diagnostic daemon is installed on Staging. Historical Actions records and
 artifacts follow retention settings; removing YAML is not a history deletion.
+# Linux resource samples during the probe
+
+P8 #20 stopped after `sqlite-integrity-execute START` with a 15,003 ms
+`durable-snapshot` timeout. That locates the unfinished Python API call; it
+does not establish corruption, lock contention, CPU saturation or disk latency.
+
+The collector now starts one separate, short-lived Python standard-library
+observer alongside the actual Docker stdin snapshot. It reads Linux `/proc`,
+PSI and cgroup v2 files. No monitoring package, service, `ptrace`, container
+capability or database setting is installed or changed. The existing probe
+command, SQL, readonly URI, 15-second subprocess deadline and acceptance gates
+remain unchanged. Instrumentation itself consumes some resources and may alter
+timing; sampling is evidence, not a performance-neutral experiment.
+
+The probe emits a numeric PID/start-ticks handshake on its diagnostic stream.
+The observer binds it to a host PID using the container init PID's namespace,
+the inner PID and the process start ticks. It never selects by process name,
+command line or the host Docker CLI PID. Missing, ambiguous or changed identity
+produces `unknown` process fields; it cannot select a substitute process.
+
+`P8_RESOURCE` records contain only these allowlisted numeric fields:
+
+| Scope | Fields and interpretation |
+| --- | --- |
+| `probe` | Host/container PID, start ticks, state, user/system CPU ticks, rchar/wchar, read_bytes/write_bytes, syscr/syscw |
+| `host` | Cumulative CPU ticks (including idle, iowait and steal separately), CPU/I/O PSI `some total` microseconds, and disk read/write sectors and I/O milliseconds for the DB filesystem device only |
+| `cgroup` | Container-group CPU usage microseconds, throttle count/time, device read/write bytes, CPU/I/O PSI totals |
+| `limits` | Clock ticks/second, leaf cgroup CPU quota/period, effective cpuset CPU count, memory/pid limits and device I/O limits |
+
+Limits are read once. Zero denotes an explicit unlimited value for a limit;
+`unknown` denotes absent, inaccessible or unsupported data. Leaf cgroup limits
+do not describe every inherited ancestor constraint. Cgroup v1 is not decoded.
+Disk fields are unavailable if the filesystem device cannot be resolved in
+`/proc/diskstats`; they are not substituted with sums across unrelated disks.
+I/O byte counters are not equivalent to physical device latency or proof of a
+SQLite lock. CPU time in seconds is the tick delta divided by clock ticks/second.
+PSI and counter deltas over each sample interval are more useful than absolute
+cumulative totals. An `S` or `D` process state alone is not a root-cause verdict.
+
+The observer samples approximately once per second for at most 15 seconds and
+16 samples, with offsets on the collector's host monotonic clock (not the delayed
+GitHub log delivery timestamps). Its output is capped to 32 KiB/64 fixed-schema lines. The original
+probe result is preserved if sampling is unavailable. Completion/timeout wakes
+the observer through a pipe; bounded cleanup can kill only the observer's own
+process group (including its read-only metadata lookup), never a container or
+the application. This change does not claim to solve a possibly surviving
+container exec process after the existing Docker CLI timeout.
+
+Samples are retained in P8 workflow logs, including on timeout. The read-only
+diagnostic workflow also includes them in its existing JSON `stages` artifact.
+They never count as required PASS markers or acceptance ledger events. There
+are no environment values, SQL rows, process command lines, host device names,
+cgroup paths or raw error messages in their output.
+
+Local tests cover PID reuse/ambiguity, parser failures, missing metrics, output
+sanitization, real subprocess completion and the real 15-second timeout. A
+restricted local `/proc` may prevent real namespace lookup; CI must exercise
+namespace-bound process counter sampling without that restriction. Remote
+staging evidence requires separately authorized workflow execution after merge.
