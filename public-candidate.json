@@ -526,7 +526,7 @@
     },
     {
       "path": "deploy/production/approved-p8.json",
-      "sha256": "5bf6cde8931bd20e9536ca675049ef4bceb957a6be76d929cb325d794c929b6b"
+      "sha256": "d3df526f56759a4db5545d4f65587ad03aa871c895bb1dde242f0aaa9085b85a"
     },
     {
       "path": "deploy/production/cutover.py",
