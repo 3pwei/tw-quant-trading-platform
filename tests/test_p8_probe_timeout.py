@@ -69,11 +69,11 @@ class BudgetTests(unittest.TestCase):
                            evidence.DURABLE_SECONDS + evidence.DURABLE_KILL_SECONDS + 10)
         p8 = yaml.load((ROOT / '.github/workflows/deploy-staging.yml').read_text(), Loader=yaml.BaseLoader)
         deployment = next(s for s in p8['jobs']['deploy']['steps'] if s['name'].startswith('Deploy A,'))['run']
-        self.assertEqual(deployment.count('--kill-after=30s 30m ssh'), 3)
-        # Four captures per deployment, each with eleven small commands plus a durable probe.
-        self.assertGreater(30 * 60, 4 * (11 * 15 + evidence.DURABLE_TRANSPORT_SECONDS) + 5 * 60)
+        self.assertEqual(deployment.count('--kill-after=30s 40m ssh'), 3)
+        # Four captures per deployment, each with eighteen small commands plus a durable probe.
+        self.assertGreater(40 * 60, 4 * (18 * 15 + evidence.DURABLE_TRANSPORT_SECONDS) + 5 * 60)
         # Current requested 30-minute soak plus pull/deploy/rollback/setup/output allowance.
-        self.assertGreater(int(p8['jobs']['deploy']['timeout-minutes']), 20 + 3 * 30 + 45 + 30)
+        self.assertGreater(int(p8['jobs']['deploy']['timeout-minutes']), 20 + 3 * 40 + 45 + 30)
 
 
 def redirect_stdout_stderr():

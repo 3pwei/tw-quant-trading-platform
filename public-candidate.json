@@ -30,7 +30,7 @@
     },
     {
       "path": ".github/workflows/deploy-staging.yml",
-      "sha256": "0481baffc3926bfc67135741aa5a12dfad2899f7f4614b94757c3709d90faae1"
+      "sha256": "6e84fa704eeca393b4e8e47966f8fed713ff97e268f3e569fc42422d37ef9cdb"
     },
     {
       "path": ".github/workflows/prepare-production-poc-clean.yml",
@@ -638,7 +638,7 @@
     },
     {
       "path": "deploy/staging/acceptance_evidence.py",
-      "sha256": "82f3f2fa8b41a2881bb16a72b4d946b07664a1a688b7244ab177b640737a333a"
+      "sha256": "7a3506150ae4fe06d29fc7aca4520bc6a9af24179c89c3c3ec5df6d04a37dd4d"
     },
     {
       "path": "deploy/staging/candidate_manifest.py",
@@ -662,7 +662,7 @@
     },
     {
       "path": "deploy/staging/durable_probe.py",
-      "sha256": "f4b4d0b5493938db96c3320406e254813eeb98f5766f85d7c1b6f6961ba99d0f"
+      "sha256": "21986aa87a932cb3eea2d7be5119124c48f698dede8e4dbd7e77cffc6617b60c"
     },
     {
       "path": "deploy/staging/identities.conf",
@@ -722,7 +722,7 @@
     },
     {
       "path": "deploy/staging/smoke_compose.py",
-      "sha256": "1cc1d3a4b84db4acf4acf7210fa325c1ed1854ceaab4140d7d8e21f60193f185"
+      "sha256": "93354890b30be71b981a56fb0a72ba3efc8873c8821c888f78596fd264df3bce"
     },
     {
       "path": "deploy/staging/soak.sh",
@@ -750,7 +750,7 @@
     },
     {
       "path": "docs/p8-staging.md",
-      "sha256": "77563ca6763dccd768c482f582ae30a2013cb96061fea2ed1e2fdfba24a0b4cb"
+      "sha256": "e9f829715708de5bddc6a92aab34b76e1a14479902031e4075a8d1da0c8c9a6f"
     },
     {
       "path": "docs/p9-poc-clean-deployment.md",
@@ -782,7 +782,7 @@
     },
     {
       "path": "docs/staging-readonly-diagnostics.md",
-      "sha256": "08ba85ba15061bb86846f22402a4aed2e0d15bfd835fddef0cf6f5a6c835330d"
+      "sha256": "1b969212b15143d8e11765f03233e4a9bb9db83e6f4d3e296f64622e11b4acae"
     },
     {
       "path": "docs/third-party-license-texts.txt",
@@ -810,7 +810,7 @@
     },
     {
       "path": "tests/p8_deployment_boundary.py",
-      "sha256": "c4a3c2741ca280cc58ce8bb1f8f8e97f870516ccdafed88bdf74fc7acf0f2bad"
+      "sha256": "c473632387a8f162326712d8d67ed6da18d8ef0e074ee43697291049dc7cd163"
     },
     {
       "path": "tests/public_fixtures.py",
@@ -1022,11 +1022,15 @@
     },
     {
       "path": "tests/test_p8_evidence.py",
-      "sha256": "8f1d436945c666d2211afe1bc94cec1e493b6d74469cb237c3582e595ff893b7"
+      "sha256": "dedb35929bd133ca90d13d63a0d0cc39ab810f06f66c564e4d7a4daf2d01fed9"
     },
     {
       "path": "tests/test_p8_failure_snapshot.py",
       "sha256": "914eaf146f8f4cc87d2a00755cd8c7951f21b67a1a2b35a991bbbde5f34ac3c9"
+    },
+    {
+      "path": "tests/test_p8_fresh_health.py",
+      "sha256": "7745cb63a2ace32820c81765270831483df1c61c1ae180ed85ebd3e94e542437"
     },
     {
       "path": "tests/test_p8_gateway.py",
@@ -1042,7 +1046,7 @@
     },
     {
       "path": "tests/test_p8_probe_timeout.py",
-      "sha256": "e9e729b5f1816e78c04e51a9a85618b1eaa829b02728ba8b9a17101828dbcaa6"
+      "sha256": "5caf29dfad50c1dcbdcb0ad3b1e5c34af08aba86715a099af4d65d26d335e967"
     },
     {
       "path": "tests/test_p8_readonly_diagnostics.py",

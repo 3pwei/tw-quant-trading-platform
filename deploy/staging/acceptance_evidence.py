@@ -32,7 +32,7 @@ COLLECTOR_STEPS = frozenset({
     'container-query-market-api', 'container-query-execution-worker', 'container-query-gateway',
     'container-inspect-market-api', 'container-inspect-execution-worker', 'container-inspect-gateway',
     'image-inspect-market-api', 'image-inspect-execution-worker', 'image-inspect-gateway',
-    'worker-health', 'durable-snapshot', 'soak-ingress',
+    'worker-health', 'durable-snapshot', 'durable-targets', 'soak-ingress',
 })
 COLLECTOR_FAILURES = frozenset({
     'timeout', 'nonzero-exit', 'output-limit', 'parse-failed', 'invocation-failed',
@@ -54,17 +54,17 @@ def emit_durable_diagnostics(stream):
             print(line.decode('ascii').rstrip('\n'), file=sys.stderr, flush=True)
 
 
-def is_durable_probe(argv):
+def is_durable_probe(argv, operation='snapshot'):
     return (len(argv) == 7 and argv[:3] == ['docker', 'exec', '-i'] and
-            argv[4:] == ['python', '-', 'snapshot'] and
+            argv[4:] == ['python', '-', operation] and
             re.fullmatch('[0-9a-f]{64}', argv[3]) is not None)
 
 
 def bounded_probe_command(argv):
     # Never use --foreground: TERM/KILL must reach the probe's own process group.
     return [*argv[:4], '/usr/bin/timeout', '--signal=TERM',
-            '--kill-after=' + str(DURABLE_KILL_SECONDS) + 's',
-            str(DURABLE_SECONDS) + 's', *argv[4:]]
+            '--kill-after=' + str(2 if argv[-1] == 'targets' else DURABLE_KILL_SECONDS) + 's',
+            str(10 if argv[-1] == 'targets' else DURABLE_SECONDS) + 's', *argv[4:]]
 
 
 def start_resource_sampling(argv, diagnostic_output, sample_output, started_ns):
@@ -168,7 +168,8 @@ def run(step, argv, *, data=None, limit=65536, parser=None):
     """Run one allowlisted collection step without exposing tool inputs or outputs."""
     require(step in COLLECTOR_STEPS, 'invalid-collector-step')
     durable = step == 'durable-snapshot' and is_durable_probe(argv)
-    command = bounded_probe_command(argv) if durable else argv
+    targets = step == 'durable-targets' and is_durable_probe(argv, 'targets')
+    command = bounded_probe_command(argv) if durable or targets else argv
     started = collection_clock_ns()
 
     def elapsed_ms():
@@ -191,7 +192,7 @@ def run(step, argv, *, data=None, limit=65536, parser=None):
                 emit_durable_diagnostics(diagnostic_output)
             finish_resource_sampling(sampler, sample_output)
         # 137 can also mean an external KILL/OOM, so never call it proven timeout.
-        if durable and result.returncode == 124:
+        if (durable or targets) and result.returncode == 124:
             raise CollectionStepError(step, 'timeout', elapsed_ms())
         if result.returncode != 0:
             raise CollectionStepError(step, 'nonzero-exit', elapsed_ms())
@@ -274,7 +275,16 @@ def parse_json_object(value):
     return document
 
 
-def capture(root=ROOT):
+def worker_health(worker):
+    health = run('worker-health',
+        ['docker', 'exec', worker['id'], 'cat', '/run/tw-quant-execution/health.json'], parser=parse_json_object)
+    result = check_health(health, worker['started'])
+    require(isinstance(health.get('generation'), str) and
+            re.fullmatch('[0-9a-f]{32}', health['generation']) is not None, 'worker-generation-invalid')
+    return {**result, 'generation': health['generation']}
+
+
+def capture(root=ROOT, *, full_integrity=True):
     values = release_values(root / 'deployments/active-release.env')
     role = values.get('RELEASE_NAME')
     require(role in ('known_good', 'candidate'), 'invalid-active-release')
@@ -308,23 +318,41 @@ def capture(root=ROOT):
                                     'config_digest': approved[prefix + '_CONFIG_DIGEST'], 'local_image_id': expected_id}
     worker = containers['execution-worker']
     require(worker['network_mode'] == 'none', 'worker-network-exposed')
-    health = run('worker-health',
-        ['docker', 'exec', worker['id'], 'cat', '/run/tw-quant-execution/health.json'], parser=parse_json_object)
-    durable = run('durable-snapshot',
-        ['docker', 'exec', '-i', worker['id'], 'python', '-', 'snapshot'],
+    # Validate immediately on both sides of the potentially slow DB probe.
+    initial_health = worker_health(worker)
+    records = record_hashes(root)
+    operation = 'snapshot' if full_integrity else 'targets'
+    durable = run('durable-' + operation,
+        ['docker', 'exec', '-i', worker['id'], 'python', '-', operation],
         data=(root / 'bundle/durable_probe.py').read_bytes(), parser=parse_json_object)
-    require(set(durable) == {'locked_target_sha256', 'sqlite_integrity', 'target_count', 'active_targets'} and
+    fields = {'locked_target_sha256', 'target_count', 'active_targets'}
+    require(set(durable) == fields | ({'sqlite_integrity'} if full_integrity else set()) and
             re.fullmatch('[0-9a-f]{64}', durable['locked_target_sha256']) is not None and
-            durable['sqlite_integrity'] == 'ok' and durable['target_count'] == 1 and durable['active_targets'] == 0,
+            (not full_integrity or durable['sqlite_integrity'] == 'ok') and
+            type(durable['target_count']) is int and durable['target_count'] == 1 and
+            type(durable['active_targets']) is int and durable['active_targets'] == 0,
             'durable-state-invalid')
+    # Re-resolve Compose membership and inspect all services: checking only the old
+    # worker ID would miss a replacement or restart during the integrity scan.
+    for service, previous in containers.items():
+        cid = run('container-query-' + service, [*compose(root), 'ps', '-q', service], parser=str.strip)
+        require(cid == previous['id'], 'container-replaced')
+        current = run('container-inspect-' + service,
+            ['docker', 'inspect', '--format', INSPECT, cid], parser=parse_json_object)
+        require_container_health(service, current)
+        require(current == previous, 'container-changed-during-probe')
+    health = worker_health(worker)
+    require(health['generation'] == initial_health['generation'], 'worker-generation-changed')
+    require(parse_time(health['heartbeat_at']) >= parse_time(initial_health['heartbeat_at']), 'heartbeat-regressed')
+    require(record_hashes(root) == records, 'release-record-drift')
     return {'observed_at': timestamp(), 'containers': containers, 'expected_images': expected_images,
             'release': {'name': role, 'configuration_identity': approved['CONFIGURATION_IDENTITY']},
-            'execution': check_health(health, worker['started']), 'durable': durable,
-            'records': record_hashes(root)}
+            'execution': health, 'durable': durable, 'records': records}
 
 
 def continuity(before, after, *, restarted=False, committed=False):
-    require(before['durable'] == after['durable'], 'durable-state-drift')
+    require({k: v for k, v in before['durable'].items() if k != 'sqlite_integrity'} ==
+            {k: v for k, v in after['durable'].items() if k != 'sqlite_integrity'}, 'durable-state-drift')
     if committed:
         records = after['records']
         require(records['current'] is not None and records['current'] == records['active-release'] and
@@ -341,6 +369,8 @@ def continuity(before, after, *, restarted=False, committed=False):
             require(parse_time(b['started']) > parse_time(a['started']), 'restart-not-observed')
         else:
             require(a['started'] == b['started'], 'container-restarted')
+    require((before['execution']['generation'] != after['execution']['generation']) if restarted else
+            (before['execution']['generation'] == after['execution']['generation']), 'worker-generation-drift')
     if restarted:
         require(parse_time(after['execution']['heartbeat_at']) > parse_time(before['execution']['heartbeat_at']),
                 'heartbeat-not-renewed')
@@ -390,6 +420,8 @@ def validate_soak(soak, requested_minutes):
     require(type(requested_minutes) is int and 30 <= requested_minutes <= 360, 'invalid-soak-duration')
     require(type(soak.get('requested_minutes')) is int and
             soak['requested_minutes'] == requested_minutes, 'soak-duration-mismatch')
+    require(all(soak.get(boundary, {}).get('durable', {}).get('sqlite_integrity') == 'ok'
+                for boundary in ('before', 'after')), 'soak-integrity-boundary-missing')
     offsets = soak.get('sample_offsets_seconds')
     require(isinstance(offsets, list) and 2 <= len(offsets) <= 2162, 'soak-samples-invalid')
     numeric = lambda value: type(value) in (int, float) and math.isfinite(value) and value >= 0
@@ -537,7 +569,7 @@ def soak(minutes, root=ROOT):
     offsets, max_gap = [], 0.0
     try:
         while True:
-            after = capture(root)
+            after = capture(root, full_integrity=False)
             continuity(before, after)
             run('soak-ingress', ['python3', str(root / 'bundle/ingress_probe.py')])
             logs.check()
@@ -549,6 +581,11 @@ def soak(minutes, root=ROOT):
             if now - started >= minutes * 60:
                 break
             time.sleep(min(10, max(0, minutes * 60 - (now - started))))
+        # The measured observation window is complete. Keep log monitoring active
+        # through the mandatory final full scan, without charging it to sample gaps.
+        after = capture(root)
+        continuity(before, after)
+        logs.check()
     finally:
         logs.close()
     require(all(s['complete'] for s in logs.stats.values()), 'log-coverage-incomplete')

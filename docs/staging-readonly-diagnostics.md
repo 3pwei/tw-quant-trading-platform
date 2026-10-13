@@ -56,15 +56,18 @@ can also mean an external KILL or OOM. A lost transport cannot prove cleanup,
 and an uninterruptible kernel I/O wait can delay signal handling; never report
 these as PASS or retry automatically.
 
-P8 deploy A, deploy B and rollback SSH deadlines allow 30 minutes each, including
+P8 deploy A, deploy B and rollback SSH deadlines allow 40 minutes each, including
 serial evidence captures, health checks and compensation. The existing overall
 workflow limit is explicitly 360 minutes, leaving room for these stages and the
 currently requested 30-minute soak. The pre-existing 360-minute soak input cannot
 fit with deployment overhead in a 360-minute hosted job; it is not covered by
-this budget and is not changed by this patch. The soak
-duration and 30-second maximum sample-gap acceptance gate are unchanged: a slow
-integrity scan can still fail that gate. This patch addresses probe lifecycle
-and deadline nesting, not a relaxation of acceptance requirements.
+this budget. Soak keeps the requested observation duration and 30-second maximum
+sample gap. Full integrity scans run before and after that window; its samples
+perform bounded read-only target checks instead. Acceptance validates freshly
+read worker health immediately before and after each DB probe, binding container
+identity/start/restart state and worker generation across the probe. The longer
+SSH allowance includes those additional identity checks; it does not relax the
+30-second heartbeat limit or the 120-second full-scan deadline.
 
 ## Evidence and interpretation
 

@@ -50,7 +50,8 @@ def health():
     return {'locked': True, 'enabled': False, 'ordering_enabled': False, 'connected': False,
             'execution_state': 'disabled', 'recovery_status': 'locked', 'broker_name': 'disabled',
             'external_order_calls': 0, 'external_cancel_calls': 0,
-            'issue_codes': ['execution_disabled', 'execution_target_not_active'], 'heartbeat_at': now()}
+            'issue_codes': ['execution_disabled', 'execution_target_not_active'], 'heartbeat_at': now(),
+            'generation': hashlib.sha256(state()['containers']['execution-worker']['started'].encode()).hexdigest()[:32]}
 
 
 def execute(args):
@@ -60,15 +61,18 @@ def execute(args):
         print(json.dumps(health()))
     elif args == ['python', '-m', 'tw_quant.execution_service', 'healthcheck']:
         return
-    elif args == ['/usr/bin/timeout', '--signal=TERM', '--kill-after=5s', '120s',
-                  'python', '-', 'snapshot']:
+    elif args in (['/usr/bin/timeout', '--signal=TERM', '--kill-after=5s', '120s',
+                   'python', '-', 'snapshot'],
+                  ['/usr/bin/timeout', '--signal=TERM', '--kill-after=2s', '10s',
+                   'python', '-', 'targets']):
         # Keep the real watchdog while remapping only the synthetic DB boundary.
         os.execv(args[0], [*args[:4], sys.executable, __file__,
                           'docker', 'exec', 'snapshot-fixture', *args[4:]])
-    elif args == ['python', '-', 'snapshot']:
+    elif args in (['python', '-', 'snapshot'], ['python', '-', 'targets']):
         sys.stdin.buffer.read()
         import durable_probe
-        print(json.dumps(durable_probe.snapshot(ROOT / 'volumes/platform-staging_staging-data/staging.sqlite3')))
+        print(json.dumps(durable_probe.snapshot(ROOT / 'volumes/platform-staging_staging-data/staging.sqlite3',
+                                               full_integrity=args[-1] == 'snapshot')))
     else:
         raise ValueError('unsupported exec')
 
