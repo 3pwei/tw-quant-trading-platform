@@ -64,12 +64,12 @@ class ContainerOriginHardeningTests(unittest.TestCase):
             encoding="utf-8"
         )
         for expected in (
-            "golang:1.26.9-alpine3.23@sha256:6750308561953d451210ed1a8086d36c8c8bdcbf672d38d9d0d424b8a7a0216c",
+            "golang:1.26.10-alpine3.23@sha256:0525c952defebc693cdaf62cdf43afa32be5a7f377e99260642ea19c240c708e",
             "caddy_2.11.7_buildable-artifact.tar.gz",
             "b430516910839fbaf35c0a9e9df80d1e2e30aa792530293c39f4a97a1b2c9060",
-            "go mod edit -go=1.26.9 -require=golang.org/x/net@v0.60.0",
+            "go mod edit -go=1.26.10 -require=golang.org/x/net@v0.60.0",
             "golang.org/x/net v0.60.0 h1:79p50tfZlm0J9YfoDsSi639qSXNGVwEzOPLCxM2FsYU=",
-            "go1\\.26\\.9",
+            "go1\\.26\\.10",
             "golang.org/x/net[[:space:]]+v0\\.60\\.0",
             "COPY --from=caddy-build --chmod=0755 /out/caddy /usr/bin/caddy",
         ):

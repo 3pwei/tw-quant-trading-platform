@@ -58,7 +58,7 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "089dc7f08f6196a198c12a438ec030ff1b640405d0f920c5f61b9949cfac18ac"
+      "sha256": "546d497d8ac08fd134a7810ca3a3f46d7c4d5aa08bfc124d88de7cf7555be35f"
     },
     {
       "path": ".github/workflows/staging-candidate.yml",
@@ -90,7 +90,7 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "sha256": "2bbfdbad4d7a9c4ddf5e8f07a9c1c65ae5988ca2b1feb174e637d44c7ab498f4"
+      "sha256": "e3db4f95b5eb95822b892ebb62ca36ccf245b1306b701f5f2a5aa3df6352be45"
     },
     {
       "path": "dashboard/app/admin/users/page.tsx",
@@ -366,11 +366,11 @@
     },
     {
       "path": "dashboard/package-lock.json",
-      "sha256": "5fc54fa18d702cdb60309fc7d2f4586c846815c8e810a7b73bb9827f80136f60"
+      "sha256": "45962d9170cd0c183b9eaa4f0086de21eb0e47d87f3d421914af0156ae8f03b7"
     },
     {
       "path": "dashboard/package.json",
-      "sha256": "43ffe386dbde52e503fbbc058bafb46e0ba7079782787fe383fcf22da5e8f47f"
+      "sha256": "570ce337839840ffe57a63c519e4e2e53128f60242ec73a77a569f792f38a94b"
     },
     {
       "path": "dashboard/public/favicon.svg",
@@ -450,7 +450,7 @@
     },
     {
       "path": "deploy/lightsail/Dockerfile.gateway",
-      "sha256": "9d5f2f30c335344719fd7ff3e892ecea37aee97bbc4bacbf9328ce9469f98c29"
+      "sha256": "2b1273ced35bf902e279630c3302e3eb080ceeb743278d5417b66ba6649ca2f3"
     },
     {
       "path": "deploy/lightsail/bootstrap.sh",
@@ -601,6 +601,10 @@
       "sha256": "bd68c7b9524174276b3177102ee662572d0e3f6d970da38200e6a4073e16079d"
     },
     {
+      "path": "deploy/security/audit_requirements.py",
+      "sha256": "782a66d1d4ee1626dda7cf429cf72907eb2f2ca609e3e34cb5dc0c9c9484f8f6"
+    },
+    {
       "path": "deploy/security/codeql_eligibility.py",
       "sha256": "a55c55a3011ffb7069f6b581eb981c9d2edf9b14f404503f30f86134331e51b0"
     },
@@ -614,7 +618,7 @@
     },
     {
       "path": "deploy/security/npm-audit-exceptions.json",
-      "sha256": "e14e23978e1ec7a42a84907acb99c1261f0e6d32c53c106946039c230a1ee34a"
+      "sha256": "81a515050e5d312ac4a453fa1bdaa999cfc11ad6a652659776bf5747c6b69168"
     },
     {
       "path": "deploy/security/npm_audit_gate.py",
@@ -630,7 +634,7 @@
     },
     {
       "path": "deploy/staging/Dockerfile.gateway",
-      "sha256": "167cd82ad61e25e6172ee06e0f4061cc424f8ca01f63ff37626d345cad5ff881"
+      "sha256": "85baac03f05480d2247df622197261d46ec76d5f7e7c5b9e4ab390dd161e92f6"
     },
     {
       "path": "deploy/staging/Dockerfile.runtime",
@@ -742,7 +746,7 @@
     },
     {
       "path": "docs/dependency-notices.json",
-      "sha256": "3131afc1f8e64d03f3aa72a30d0736e773e12387cc1cb68dd1069f02a4ec792f"
+      "sha256": "49a07b1e3d6e77b527e10051039f182c1b8a5dd1a757299b22f3426b60ca815d"
     },
     {
       "path": "docs/deployment.md",
@@ -773,6 +777,10 @@
       "sha256": "f461f9e5b811bdcd0e480086fde408c6f4f5778223201e579c5396a8d178caf7"
     },
     {
+      "path": "docs/security-exception-review-2026-10-24.md",
+      "sha256": "d8c3ed2caa177947a23b5797ed90945c9203f4693dc7db2c545852d76dd6dea0"
+    },
+    {
       "path": "docs/security-exception-review.md",
       "sha256": "987d19400e37a97cfe282b5ce9069922354edcc70f046bf68b61f1193c64fea7"
     },
@@ -786,11 +794,11 @@
     },
     {
       "path": "docs/third-party-license-texts.txt",
-      "sha256": "13dca457caa021bd68fc4ee43742e7ec3ee447228da17d6ba615b0f4e99d38c4"
+      "sha256": "a7cd2bc45897f23f2b3f7b09b3e9a62d7610adfeeb8bcb9cb2939d76839ee841"
     },
     {
       "path": "pyproject.toml",
-      "sha256": "73f5db4b7ea088ab31e587b335a4b954be95bf58285451094d2688fda83f81dc"
+      "sha256": "44211ed48806599778bdf875c1d42f0481e2ba4592bea76585d32e5e4d20b077"
     },
     {
       "path": "requirements/core-runtime.txt",
@@ -874,7 +882,7 @@
     },
     {
       "path": "tests/test_container_origin_hardening.py",
-      "sha256": "69319905abb0cca45834544664b2e99b5674afae7f7a59c8d8194047774af5ab"
+      "sha256": "13cceb48b3d2b6548ae68c51c13919e20cfadf72322d6381f1337f7e7489646f"
     },
     {
       "path": "tests/test_costs.py",
@@ -1010,7 +1018,7 @@
     },
     {
       "path": "tests/test_npm_audit_gate.py",
-      "sha256": "73b7958bdbc9dc85db64e86438742afc918a257702afb467b2d8ba2cd7d95b48"
+      "sha256": "95bbc7cd88e4bcce097eae8851f1b506da773b65b68667e2272e35e3bfda64c2"
     },
     {
       "path": "tests/test_openssl_runtime.py",
@@ -1070,7 +1078,7 @@
     },
     {
       "path": "tests/test_p8_staging.py",
-      "sha256": "e78633c17b5339dcd9570e5b4989ecbe323af8ea66e1e68238cb91ad303cc897"
+      "sha256": "118ffaceceb79d3b17f8b3cea41ae10fd71a433d2b7f8c3b4f33400f6da0286e"
     },
     {
       "path": "tests/test_p9_approval_inventory.py",
@@ -1165,6 +1173,10 @@
       "sha256": "855ada7d1d151d9db20af6117ceca12afd8f73191d4fb07c3b58e6482e1aa644"
     },
     {
+      "path": "tests/test_python_audit_requirements.py",
+      "sha256": "d1ee36707a7b1d8ac805488e1abee1d56e2d1a34c10d838d45ceda5399bad8db"
+    },
+    {
       "path": "tests/test_rate_limit.py",
       "sha256": "05b855e99b5b42046521934205f09b8b6e217af28a94c00630266669b3a9ede7"
     },
@@ -1210,7 +1222,7 @@
     },
     {
       "path": "tools/verify_publication_policy.py",
-      "sha256": "5e33bde907f80ba4ee39eb46c11486e939b38fe8849c11dbf1325a46ec7c02ab"
+      "sha256": "2466493f85bb9e456451f61071e0bb5a66f0421454d992afb9b9c707883b0c52"
     },
     {
       "path": "tw_quant/__init__.py",
@@ -1758,7 +1770,7 @@
     },
     {
       "path": "uv.lock",
-      "sha256": "30f1af09c504171254155c28c7ee5faeff9e0028ffccba9eb2f7718d18b442a4"
+      "sha256": "5e64b6657883b8d61a2e4d600e8222d329c93e72b16f3f894ec1394c353019f6"
     }
   ],
   "p6_acceptance": [
