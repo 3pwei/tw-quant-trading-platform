@@ -366,11 +366,11 @@
     },
     {
       "path": "dashboard/package-lock.json",
-      "sha256": "5fc54fa18d702cdb60309fc7d2f4586c846815c8e810a7b73bb9827f80136f60"
+      "sha256": "45962d9170cd0c183b9eaa4f0086de21eb0e47d87f3d421914af0156ae8f03b7"
     },
     {
       "path": "dashboard/package.json",
-      "sha256": "43ffe386dbde52e503fbbc058bafb46e0ba7079782787fe383fcf22da5e8f47f"
+      "sha256": "570ce337839840ffe57a63c519e4e2e53128f60242ec73a77a569f792f38a94b"
     },
     {
       "path": "dashboard/public/favicon.svg",
@@ -614,7 +614,7 @@
     },
     {
       "path": "deploy/security/npm-audit-exceptions.json",
-      "sha256": "e14e23978e1ec7a42a84907acb99c1261f0e6d32c53c106946039c230a1ee34a"
+      "sha256": "81a515050e5d312ac4a453fa1bdaa999cfc11ad6a652659776bf5747c6b69168"
     },
     {
       "path": "deploy/security/npm_audit_gate.py",
@@ -742,7 +742,7 @@
     },
     {
       "path": "docs/dependency-notices.json",
-      "sha256": "3131afc1f8e64d03f3aa72a30d0736e773e12387cc1cb68dd1069f02a4ec792f"
+      "sha256": "4be1912f3e8802dcabb9c19c7f2c6dedc65b448094a47951a708204d21cd66f6"
     },
     {
       "path": "docs/deployment.md",
@@ -771,6 +771,10 @@
     {
       "path": "docs/provenance.md",
       "sha256": "f461f9e5b811bdcd0e480086fde408c6f4f5778223201e579c5396a8d178caf7"
+    },
+    {
+      "path": "docs/security-exception-review-2026-10-24.md",
+      "sha256": "d76a306009a3a7f0812a396f35f3c060b3036b9c5f5e98a23a80a821a084a7f3"
     },
     {
       "path": "docs/security-exception-review.md",
@@ -1010,7 +1014,7 @@
     },
     {
       "path": "tests/test_npm_audit_gate.py",
-      "sha256": "73b7958bdbc9dc85db64e86438742afc918a257702afb467b2d8ba2cd7d95b48"
+      "sha256": "95bbc7cd88e4bcce097eae8851f1b506da773b65b68667e2272e35e3bfda64c2"
     },
     {
       "path": "tests/test_openssl_runtime.py",

@@ -67,7 +67,7 @@
   ],
   "inputs": {
     "Dockerfile": "727d80a2314691deba494ebadfaae1c904056bdf7992187bd1059a635ab99de6",
-    "dashboard/package-lock.json": "5fc54fa18d702cdb60309fc7d2f4586c846815c8e810a7b73bb9827f80136f60",
+    "dashboard/package-lock.json": "45962d9170cd0c183b9eaa4f0086de21eb0e47d87f3d421914af0156ae8f03b7",
     "deploy/lightsail/Dockerfile.gateway": "9d5f2f30c335344719fd7ff3e892ecea37aee97bbc4bacbf9328ce9469f98c29",
     "uv.lock": "30f1af09c504171254155c28c7ee5faeff9e0028ffccba9eb2f7718d18b442a4"
   },
@@ -820,8 +820,8 @@
       "license": "MIT",
       "license_files": [],
       "path": "node_modules/@next/env",
-      "resolved": "https://registry.npmjs.org/@next/env/-/env-16.3.8.tgz",
-      "version": "16.3.8"
+      "resolved": "https://registry.npmjs.org/@next/env/-/env-16.4.1.tgz",
+      "version": "16.4.1"
     },
     {
       "license": "MIT",
@@ -858,57 +858,57 @@
       "license": "MIT",
       "license_files": [],
       "path": "node_modules/@next/swc-darwin-arm64",
-      "resolved": "https://registry.npmjs.org/@next/swc-darwin-arm64/-/swc-darwin-arm64-16.3.8.tgz",
-      "version": "16.3.8"
+      "resolved": "https://registry.npmjs.org/@next/swc-darwin-arm64/-/swc-darwin-arm64-16.4.1.tgz",
+      "version": "16.4.1"
     },
     {
       "license": "MIT",
       "license_files": [],
       "path": "node_modules/@next/swc-darwin-x64",
-      "resolved": "https://registry.npmjs.org/@next/swc-darwin-x64/-/swc-darwin-x64-16.3.8.tgz",
-      "version": "16.3.8"
+      "resolved": "https://registry.npmjs.org/@next/swc-darwin-x64/-/swc-darwin-x64-16.4.1.tgz",
+      "version": "16.4.1"
     },
     {
       "license": "MIT",
       "license_files": [],
       "path": "node_modules/@next/swc-linux-arm64-gnu",
-      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-gnu/-/swc-linux-arm64-gnu-16.3.8.tgz",
-      "version": "16.3.8"
+      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-gnu/-/swc-linux-arm64-gnu-16.4.1.tgz",
+      "version": "16.4.1"
     },
     {
       "license": "MIT",
       "license_files": [],
       "path": "node_modules/@next/swc-linux-arm64-musl",
-      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-musl/-/swc-linux-arm64-musl-16.3.8.tgz",
-      "version": "16.3.8"
+      "resolved": "https://registry.npmjs.org/@next/swc-linux-arm64-musl/-/swc-linux-arm64-musl-16.4.1.tgz",
+      "version": "16.4.1"
     },
     {
       "license": "MIT",
       "license_files": [],
       "path": "node_modules/@next/swc-linux-x64-gnu",
-      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-16.3.8.tgz",
-      "version": "16.3.8"
+      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-gnu/-/swc-linux-x64-gnu-16.4.1.tgz",
+      "version": "16.4.1"
     },
     {
       "license": "MIT",
       "license_files": [],
       "path": "node_modules/@next/swc-linux-x64-musl",
-      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-musl/-/swc-linux-x64-musl-16.3.8.tgz",
-      "version": "16.3.8"
+      "resolved": "https://registry.npmjs.org/@next/swc-linux-x64-musl/-/swc-linux-x64-musl-16.4.1.tgz",
+      "version": "16.4.1"
     },
     {
       "license": "MIT",
       "license_files": [],
       "path": "node_modules/@next/swc-win32-arm64-msvc",
-      "resolved": "https://registry.npmjs.org/@next/swc-win32-arm64-msvc/-/swc-win32-arm64-msvc-16.3.8.tgz",
-      "version": "16.3.8"
+      "resolved": "https://registry.npmjs.org/@next/swc-win32-arm64-msvc/-/swc-win32-arm64-msvc-16.4.1.tgz",
+      "version": "16.4.1"
     },
     {
       "license": "MIT",
       "license_files": [],
       "path": "node_modules/@next/swc-win32-x64-msvc",
-      "resolved": "https://registry.npmjs.org/@next/swc-win32-x64-msvc/-/swc-win32-x64-msvc-16.3.8.tgz",
-      "version": "16.3.8"
+      "resolved": "https://registry.npmjs.org/@next/swc-win32-x64-msvc/-/swc-win32-x64-msvc-16.4.1.tgz",
+      "version": "16.4.1"
     },
     {
       "license": "MIT",
@@ -4071,8 +4071,8 @@
         }
       ],
       "path": "node_modules/next",
-      "resolved": "https://registry.npmjs.org/next/-/next-16.3.8.tgz",
-      "version": "16.3.8"
+      "resolved": "https://registry.npmjs.org/next/-/next-16.4.1.tgz",
+      "version": "16.4.1"
     },
     {
       "license": "MIT",

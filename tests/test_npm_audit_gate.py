@@ -132,6 +132,25 @@ class NpmAuditGateTests(unittest.TestCase):
         GATE.validate_lock(exceptions, ROOT / "dashboard/package-lock.json")
         GATE.validate_expiry(exceptions, date(2026, 10, 3), fail_on_expired=True)
 
+    def test_no_exceptions_accepts_clean_audit_but_rejects_returning_advisory(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            paths = self.fixture(Path(temporary))
+            paths["exceptions"].write_text(json.dumps({"schema_version": 1, "exceptions": []}))
+            original_report = paths["report"].read_text()
+            paths["report"].write_text(json.dumps({
+                "auditReportVersion": 2,
+                "vulnerabilities": {},
+                "metadata": {"vulnerabilities": {"high": 0, "critical": 0}},
+            }))
+            self.assertEqual(GATE.enforce(
+                paths["report"], paths["lock"], paths["exceptions"], date(2026, 10, 24)
+            ), {"high": 0, "critical": 0, "exceptions": 0})
+            paths["report"].write_text(original_report)
+            with self.assertRaisesRegex(ValueError, "unexpected=GHSA-vfj7-8cjw-p6xm"):
+                GATE.enforce(
+                    paths["report"], paths["lock"], paths["exceptions"], date(2026, 10, 24)
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
