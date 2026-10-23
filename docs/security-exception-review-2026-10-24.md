@@ -125,3 +125,49 @@ Candidate #31, P8 #25 and the P9 binding remain historical acceptance for their
 recorded identities. They do not validate these changed dependencies or grant
 deployment permission. No merge, rerun, workflow_dispatch, Candidate, P8 or
 Production deployment is performed by this review.
+
+## Follow-up: distinguish workflow failures from vulnerability failures
+
+CI #326 subsequently completed successfully. Security #171 failed exactly
+three jobs: exception deadlines, Python dependency audit and container scan.
+The first and third are valid blocking findings. The Python audit's pip
+resolution failure prevented the actual dependency vulnerability check.
+
+The Python audit now keeps `uv lock --check` and the complete hashed
+`uv export --locked --all-extras --no-dev --no-emit-project` output. It verifies
+the public source first, then creates an audit-only requirements file. The
+Core wheel URL is matched to the exact locked public release URL/version/hash
+and represented as `tw-quant-core==1.2.0` for OSV. All other lines, dependency
+markers and hashes remain unchanged. This identity mapping is not used for
+installation or image construction, and it does not substitute an index wheel
+for the verified Core artifact. Source/hash drift aborts and deletes stale
+output. Unknown URL requirements still fail pip-audit's strict policy.
+
+`pip-audit --strict --disable-pip --require-hashes` queries OSV for the complete
+resolved list without re-downloading packages or excluding Shioaji/Core.
+OSV mode checks hash presence, not downloaded artifact bytes; the mandatory
+locked installs and image builds retain artifact integrity verification.
+Missing hashes, unknown dependencies, service errors and vulnerabilities
+remain blocking. The input and JSON report are retained for 14 days even when
+the audit fails, so a resolution failure cannot conceal findings again.
+
+Local live validation completed 40 package audits with zero skipped packages,
+including shioaji 1.7.4 and Core 1.2.0. It returned exit code 1 for 40 advisory
+records across two packages: certifi 2026.7.22 (one, fixed in 2026.10.19) and
+Pillow 12.3.0 (39, fixed in 13.0.0). Advisory records across databases may be
+aliases and must not be summed as distinct CVEs. These findings still require
+dependency upgrades, compatibility tests and regenerated license/lock evidence.
+This workflow fix does not claim a clean Python audit or change those versions.
+
+Security #171's unfiltered scans additionally confirmed all original eight
+Debian IDs, Pillow 12.3.0 findings in both public runtimes, and Go stdlib
+CVE-2026-111943 in gateway (v1.26.9; fixed in 1.26.10 / 1.27.3). Evidence is
+artifact 12520476078 on run 39996422839. Later blocking scan/SBOM steps were
+skipped after the first blocking scan, while independent unfiltered evidence
+for all three images was retained. No SBOM PASS is claimed.
+
+Preventing repeat failures requires removing the actual findings before their
+deadline: test supported stable upgrades, keep the existing 14/7/3-day review
+notifications, and resolve the eight Debian items through explicit human risk
+review when no stable fix exists. Do not automatically extend expiry, ignore
+unfixed findings, suppress exit codes or retry an unchanged failing revision.

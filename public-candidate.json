@@ -58,7 +58,7 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "089dc7f08f6196a198c12a438ec030ff1b640405d0f920c5f61b9949cfac18ac"
+      "sha256": "d31b9ab04c76179a41996eb75f0a915fa40c9ec7c2f721aff43e9b49064c87f3"
     },
     {
       "path": ".github/workflows/staging-candidate.yml",
@@ -601,6 +601,10 @@
       "sha256": "bd68c7b9524174276b3177102ee662572d0e3f6d970da38200e6a4073e16079d"
     },
     {
+      "path": "deploy/security/audit_requirements.py",
+      "sha256": "782a66d1d4ee1626dda7cf429cf72907eb2f2ca609e3e34cb5dc0c9c9484f8f6"
+    },
+    {
       "path": "deploy/security/codeql_eligibility.py",
       "sha256": "a55c55a3011ffb7069f6b581eb981c9d2edf9b14f404503f30f86134331e51b0"
     },
@@ -774,7 +778,7 @@
     },
     {
       "path": "docs/security-exception-review-2026-10-24.md",
-      "sha256": "d76a306009a3a7f0812a396f35f3c060b3036b9c5f5e98a23a80a821a084a7f3"
+      "sha256": "04f3c9aa6452a237814cd35e7a6eb09cf35b57332cb721fefe8bdad65ca4a18e"
     },
     {
       "path": "docs/security-exception-review.md",
@@ -1167,6 +1171,10 @@
     {
       "path": "tests/test_publication_policy.py",
       "sha256": "855ada7d1d151d9db20af6117ceca12afd8f73191d4fb07c3b58e6482e1aa644"
+    },
+    {
+      "path": "tests/test_python_audit_requirements.py",
+      "sha256": "d1ee36707a7b1d8ac805488e1abee1d56e2d1a34c10d838d45ceda5399bad8db"
     },
     {
       "path": "tests/test_rate_limit.py",

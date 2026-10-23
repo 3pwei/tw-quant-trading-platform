@@ -156,11 +156,27 @@ jobs:
       - name: Audit locked Python environment
         run: |
           python -m pip install "uv==0.11.33" "pip-audit==2.9.0"
+          python tools/verify_public_candidate.py
           uv lock --check
           uv export --locked --all-extras --no-dev --no-emit-project \
             --format requirements-txt --output-file /tmp/locked-requirements.txt
-          pip-audit --strict --vulnerability-service osv --progress-spinner=off \
-            --requirement /tmp/locked-requirements.txt
+          python deploy/security/audit_requirements.py --lock-file uv.lock \
+            --input /tmp/locked-requirements.txt \
+            --output "${RUNNER_TEMP}/python-audit-requirements.txt"
+          pip-audit --strict --disable-pip --require-hashes \
+            --vulnerability-service osv --progress-spinner=off --format json \
+            --output "${RUNNER_TEMP}/python-audit.json" \
+            --requirement "${RUNNER_TEMP}/python-audit-requirements.txt"
+      - name: Retain Python audit evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: python-audit-evidence
+          path: |
+            ${{ runner.temp }}/python-audit-requirements.txt
+            ${{ runner.temp }}/python-audit.json
+          if-no-files-found: error
+          retention-days: 14
 
   npm-audit:
     name: npm dependency audit
