@@ -1,5 +1,47 @@
 # Security exception re-review — 2026-10-24
 
+## Current remediation status (supersedes historical observations below)
+
+The repeated failures were unresolved dependencies, not a transient runner
+error. This follow-up changes the actual vulnerable inputs:
+
+| Input | Previous | Proposed | Local evidence |
+| --- | --- | --- | --- |
+| certifi | 2026.7.22 | 2026.10.19 | complete OSV audit and TLS verification PASS |
+| Pillow | 12.3.0 | 13.0.0 | complete OSV audit and Matplotlib/Pillow PNG/PDF output PASS |
+| gateway Go toolchain | 1.26.9 | 1.26.10 | official Docker index digest verified; exact image build/scan required in CI |
+
+The complete Python audit now reports 40 packages, zero vulnerabilities and
+zero skipped packages. Only certifi/Pillow identities change in uv.lock;
+Shioaji remains 1.7.4 and Core remains 1.2.0. Add uv constraints for the fixed
+certifi/Pillow minimums so future lock refreshes cannot choose the vulnerable
+versions. Both gateway Dockerfiles, exact toolchain/build-info checks, pinned
+image digest, publication policy and versioned notices are updated together.
+The official Go index digest is
+`sha256:0525c952defebc693cdaf62cdf43afa32be5a7f377e99260642ea19c240c708e`.
+
+Local validation: complete Python suite 827 tests PASS (10 environment-dependent
+skips); 16 public runtime contract probes PASS; public source/runtime/dependency
+verification PASS; Bandit high=0. Package sdists were verified against lock
+SHA-256 values and their current license texts/inventory were refreshed.
+
+All three blocking image scans and all three SBOM steps run whenever their
+source-verified image build succeeds and the workflow is not cancelled,
+including after a preceding scan fails. Exit code 1, HIGH/CRITICAL severity,
+unfixed findings, exception expiry, strict audit and unfiltered evidence remain
+mandatory. This prevents an early failure from hiding a separate gateway
+finding; it does not turn failures into successes.
+
+The original eight Debian exceptions remain expired and unchanged. Until a
+tested stable fix or a separately reviewed human risk decision resolves them,
+the expiry and runtime-image checks must still fail. No promise of an entirely
+green Security workflow is made for this change. A repeated scan of unchanged
+bytes is not remediation. Before proposing another fix, identify every failed
+check, obtain the complete audit/image evidence, test exact dependency inputs,
+and explicitly report any remaining blocker before merging or release work.
+
+The sections below preserve the baseline and earlier investigation history.
+
 Baseline: master `0c5f08055daa7a30b1dd9c275db78e1166f0ca0c` (PR #65).
 This review follows the expiry failures through 2026-10-23. It does not renew
 any exception, approve a release, or change real-order/deployment controls.

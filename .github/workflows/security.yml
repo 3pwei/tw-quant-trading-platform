@@ -234,6 +234,7 @@ jobs:
             --build-arg PIPELINE_REVISION="$GITHUB_SHA" \
             --tag platform-gateway:security .
       - name: Scan market API image
+        if: ${{ !cancelled() && steps.runtime-build.outcome == 'success' }}
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: platform-market-api:security
@@ -243,6 +244,7 @@ jobs:
           ignore-unfixed: false
           exit-code: "1"
       - name: Scan execution worker image
+        if: ${{ !cancelled() && steps.runtime-build.outcome == 'success' }}
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: platform-execution-worker:security
@@ -252,6 +254,7 @@ jobs:
           ignore-unfixed: false
           exit-code: "1"
       - name: Scan gateway image
+        if: ${{ !cancelled() && steps.runtime-build.outcome == 'success' }}
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           image-ref: platform-gateway:security
@@ -290,18 +293,21 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Generate CycloneDX SBOMs
+        if: ${{ !cancelled() && steps.runtime-build.outcome == 'success' }}
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
           image: platform-market-api:security
           artifact-name: platform-market-api-sbom.cdx.json
           format: cyclonedx-json
       - name: Generate execution worker CycloneDX SBOM
+        if: ${{ !cancelled() && steps.runtime-build.outcome == 'success' }}
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
           image: platform-execution-worker:security
           artifact-name: platform-execution-worker-sbom.cdx.json
           format: cyclonedx-json
       - name: Generate gateway CycloneDX SBOM
+        if: ${{ !cancelled() && steps.runtime-build.outcome == 'success' }}
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
           image: platform-gateway:security

@@ -1,7 +1,7 @@
 {
   "acceptance": {
     "dashboard_attribution": "Keep built-in TradingView attribution logo/link and included license/notice texts",
-    "license_texts_sha256": "13dca457caa021bd68fc4ee43742e7ec3ee447228da17d6ba615b0f4e99d38c4",
+    "license_texts_sha256": "a7cd2bc45897f23f2b3f7b09b3e9a62d7610adfeeb8bcb9cb2939d76839ee841",
     "preserve_installed_license_files": true,
     "repository_owned_source": "Publication authorization only; no new license grant invented",
     "scope": "source publication; no third-party binary redistribution in source",
@@ -27,10 +27,10 @@
         }
       ],
       "name": "caddy",
-      "provenance": "official GitHub buildable release artifact rebuilt with pinned Go 1.26.9 and golang.org/x/net 0.60.0; checksum and module sum pinned in gateway Dockerfile",
+      "provenance": "official GitHub buildable release artifact rebuilt with pinned Go 1.26.10 and golang.org/x/net 0.60.0; checksum and module sum pinned in gateway Dockerfile",
       "sha256": "b430516910839fbaf35c0a9e9df80d1e2e30aa792530293c39f4a97a1b2c9060",
       "source": "https://github.com/caddyserver/caddy/releases/download/v2.11.7/caddy_2.11.7_buildable-artifact.tar.gz",
-      "version": "2.11.7+go1.26.9.xnet0.60.0"
+      "version": "2.11.7+go1.26.10.xnet0.60.0"
     }
   ],
   "containers": [
@@ -51,7 +51,7 @@
     },
     {
       "dockerfile": "deploy/lightsail/Dockerfile.gateway",
-      "image": "golang:1.26.9-alpine3.23@sha256:6750308561953d451210ed1a8086d36c8c8bdcbf672d38d9d0d424b8a7a0216c",
+      "image": "golang:1.26.10-alpine3.23@sha256:0525c952defebc693cdaf62cdf43afa32be5a7f377e99260642ea19c240c708e",
       "policy": "Retain upstream and OS package copyright/license files; build stage only; no base-image layers included in final image or source tree."
     },
     {
@@ -68,8 +68,8 @@
   "inputs": {
     "Dockerfile": "727d80a2314691deba494ebadfaae1c904056bdf7992187bd1059a635ab99de6",
     "dashboard/package-lock.json": "45962d9170cd0c183b9eaa4f0086de21eb0e47d87f3d421914af0156ae8f03b7",
-    "deploy/lightsail/Dockerfile.gateway": "9d5f2f30c335344719fd7ff3e892ecea37aee97bbc4bacbf9328ce9469f98c29",
-    "uv.lock": "30f1af09c504171254155c28c7ee5faeff9e0028ffccba9eb2f7718d18b442a4"
+    "deploy/lightsail/Dockerfile.gateway": "2b1273ced35bf902e279630c3302e3eb080ceeb743278d5417b66ba6649ca2f3",
+    "uv.lock": "5e64b6657883b8d61a2e4d600e8222d329c93e72b16f3f894ec1394c353019f6"
   },
   "npm": [
     {
@@ -5254,17 +5254,17 @@
       "classifiers": [
         "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)"
       ],
-      "evidence": "https://pypi.org/pypi/certifi/2026.7.22/json",
+      "evidence": "https://pypi.org/pypi/certifi/2026.10.19/json",
       "license": "MPL-2.0",
       "license_files": [
         {
-          "path": "certifi-2026.7.22/LICENSE",
+          "path": "certifi-2026.10.19/LICENSE",
           "sha256": "e93716da6b9c0d5a4a1df60fe695b370f0695603d21f6f83f053e42cfc10caf7"
         }
       ],
       "name": "certifi",
       "redistribution_scope": "external dependency; archive license files preserved on installation; not vendored in source",
-      "version": "2026.7.22"
+      "version": "2026.10.19"
     },
     {
       "classifiers": [],
@@ -5844,37 +5844,37 @@
     },
     {
       "classifiers": [],
-      "evidence": "https://pypi.org/pypi/pillow/12.3.0/json",
+      "evidence": "https://pypi.org/pypi/pillow/13.0.0/json",
       "license": "MIT-CMU",
       "license_files": [
         {
-          "path": "pillow-12.3.0/LICENSE",
+          "path": "pillow-13.0.0/LICENSE",
           "sha256": "15181e7363dca9aed78b79bebebc7fde7f1814b8bd311ea3b87ae8ccadfc185b"
         },
         {
-          "path": "pillow-12.3.0/Tests/fonts/DejaVuSans/LICENSE.txt",
+          "path": "pillow-13.0.0/Tests/fonts/DejaVuSans/LICENSE.txt",
           "sha256": "ba4aee7ef5b2ebc285e76df2497953d8a6e7480bc249f4e0a55f1199a3396622"
         },
         {
-          "path": "pillow-12.3.0/Tests/fonts/LICENSE.txt",
+          "path": "pillow-13.0.0/Tests/fonts/LICENSE.txt",
           "sha256": "b79f6f6a2fc060b2e0a6e7a6946c446ae199bec07b92a3df1295975e25c4d96b"
         },
         {
-          "path": "pillow-12.3.0/Tests/icc/LICENSE.txt",
+          "path": "pillow-13.0.0/Tests/icc/LICENSE.txt",
           "sha256": "09e62757edb34e284bc11c54e3429b438d9db37f46c9cb36bd57b1b25ae36184"
         },
         {
-          "path": "pillow-12.3.0/docs/COPYING",
+          "path": "pillow-13.0.0/docs/COPYING",
           "sha256": "d44ce2bbf81806be0eb34ec0ecb0cb013ccd56a94057daf214fb7381adde8f0c"
         },
         {
-          "path": "pillow-12.3.0/src/thirdparty/raqm/COPYING",
-          "sha256": "4a574f631d5aee5223d108d3f7ec4f717343685d8a8904f42591be72c907ecba"
+          "path": "pillow-13.0.0/src/thirdparty/raqm/COPYING",
+          "sha256": "f6baa5c872ed0c35cde377735f930d97a23e08065d87cf34d766b3aad5beed1e"
         }
       ],
       "name": "pillow",
       "redistribution_scope": "external dependency; archive license files preserved on installation; not vendored in source",
-      "version": "12.3.0"
+      "version": "13.0.0"
     },
     {
       "classifiers": [],

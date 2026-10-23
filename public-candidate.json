@@ -58,7 +58,7 @@
     },
     {
       "path": ".github/workflows/security.yml",
-      "sha256": "d31b9ab04c76179a41996eb75f0a915fa40c9ec7c2f721aff43e9b49064c87f3"
+      "sha256": "546d497d8ac08fd134a7810ca3a3f46d7c4d5aa08bfc124d88de7cf7555be35f"
     },
     {
       "path": ".github/workflows/staging-candidate.yml",
@@ -90,7 +90,7 @@
     },
     {
       "path": "THIRD_PARTY_NOTICES.md",
-      "sha256": "2bbfdbad4d7a9c4ddf5e8f07a9c1c65ae5988ca2b1feb174e637d44c7ab498f4"
+      "sha256": "e3db4f95b5eb95822b892ebb62ca36ccf245b1306b701f5f2a5aa3df6352be45"
     },
     {
       "path": "dashboard/app/admin/users/page.tsx",
@@ -450,7 +450,7 @@
     },
     {
       "path": "deploy/lightsail/Dockerfile.gateway",
-      "sha256": "9d5f2f30c335344719fd7ff3e892ecea37aee97bbc4bacbf9328ce9469f98c29"
+      "sha256": "2b1273ced35bf902e279630c3302e3eb080ceeb743278d5417b66ba6649ca2f3"
     },
     {
       "path": "deploy/lightsail/bootstrap.sh",
@@ -634,7 +634,7 @@
     },
     {
       "path": "deploy/staging/Dockerfile.gateway",
-      "sha256": "167cd82ad61e25e6172ee06e0f4061cc424f8ca01f63ff37626d345cad5ff881"
+      "sha256": "85baac03f05480d2247df622197261d46ec76d5f7e7c5b9e4ab390dd161e92f6"
     },
     {
       "path": "deploy/staging/Dockerfile.runtime",
@@ -746,7 +746,7 @@
     },
     {
       "path": "docs/dependency-notices.json",
-      "sha256": "4be1912f3e8802dcabb9c19c7f2c6dedc65b448094a47951a708204d21cd66f6"
+      "sha256": "49a07b1e3d6e77b527e10051039f182c1b8a5dd1a757299b22f3426b60ca815d"
     },
     {
       "path": "docs/deployment.md",
@@ -778,7 +778,7 @@
     },
     {
       "path": "docs/security-exception-review-2026-10-24.md",
-      "sha256": "04f3c9aa6452a237814cd35e7a6eb09cf35b57332cb721fefe8bdad65ca4a18e"
+      "sha256": "d8c3ed2caa177947a23b5797ed90945c9203f4693dc7db2c545852d76dd6dea0"
     },
     {
       "path": "docs/security-exception-review.md",
@@ -794,11 +794,11 @@
     },
     {
       "path": "docs/third-party-license-texts.txt",
-      "sha256": "13dca457caa021bd68fc4ee43742e7ec3ee447228da17d6ba615b0f4e99d38c4"
+      "sha256": "a7cd2bc45897f23f2b3f7b09b3e9a62d7610adfeeb8bcb9cb2939d76839ee841"
     },
     {
       "path": "pyproject.toml",
-      "sha256": "73f5db4b7ea088ab31e587b335a4b954be95bf58285451094d2688fda83f81dc"
+      "sha256": "44211ed48806599778bdf875c1d42f0481e2ba4592bea76585d32e5e4d20b077"
     },
     {
       "path": "requirements/core-runtime.txt",
@@ -882,7 +882,7 @@
     },
     {
       "path": "tests/test_container_origin_hardening.py",
-      "sha256": "69319905abb0cca45834544664b2e99b5674afae7f7a59c8d8194047774af5ab"
+      "sha256": "13cceb48b3d2b6548ae68c51c13919e20cfadf72322d6381f1337f7e7489646f"
     },
     {
       "path": "tests/test_costs.py",
@@ -1078,7 +1078,7 @@
     },
     {
       "path": "tests/test_p8_staging.py",
-      "sha256": "e78633c17b5339dcd9570e5b4989ecbe323af8ea66e1e68238cb91ad303cc897"
+      "sha256": "118ffaceceb79d3b17f8b3cea41ae10fd71a433d2b7f8c3b4f33400f6da0286e"
     },
     {
       "path": "tests/test_p9_approval_inventory.py",
@@ -1222,7 +1222,7 @@
     },
     {
       "path": "tools/verify_publication_policy.py",
-      "sha256": "5e33bde907f80ba4ee39eb46c11486e939b38fe8849c11dbf1325a46ec7c02ab"
+      "sha256": "2466493f85bb9e456451f61071e0bb5a66f0421454d992afb9b9c707883b0c52"
     },
     {
       "path": "tw_quant/__init__.py",
@@ -1770,7 +1770,7 @@
     },
     {
       "path": "uv.lock",
-      "sha256": "30f1af09c504171254155c28c7ee5faeff9e0028ffccba9eb2f7718d18b442a4"
+      "sha256": "5e64b6657883b8d61a2e4d600e8222d329c93e72b16f3f894ec1394c353019f6"
     }
   ],
   "p6_acceptance": [
