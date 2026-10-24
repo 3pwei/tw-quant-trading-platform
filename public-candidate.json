@@ -14,7 +14,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "fecffb4932794177686d50a6441501a35465e8865b887d90d6b032f12a06582c"
+      "sha256": "14bfaf7405f545a17fcb417db1a299a1e88bd0f9bfa89603e55a4948d5c3fe0a"
     },
     {
       "path": ".github/workflows/deploy-lightsail.yml",
@@ -377,80 +377,7 @@
       "sha256": "e6d2e59b7b5bbb0342e0fb496dfc262decbfe4426bbb7b047aec8d467d1dc6f7"
     },
     {
-      "path": "dashboard/scripts/verify-security-gate.mjs",
-      "sha256": "3797294cd3337a919ebbfc0293df94133a61642c51a6e97553aff981c0c38fdf"
-    },
-    {
-      "path": "dashboard/tests/backtest-trade-chart-model.test.ts",
-      "sha256": "a5dc1091e1a12a8105bec403740ef1377b7b643dc871c9d9ccfda03c7b707049"
-    },
-    {
-      "path": "dashboard/tests/demo-client.test.ts",
-      "sha256": "5ee4e2aea9678c3ed384d7daf47a317d8b5fdf094c55c214b0ff11f5804f5b9d"
-    },
-    {
-      "path": "dashboard/tests/history-pagination.test.ts",
-      "sha256": "3f485fe52bf0cb2880fdc7d73abbcd9237069ee189a30ec32b0771c36ff59f62"
-    },
-    {
-      "path": "dashboard/tests/history-selection.test.ts",
-      "sha256": "5c4acdd961f15d412c2dc84dffc6ab974c694b3e1389f0b606c8679a3bc0c1a1"
-    },
-    {
-      "path": "dashboard/tests/live-canary-boundary.test.ts",
-      "sha256": "58e3db307745f0fc9314cc28a1a60245048b9a8e18eda6d3f682c1f5d65afcc5"
-    },
-    {
-      "path": "dashboard/tests/live-shadow-boundary.test.ts",
-      "sha256": "7f47797e3361ed9100ec5be82c17564cf406f41347f52d466107c74d53362f24"
-    },
-    {
-      "path": "dashboard/tests/market-socket-policy.test.ts",
-      "sha256": "d48fe1af644f4a7f3e898eb98f52dc1b788ac8c9a09d4c66dec8aa3c2d27d481"
-    },
-    {
-      "path": "dashboard/tests/paper-account-loader.test.ts",
-      "sha256": "a2443a5cbc7a452cac9b112a2b64d815df3541b06ce18d3f5faa79326064293d"
-    },
-    {
-      "path": "dashboard/tests/paper-auto-policy.test.ts",
-      "sha256": "64ef652a9736b9b1f473a6e771c0fcbee4b2b9c800c1834df2af515a30b48eda"
-    },
-    {
-      "path": "dashboard/tests/provider-identity.test.ts",
-      "sha256": "14d41243077fb8893cdb74a9022c4fce279d731eab8dacf85ec66547be9f159a"
-    },
-    {
-      "path": "dashboard/tests/replay-chart-data.test.ts",
-      "sha256": "ac67fa8a6a0f354901252ff72618fdb74d31090bb052f74d28302c106f3a591d"
-    },
-    {
-      "path": "dashboard/tests/strategy-catalog.test.ts",
-      "sha256": "4fd7cd394982b163b904e351f6f2135aa85b1a9d2780b68f0a637029e6604b6c"
-    },
-    {
-      "path": "dashboard/tests/strategy-menu.test.ts",
-      "sha256": "58fb9b42ffa05fcf1566c094f16201e2530858e49f8c2b795054092102aa80cf"
-    },
-    {
-      "path": "dashboard/tests/system-nav-policy.test.ts",
-      "sha256": "9a20d767494195093b173abde18fce584bd783b037459529d8d5f28f236695a6"
-    },
-    {
-      "path": "dashboard/tests/trade-selection.test.ts",
-      "sha256": "6b201ba42c8f3ceea97db762eaa670ac797f3388248cb5058c753cf25e2fa52b"
-    },
-    {
-      "path": "dashboard/tsconfig.json",
-      "sha256": "f2735fc4e568bab363ae9b9d3cdb1d0e94128ef6f963f780cf59cc715eef2f7e"
-    },
-    {
-      "path": "deploy/lightsail/Caddyfile",
-      "sha256": "95d2bc9ea9ad2da8c99742d8720780892b0f816c95669f933b883538a4b9fa26"
-    },
-    {
-      "path": "deploy/lightsail/Dockerfile.gateway",
-      "sha256": "9d5f2f30c335344719fd7ff3e892ecea37aee97bbc4bacbf9328ce9469f98c29"
+      "path"…770 tokens truncated…a37aee97bbc4bacbf9328ce9469f98c29"
     },
     {
       "path": "deploy/lightsail/bootstrap.sh",
@@ -739,6 +666,10 @@
     {
       "path": "docker-compose.yml",
       "sha256": "427d8ea9cfa62e8f8bda7b0a060cfb7dd087e55265bc1b9b67e6291d552c2a29"
+    },
+    {
+      "path": "docs/actions-cost-audit-2026-10-24.md",
+      "sha256": "c2135deb93bb731916493e6fa0bd58f5d5da5ac256a0754921dc1e5b747d821a"
     },
     {
       "path": "docs/dependency-notices.json",
