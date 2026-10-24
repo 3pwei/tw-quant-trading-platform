@@ -1,9 +1,16 @@
 name: CI
 on:
   push:
+    branches: [master]
   pull_request:
 permissions:
   contents: read
+
+# Replace obsolete PR checks only. Keep every master SHA's deployment evidence.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   p8-shioaji:
     name: P8 offline Shioaji exact-image capability

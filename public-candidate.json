@@ -14,7 +14,7 @@
     },
     {
       "path": ".github/workflows/ci.yml",
-      "sha256": "fecffb4932794177686d50a6441501a35465e8865b887d90d6b032f12a06582c"
+      "sha256": "14bfaf7405f545a17fcb417db1a299a1e88bd0f9bfa89603e55a4948d5c3fe0a"
     },
     {
       "path": ".github/workflows/deploy-lightsail.yml",
@@ -739,6 +739,10 @@
     {
       "path": "docker-compose.yml",
       "sha256": "427d8ea9cfa62e8f8bda7b0a060cfb7dd087e55265bc1b9b67e6291d552c2a29"
+    },
+    {
+      "path": "docs/actions-cost-audit-2026-10-24.md",
+      "sha256": "c2135deb93bb731916493e6fa0bd58f5d5da5ac256a0754921dc1e5b747d821a"
     },
     {
       "path": "docs/dependency-notices.json",
