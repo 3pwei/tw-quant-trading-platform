@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==84.0.0"]
+requires = ["setuptools==84.2.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -12,7 +12,7 @@ dependencies = [
   "tw-quant-core @ https://github.com/3pwei/tw-quant-core/releases/download/v1.2.0/tw_quant_core-1.2.0-py3-none-any.whl",
   "matplotlib>=3.7",
   "numpy>=1.24",
-  "pandas==3.0.6",
+  "pandas==3.1.0",
 ]
 
 [project.optional-dependencies]
