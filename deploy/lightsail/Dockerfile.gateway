@@ -30,7 +30,7 @@ RUN set -eux; \
     /out/caddy build-info | grep -Eq '^go[[:space:]]+go1\.26\.9$'; \
     /out/caddy build-info | grep -Eq '^dep[[:space:]]+golang.org/x/net[[:space:]]+v0\.60\.0([[:space:]]|$)'
 
-FROM alpine:3.23.6@sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0
+FROM alpine:3.24.0@sha256:a2d49ea686c2adfe3c992e47dc3b5e7fa6e6b5055609400dc2acaeb241c829f4
 COPY --from=caddy-build --chmod=0755 /out/caddy /usr/bin/caddy
 RUN set -eux; \
     test "$(apk --print-arch)" = x86_64; \
